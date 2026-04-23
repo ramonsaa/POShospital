@@ -13,11 +13,12 @@
             --primary-blue: #2c3e50;
             --secondary-blue: #34495e;
             --accent-green: #27ae60;
+            --danger-red: #c0392b;
+            --warning-orange: #d35400;
             --light-bg: #f4f7f6;
             --white: #ffffff;
             --border-color: #dcdde1;
             --text-dark: #2f3640;
-            --danger-red: #c0392b;
             --cart-width: 0px; 
         }
 
@@ -64,9 +65,10 @@
         .total-amount { font-size: 1.6em; color: var(--primary-blue); font-weight: bold; text-align: right;}
         .action-bar { padding: 10px; border-top: 1px solid var(--border-color); display: flex; gap: 10px; background: #fdfdfd;}
         
-        button.btn-action { padding: 8px 15px; cursor: pointer; border: none; font-size: 0.85em; font-weight: bold; border-radius: 3px;}
+        button.btn-action { padding: 8px 15px; cursor: pointer; border: none; font-size: 0.85em; font-weight: bold; border-radius: 3px; display: flex; justify-content: center; align-items: center; gap: 5px;}
         .btn-primary { background-color: var(--primary-blue); color: white; }
         .btn-success { background-color: var(--accent-green); color: white; }
+        .btn-warning { background-color: var(--warning-orange); color: white; }
         .btn-danger { background-color: var(--danger-red); color: white; }
         
         .nurse-badge { font-size: 0.75em; background: #e8f5e9; color: #2e7d32; padding: 2px 6px; border-radius: 3px; font-weight: 600;}
@@ -74,10 +76,12 @@
         .stock-warning { color: var(--danger-red); font-weight: bold; }
 
         /* CARRITO DESLIZANTE */
-        #cart-section { background-color: #1a252f; color: white; border-right: 3px solid var(--accent-green); }
+        #cart-section { background-color: #1a252f; color: white; border-right: 3px solid var(--accent-green); transition: border-color 0.3s; }
+        #cart-section.internal-cart { border-right-color: var(--warning-orange); }
         #cart-section .panel-header { background-color: #151e27; border-bottom: 1px solid #2c3e50; }
         .cart-items-container { padding: 10px; flex: 1; overflow-y: auto; overflow-x: hidden; }
         .cart-item { background: rgba(255,255,255,0.05); padding: 10px; margin-bottom: 8px; border-radius: 4px; border-left: 3px solid var(--accent-green); }
+        .internal-cart .cart-item { border-left-color: var(--warning-orange); }
         .cart-item-title { font-size: 0.85em; font-weight: bold; margin-bottom: 5px; word-wrap: break-word;}
         .cart-controls { display: flex; justify-content: space-between; align-items: center; margin-top: 8px;}
         .qty-box { display: flex; align-items: center; background: rgba(0,0,0,0.3); border-radius: 4px; overflow: hidden;}
@@ -85,6 +89,7 @@
         .qty-btn:hover { background: #2c3e50; }
         .qty-val { width: 30px; text-align: center; font-size: 0.85em; font-weight: bold;}
         .cart-price { color: var(--accent-green); font-weight: bold; font-size: 0.9em;}
+        .internal-cart .cart-price { color: var(--warning-orange); }
         .cart-badge { font-size: 0.7em; color: #95a5a6; display: block; margin-top: 2px;}
         .cart-summary { padding: 15px; background: rgba(0,0,0,0.2); border-top: 1px solid #2c3e50; }
         
@@ -118,7 +123,7 @@
 <header>
     <div><strong>HOSPITAL POS</strong> | Panel Administrativo</div>
     <div class="header-actions">
-        <a href="inventory-admin.html" style="color: white; font-size: 0.85em; text-decoration: none; border: 1px solid white; padding: 5px; border-radius: 4px;">📦 Ir a Inventario Maestro</a>
+        <a href="inventory-admin.html" style="color: white; font-size: 0.85em; text-decoration: none; border: 1px solid white; padding: 5px; border-radius: 4px;">📦 Ir a Inventario</a>
         <span class="user-info"> | <span id="user-display">Verificando sesión...</span></span>
         <span class="user-info"> | <span id="clock">--:--</span></span>
         <button id="btn-fullscreen" class="btn-header">🖵 Pantalla Completa</button>
@@ -135,8 +140,8 @@
                 <span>Total:</span>
                 <span id="cart-total-text" style="color: var(--accent-green);">$0.00</span>
             </div>
-            <button class="btn-action btn-success" id="btn-procesar-carrito" style="width: 100%; padding: 10px; margin-bottom: 10px;">Confirmar Cargos</button>
-            <button class="btn-action btn-danger" style="width: 100%; padding: 8px;" id="btn-vaciar-carrito">Vaciar Lista</button>
+            <button class="btn-action btn-success" id="btn-procesar-carrito" style="width: 100%; padding: 10px; margin-bottom: 10px; justify-content: center;">Confirmar Cargos</button>
+            <button class="btn-action" style="width: 100%; padding: 8px; background: gray; justify-content: center; color: white;" id="btn-vaciar-carrito">Vaciar Lista</button>
         </div>
     </section>
 
@@ -144,6 +149,7 @@
         <div class="panel-header">Pacientes Activos <span>[F1]</span></div>
         <div class="search-container" style="display: flex; gap: 10px;">
             <input type="text" id="search-patients" placeholder="Buscar cuarto o paciente..." style="flex: 1;">
+            <button class="btn-action btn-warning" onclick="activarModoInterno()" style="padding: 8px 12px; font-size: 0.85em;" title="Extraer insumos sin cuenta de paciente">📋 Uso Interno</button>
             <button class="btn-action btn-success" onclick="abrirModalNuevo()" style="padding: 8px 12px; font-size: 0.85em;">➕ Nuevo</button>
         </div>
         <div class="data-list">
@@ -160,20 +166,20 @@
         <div class="panel-header" id="header-cuenta">Cuenta del Paciente <span>--</span></div>
         <div class="account-details">
             <div class="summary-box" id="resumen-cuenta" style="flex-direction: column;">
-                <div>Seleccione un paciente de la lista.</div>
+                <div>Seleccione un paciente de la lista o active el Uso Interno.</div>
             </div>
             <div class="data-list">
                 <table>
                     <thead>
-                        <tr><th>Concepto</th><th>Cant.</th><th>Total</th><th>Acreditado a</th></tr>
+                        <tr id="table-head-tx"><th>Concepto</th><th>Cant.</th><th>Total</th><th>Acreditado a</th></tr>
                     </thead>
                     <tbody id="lista-transacciones"></tbody>
                 </table>
             </div>
-            <div class="action-bar">
-                <button class="btn-action btn-primary" id="btn-imprimir">Imprimir Cuenta [P]</button>
-                <button class="btn-action btn-success" id="btn-liquidar">Liquidar [F10]</button>
-                <button class="btn-action btn-danger" onclick="abrirModalBorrar()">Borrar [DEL]</button>
+            <div class="action-bar" id="action-bar-cuenta">
+                <button class="btn-action btn-primary" id="btn-imprimir">🖨️ Imprimir [P]</button>
+                <button class="btn-action btn-success" id="btn-liquidar">💰 Liquidar [F10]</button>
+                <button class="btn-action btn-danger" onclick="abrirModalBorrar()">🗑️ Borrar [DEL]</button>
             </div>
         </div>
     </section>
@@ -246,8 +252,8 @@
         <textarea id="modal-alergias" rows="3" placeholder="Observaciones / Alergias..."></textarea>
         
         <div style="display:flex; gap:10px; margin-top:10px;">
-            <button class="btn-action" style="flex:1; background: gray; color: white;" onclick="cerrarModalPaciente()">Cancelar</button>
-            <button class="btn-action btn-success" style="flex:1;" id="btn-guardar-paciente" onclick="guardarPaciente()">💾 Guardar</button>
+            <button class="btn-action" style="flex:1; background: gray; color: white; justify-content: center;" onclick="cerrarModalPaciente()">Cancelar</button>
+            <button class="btn-action btn-success" style="flex:1; justify-content: center;" id="btn-guardar-paciente" onclick="guardarPaciente()">💾 Guardar</button>
         </div>
     </div>
 </div>
@@ -267,8 +273,8 @@
         <input type="text" id="delete-confirm-text" placeholder="Escribe BORRAR aquí" autocomplete="off">
         
         <div style="display:flex; gap:10px; margin-top:15px;">
-            <button class="btn-action" style="flex:1; background: gray; color: white;" onclick="cerrarModalBorrar()">Cancelar</button>
-            <button class="btn-action btn-danger" style="flex:1;" id="btn-confirmar-borrar" onclick="ejecutarBorrado()">Eliminar Cuenta</button>
+            <button class="btn-action" style="flex:1; background: gray; color: white; justify-content: center;" onclick="cerrarModalBorrar()">Cancelar</button>
+            <button class="btn-action btn-danger" style="flex:1; justify-content: center;" id="btn-confirmar-borrar" onclick="ejecutarBorrado()">Eliminar Cuenta</button>
         </div>
     </div>
 </div>
@@ -294,8 +300,8 @@
         </label>
 
         <div style="display:flex; gap:10px; margin-top:20px;">
-            <button class="btn-action" style="flex:1; background: gray; color: white;" onclick="cerrarModalImpresion()">Cancelar</button>
-            <button class="btn-action btn-primary" style="flex:1;" id="btn-generar-pdf" onclick="ejecutarExportacionPDF()">📄 Generar PDF</button>
+            <button class="btn-action" style="flex:1; background: gray; color: white; justify-content: center;" onclick="cerrarModalImpresion()">Cancelar</button>
+            <button class="btn-action btn-primary" style="flex:1; justify-content: center;" id="btn-generar-pdf" onclick="ejecutarExportacionPDF()">📄 Generar PDF</button>
         </div>
     </div>
 </div>
@@ -333,12 +339,14 @@
     window.abrirModalImpresion = abrirModalImpresion;
     window.cerrarModalImpresion = cerrarModalImpresion;
     window.ejecutarExportacionPDF = ejecutarExportacionPDF;
+    window.activarModoInterno = activarModoInterno; // NUEVA
 
     let modoModal = 'nuevo';
 
     window.AppState = {
         pacienteActualId: null,
         pacienteActualData: null,
+        isModoInterno: false, // FLAG MODO INTERNO
         uidRecepcionista: null,
         nombreRecepcionista: null,
         pinRecepcionista: null,
@@ -388,30 +396,24 @@
     });
 
     document.getElementById('btn-logout').addEventListener('click', () => { signOut(auth); });
-    document.getElementById('btn-vaciar-carrito').addEventListener('click', vaciarCarrito);
 
     // ==========================================
-    // CONTROL DE INACTIVIDAD (5 MINUTOS)
+    // CONTROL DE INACTIVIDAD
     // ==========================================
     let timeoutInactividad;
-    const TIEMPO_INACTIVIDAD = 5 * 60 * 1000; 
-
     function resetearInactividad() {
         clearTimeout(timeoutInactividad);
         if(document.getElementById('lock-screen').style.display !== 'flex') {
-            timeoutInactividad = setTimeout(bloquearSistema, TIEMPO_INACTIVIDAD);
+            timeoutInactividad = setTimeout(() => {
+                document.getElementById('lock-screen').style.display = 'flex';
+                document.getElementById('unlock-pin').value = '';
+                document.getElementById('unlock-pin').focus();
+            }, 5 * 60 * 1000);
         }
     }
 
-    function bloquearSistema() {
-        document.getElementById('lock-screen').style.display = 'flex';
-        document.getElementById('unlock-pin').value = '';
-        document.getElementById('unlock-pin').focus();
-    }
-
     function desbloquearSistema() {
-        const pinIngresado = document.getElementById('unlock-pin').value;
-        if(pinIngresado === AppState.pinRecepcionista) {
+        if(document.getElementById('unlock-pin').value === AppState.pinRecepcionista) {
             document.getElementById('lock-screen').style.display = 'none';
             resetearInactividad();
         } else {
@@ -421,17 +423,14 @@
         }
     }
 
-    document.getElementById('unlock-pin').addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') desbloquearSistema();
-    });
+    document.getElementById('unlock-pin').addEventListener('keypress', (e) => { if (e.key === 'Enter') desbloquearSistema(); });
+    document.addEventListener('mousemove', resetearInactividad);
+    document.addEventListener('keypress', resetearInactividad);
+    document.addEventListener('click', resetearInactividad);
 
-    function iniciarControlInactividad() {
-        document.addEventListener('mousemove', resetearInactividad);
-        document.addEventListener('keypress', resetearInactividad);
-        document.addEventListener('click', resetearInactividad);
-        resetearInactividad();
-    }
-
+    // ==========================================
+    // INICIALIZACIÓN
+    // ==========================================
     function iniciarSistema() {
         escucharPacientesActivos();
         escucharServiciosYPaquetes();
@@ -475,6 +474,9 @@
         });
     }
 
+    // ==========================================
+    // SELECCIÓN DE MODOS (PACIENTE vs INTERNO)
+    // ==========================================
     function escucharPacientesActivos() {
         onSnapshot(query(collection(db, "accounts"), where("estado", "==", "abierta")), (snap) => {
             const tbody = document.getElementById('lista-pacientes'); tbody.innerHTML = '';
@@ -490,7 +492,81 @@
         });
     }
 
+    function activarModoInterno() {
+        if(Object.keys(AppState.carrito).length > 0) {
+            if(!confirm("Tienes insumos pendientes. ¿Vaciar carrito y cambiar a Consumo Interno?")) return;
+            vaciarCarrito();
+        }
+
+        AppState.isModoInterno = true;
+        AppState.pacienteActualId = null;
+        AppState.pacienteActualData = null;
+        
+        // UI Updates
+        document.querySelectorAll('#lista-pacientes tr').forEach(r => r.classList.remove('selected-row'));
+        
+        document.getElementById('header-cuenta').innerHTML = `Modo Activo <span>CONSUMO INTERNO / MERMA</span>`;
+        document.getElementById('header-cuenta').style.backgroundColor = 'var(--warning-orange)';
+        
+        document.getElementById('resumen-cuenta').innerHTML = `
+            <div style="font-size: 1.1em; color: var(--text-dark);">
+                <strong>⚠️ Extracción de Insumos al Hospital</strong><br>
+                <span style="font-size: 0.85em; color: gray;">Los insumos procesados aquí se descontarán del stock físico y se enviarán al reporte de Pérdidas/Mermas de la administración. No se cobrarán a ningún paciente.</span>
+            </div>`;
+        
+        document.getElementById('lista-transacciones').innerHTML = '';
+        document.getElementById('table-head-tx').style.display = 'none';
+        
+        // Ocultar barra de acciones (Imprimir, Borrar, etc)
+        document.getElementById('action-bar-cuenta').style.display = 'none';
+
+        // Modificar apariencia del carrito
+        document.getElementById('cart-section').classList.add('internal-cart');
+        const btnCarrito = document.getElementById('btn-procesar-carrito');
+        btnCarrito.innerText = "Confirmar Merma";
+        btnCarrito.className = "btn-action btn-warning";
+    }
+
+    function seleccionarPaciente(id, data, filaHtml) {
+        if(Object.keys(AppState.carrito).length > 0) {
+            if(!confirm("Tienes insumos pendientes en el carrito. ¿Vaciar y cambiar de paciente?")) return;
+            vaciarCarrito();
+        }
+
+        AppState.isModoInterno = false;
+        AppState.pacienteActualId = id; 
+        AppState.pacienteActualData = data;
+        
+        document.querySelectorAll('#lista-pacientes tr').forEach(r => r.classList.remove('selected-row'));
+        filaHtml.classList.add('selected-row');
+        
+        // Restaurar UI Normal
+        document.getElementById('header-cuenta').style.backgroundColor = 'var(--secondary-blue)';
+        document.getElementById('table-head-tx').style.display = '';
+        document.getElementById('action-bar-cuenta').style.display = 'flex';
+        document.getElementById('cart-section').classList.remove('internal-cart');
+        
+        const btnCarrito = document.getElementById('btn-procesar-carrito');
+        btnCarrito.innerText = "Confirmar Cargos";
+        btnCarrito.className = "btn-action btn-success";
+
+        actualizarUIResumenCuenta();
+
+        if(AppState.unsubscribeTransacciones) AppState.unsubscribeTransacciones();
+        AppState.unsubscribeTransacciones = onSnapshot(query(collection(db, "transactions"), where("pacienteId", "==", id)), (snap) => {
+            const tbody = document.getElementById('lista-transacciones'); tbody.innerHTML = '';
+            const txs = []; snap.forEach(d => txs.push(d.data()));
+            txs.sort((a,b) => (b.timestamp?.toMillis()||0) - (a.timestamp?.toMillis()||0));
+            txs.forEach((tx) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td>${tx.nombre}</td><td>${tx.cantidad || 1}</td><td>$${tx.precio_venta.toLocaleString('es-MX')}</td><td><span class="${tx.acreditado_a_nombre===AppState.nombreRecepcionista?'system-badge':'nurse-badge'}">${tx.acreditado_a_nombre}</span></td>`;
+                tbody.appendChild(tr);
+            });
+        });
+    }
+
     function actualizarUIResumenCuenta() {
+        if (AppState.isModoInterno) return;
         const data = AppState.pacienteActualData;
         const cuartoDisplay = data.es_ambulatorio ? 'AMB' : (data.cuarto_id || 'AMB');
         
@@ -509,32 +585,8 @@
         `;
     }
 
-    function seleccionarPaciente(id, data, filaHtml) {
-        if(Object.keys(AppState.carrito).length > 0) {
-            if(!confirm("Tienes insumos pendientes en el carrito. ¿Vaciar y cambiar de paciente?")) return;
-            vaciarCarrito();
-        }
-
-        AppState.pacienteActualId = id; AppState.pacienteActualData = data;
-        document.querySelectorAll('#lista-pacientes tr').forEach(r => r.classList.remove('selected-row'));
-        filaHtml.classList.add('selected-row');
-        actualizarUIResumenCuenta();
-
-        if(AppState.unsubscribeTransacciones) AppState.unsubscribeTransacciones();
-        AppState.unsubscribeTransacciones = onSnapshot(query(collection(db, "transactions"), where("pacienteId", "==", id)), (snap) => {
-            const tbody = document.getElementById('lista-transacciones'); tbody.innerHTML = '';
-            const txs = []; snap.forEach(d => txs.push(d.data()));
-            txs.sort((a,b) => (b.timestamp?.toMillis()||0) - (a.timestamp?.toMillis()||0));
-            txs.forEach((tx) => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `<td>${tx.nombre}</td><td>${tx.cantidad || 1}</td><td>$${tx.precio_venta}</td><td><span class="${tx.acreditado_a_nombre===AppState.nombreRecepcionista?'system-badge':'nurse-badge'}">${tx.acreditado_a_nombre}</span></td>`;
-                tbody.appendChild(tr);
-            });
-        });
-    }
-
     // ==========================================
-    // EXPORTACIÓN A PDF Y FIRMAS (ESTILO FLEXOWASH)
+    // EXPORTACIÓN A PDF Y FIRMAS
     // ==========================================
     document.getElementById('btn-imprimir').addEventListener('click', abrirModalImpresion);
 
@@ -555,27 +607,21 @@
         document.getElementById('print-modal').style.display = 'none';
     }
 
-async function ejecutarExportacionPDF() {
+    async function ejecutarExportacionPDF() {
         const btn = document.getElementById('btn-generar-pdf');
         btn.innerText = "⏳ Generando...";
         btn.disabled = true;
 
         try {
-            // 1. SEGURO DE LIBRERÍAS: Verificamos que el internet haya cargado jsPDF
-            if (!window.jspdf || !window.jspdf.jsPDF) {
-                throw new Error("La librería de PDF no cargó correctamente. Revisa tu conexión o desactiva tu bloqueador de anuncios.");
-            }
+            if (!window.jspdf || !window.jspdf.jsPDF) throw new Error("La librería de PDF no cargó correctamente.");
 
             const data = AppState.pacienteActualData;
-            
-            // Consultar Transacciones
             const q = query(collection(db, "transactions"), where("pacienteId", "==", AppState.pacienteActualId));
             const snap = await getDocs(q);
             const txs = [];
             snap.forEach(d => txs.push(d.data()));
             txs.sort((a,b) => (a.timestamp?.toMillis()||0) - (b.timestamp?.toMillis()||0));
 
-            // Preparar datos para la tabla (Con seguro contra fechas pendientes)
             const tableBody = txs.map(tx => [
                 (tx.timestamp && typeof tx.timestamp.toDate === 'function') ? new Date(tx.timestamp.toDate()).toLocaleString('es-MX') : 'Pendiente',
                 tx.nombre,
@@ -584,27 +630,20 @@ async function ejecutarExportacionPDF() {
                 `$${tx.precio_venta.toLocaleString('es-MX')}`
             ]);
 
-            // 2. SEGURO DE TEXTOS: Forzamos que las observaciones sean texto antes de buscar "enters"
             let observacionesStr = data.alergias ? String(data.alergias) : 'Ninguna registrada';
             observacionesStr = observacionesStr.replace(/\n/g, ' / ');
 
-            // 3. SEGURO DE FECHAS: Evaluamos todos los posibles estados de la fecha de ingreso
             const fechaEmision = new Date().toLocaleString('es-MX');
             let fechaIngreso = 'N/A';
             if (data.fecha_ingreso) {
-                if (typeof data.fecha_ingreso.toDate === 'function') {
-                    fechaIngreso = new Date(data.fecha_ingreso.toDate()).toLocaleString('es-MX'); // Fecha de Firebase
-                } else if (data.fecha_ingreso instanceof Date) {
-                    fechaIngreso = data.fecha_ingreso.toLocaleString('es-MX'); // Fecha manual recién guardada
-                }
+                if (typeof data.fecha_ingreso.toDate === 'function') fechaIngreso = new Date(data.fecha_ingreso.toDate()).toLocaleString('es-MX');
+                else if (data.fecha_ingreso instanceof Date) fechaIngreso = data.fecha_ingreso.toLocaleString('es-MX');
             }
 
-            // Iniciar jsPDF
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF('p', 'pt', 'letter');
             const pageWidth = doc.internal.pageSize.width;
 
-            // Encabezado principal
             doc.setFontSize(18);
             doc.setFont("helvetica", "bold");
             doc.text("HOSPITAL POS", 40, 40);
@@ -614,17 +653,14 @@ async function ejecutarExportacionPDF() {
             doc.setTextColor(100);
             doc.text("Reporte Técnico de Cuenta Médica", 40, 55);
 
-            // Información lateral derecha
             doc.setFontSize(9);
             doc.text(`Fecha de Emisión: ${fechaEmision}`, pageWidth - 40, 40, { align: 'right' });
             doc.text(`Impreso por: ${AppState.nombreRecepcionista}`, pageWidth - 40, 52, { align: 'right' });
 
-            // Línea divisoria
             doc.setDrawColor(44, 62, 80);
             doc.setLineWidth(1.5);
             doc.line(40, 65, pageWidth - 40, 65);
 
-            // Bloque de Información del Paciente
             doc.setTextColor(44, 62, 80);
             doc.setFontSize(10);
             
@@ -652,14 +688,8 @@ async function ejecutarExportacionPDF() {
             doc.text("Observaciones:", 300, 100);
             doc.setFont("helvetica", "normal");
             
-            // Multiline de observaciones
             const splitObs = doc.splitTextToSize(observacionesStr, 230);
             doc.text(splitObs, 385, 100);
-
-            // Generar Tabla
-            if (typeof doc.autoTable !== 'function') {
-                throw new Error("El plugin de tablas (AutoTable) no se cargó correctamente.");
-            }
 
             doc.autoTable({
                 startY: 135,
@@ -667,62 +697,41 @@ async function ejecutarExportacionPDF() {
                 body: tableBody,
                 theme: 'striped',
                 headStyles: { fillColor: [44, 62, 80], textColor: 255 },
-                columnStyles: {
-                    0: { cellWidth: 100 },
-                    2: { cellWidth: 40, halign: 'center' },
-                    4: { halign: 'right' }
-                },
+                columnStyles: { 0: { cellWidth: 100 }, 2: { cellWidth: 40, halign: 'center' }, 4: { halign: 'right' } },
                 styles: { fontSize: 9 }
             });
 
-            // Gran Total
             let finalY = doc.lastAutoTable.finalY + 20;
             doc.setFontSize(14);
             doc.setFont("helvetica", "bold");
             doc.text(`GRAN TOTAL: $${(data.total || 0).toLocaleString('es-MX')} MXN`, pageWidth - 40, finalY, { align: 'right' });
 
-            // Lógica Dinámica de Firmas
             let firmas = [];
             if(document.getElementById('chk-sig-hospital').checked) firmas.push("Hospital (Representante)");
             if(document.getElementById('chk-sig-paciente').checked) firmas.push(`Paciente: ${data.es_anonimo ? 'Anónimo' : data.paciente_nombre}`);
             if(document.getElementById('chk-sig-familiar').checked) firmas.push("Familiar / Responsable");
 
             if (firmas.length > 0) {
-                finalY += 80; // Espacio vertical para firmar con pluma
-                
-                // Si se va a salir de la hoja, creamos página nueva
-                if (finalY > doc.internal.pageSize.height - 40) {
-                    doc.addPage();
-                    finalY = 80;
-                }
+                finalY += 80; 
+                if (finalY > doc.internal.pageSize.height - 40) { doc.addPage(); finalY = 80; }
 
                 doc.setDrawColor(0);
                 doc.setLineWidth(0.5);
                 doc.setFontSize(10);
                 doc.setFont("helvetica", "normal");
 
-                // Distribución algorítmica perfecta
                 firmas.forEach((firma, index) => {
                     let xPos;
-                    if (firmas.length === 1) {
-                        xPos = pageWidth / 2;
-                    } else if (firmas.length === 2) {
-                        xPos = (index === 0) ? pageWidth * 0.30 : pageWidth * 0.70;
-                    } else if (firmas.length === 3) {
-                        xPos = (index === 0) ? pageWidth * 0.20 : (index === 1) ? pageWidth * 0.50 : pageWidth * 0.80;
-                    }
+                    if (firmas.length === 1) xPos = pageWidth / 2;
+                    else if (firmas.length === 2) xPos = (index === 0) ? pageWidth * 0.30 : pageWidth * 0.70;
+                    else if (firmas.length === 3) xPos = (index === 0) ? pageWidth * 0.20 : (index === 1) ? pageWidth * 0.50 : pageWidth * 0.80;
 
-                    // Línea (Ancho de 140px centrado en xPos)
                     doc.line(xPos - 70, finalY, xPos + 70, finalY);
-                    
-                    // Texto debajo de la línea
                     doc.text(firma, xPos, finalY + 15, { align: 'center' });
                 });
             }
 
-            // Descargar el documento
             doc.save(`Cuenta_Hospital_${data.es_anonimo ? 'Anonimo' : data.paciente_nombre.replace(/\s+/g, '_')}.pdf`);
-            
             cerrarModalImpresion();
 
         } catch(error) {
@@ -754,7 +763,6 @@ async function ejecutarExportacionPDF() {
                     document.getElementById('lista-transacciones').innerHTML = '';
                     alert("Cuenta liquidada con éxito.");
                 } catch(e) { 
-                    alert("Error al liquidar la cuenta."); 
                     console.error(e); 
                 }
             }
@@ -827,7 +835,6 @@ async function ejecutarExportacionPDF() {
             alert("🗑️ Cuenta eliminada correctamente.");
             
         } catch(e) { 
-            alert("Error al intentar borrar la cuenta."); 
             console.error(e); 
         } finally {
             btn.disabled = false;
@@ -845,7 +852,7 @@ async function ejecutarExportacionPDF() {
                 const item = { id: docSnap.id, ...docSnap.data() };
                 const tr = document.createElement('tr');
                 const icono = item.tipo === 'kit' ? '📦 ' : '🩺 ';
-                tr.innerHTML = `<td>${icono}${item.nombre}</td><td>$${item.precio_venta}</td>`;
+                tr.innerHTML = `<td>${icono}${item.nombre}</td><td>$${item.precio_venta.toLocaleString('es-MX')}</td>`;
                 tr.onclick = () => procesarServicioOKit(item); 
                 tbody.appendChild(tr);
             });
@@ -859,7 +866,7 @@ async function ejecutarExportacionPDF() {
                 const i = { id: docSnap.id, ...docSnap.data(), tipo: 'fisico' };
                 if(i.publicado_en_pos) {
                     const tr = document.createElement('tr');
-                    tr.innerHTML = `<td>${i.nombre}</td><td class="${i.stock < 10 ? 'stock-warning':''}">${i.stock}</td><td>$${i.precio_venta}</td>`;
+                    tr.innerHTML = `<td>${i.nombre}</td><td class="${i.stock < 10 ? 'stock-warning':''}">${i.stock}</td><td>$${i.precio_venta.toLocaleString('es-MX')}</td>`;
                     tr.onclick = () => agregarAlCarrito(i); 
                     tbody.appendChild(tr);
                 }
@@ -867,9 +874,9 @@ async function ejecutarExportacionPDF() {
         });
     }
 
-    /* ==========================================
-       LÓGICA UNIFICADA: NUEVO / EDITAR PACIENTE
-       ========================================== */
+    // ==========================================
+    // ALTA Y EDICIÓN DE PACIENTES
+    // ==========================================
     function toggleAmbulatorio() {
         const isAmbulatorio = document.getElementById('modal-ambulatorio').checked;
         const inputCuarto = document.getElementById('modal-cuarto');
@@ -892,7 +899,7 @@ async function ejecutarExportacionPDF() {
         document.getElementById('modal-anonimo').checked = false;
         document.getElementById('modal-nivel').value = 'baja';
         document.getElementById('modal-alergias').value = '';
-        document.getElementById('modal-fecha-ingreso').value = ''; // Dejar vacío para usar timestamp actual
+        document.getElementById('modal-fecha-ingreso').value = ''; 
         toggleAmbulatorio();
         document.getElementById('patient-modal').style.display = 'flex';
     }
@@ -909,7 +916,6 @@ async function ejecutarExportacionPDF() {
         document.getElementById('modal-nivel').value = d.nivel_observacion || 'baja';
         document.getElementById('modal-alergias').value = d.alergias || '';
         
-        // Convertir Timestamp a String de Datetime-Local
         if(d.fecha_ingreso && typeof d.fecha_ingreso.toDate === 'function') {
             const date = d.fecha_ingreso.toDate();
             date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
@@ -944,7 +950,6 @@ async function ejecutarExportacionPDF() {
             alergias: document.getElementById('modal-alergias').value
         };
 
-        // Si el usuario puso una fecha manual, la convertimos a objeto Date, sino se usa el servidor.
         if (fechaInput) {
             datos.fecha_ingreso = new Date(fechaInput);
         } else if (modoModal === 'nuevo') {
@@ -960,9 +965,8 @@ async function ejecutarExportacionPDF() {
                 if(!AppState.pacienteActualId) return;
                 await updateDoc(doc(db, "accounts", AppState.pacienteActualId), datos);
                 
-                // Refrescar el estado local
                 if (datos.fecha_ingreso instanceof Date) {
-                    datos.fecha_ingreso = { toDate: () => datos.fecha_ingreso }; // Mock para que el render la lea igual
+                    datos.fecha_ingreso = { toDate: () => datos.fecha_ingreso }; 
                 }
                 AppState.pacienteActualData = { ...AppState.pacienteActualData, ...datos };
                 actualizarUIResumenCuenta(); 
@@ -970,18 +974,22 @@ async function ejecutarExportacionPDF() {
             cerrarModalPaciente();
         } catch (error) {
             console.error(error);
-            alert("Error al guardar paciente.");
         } finally {
             btn.disabled = false;
             btn.innerText = "💾 Guardar";
         }
     }
 
-    /* ==========================================
-       LÓGICA HÍBRIDA: SERVICIOS Y PAQUETES (KITS)
-       ========================================== */
+    // ==========================================
+    // LÓGICA DE CARGOS Y CARRITO
+    // ==========================================
     async function procesarServicioOKit(item) {
+        if (AppState.isModoInterno) {
+            alert("Los servicios médicos y honorarios no aplican para consumo interno. Selecciona insumos físicos.");
+            return;
+        }
         if (!AppState.pacienteActualId) return alert("Selecciona un paciente primero.");
+        
         const selector = document.getElementById('select-empleado');
         const ac_id = selector.value;
         const ac_nombre = selector.options[selector.selectedIndex].text;
@@ -1019,18 +1027,13 @@ async function ejecutarExportacionPDF() {
             }
 
             await batch.commit();
-            
         } catch (error) { 
             console.error(error);
-            alert("Error procesando el " + (item.tipo === 'kit' ? "paquete." : "servicio.")); 
         }
     }
 
-    /* ==========================================
-       LÓGICA DEL CARRITO (INSUMOS FÍSICOS)
-       ========================================== */
     function agregarAlCarrito(item) {
-        if (!AppState.pacienteActualId) return alert("Selecciona un paciente primero.");
+        if (!AppState.pacienteActualId && !AppState.isModoInterno) return alert("Selecciona un paciente o activa el Uso Interno.");
         if (item.stock <= 0) return alert("No hay stock disponible.");
         const selector = document.getElementById('select-empleado');
         const cartKey = `${item.id}_${selector.value}`;
@@ -1080,7 +1083,7 @@ async function ejecutarExportacionPDF() {
                         <div class="qty-val">${cObj.cantidad}</div>
                         <button class="qty-btn" onclick="modificarCantidad('${key}', 1)">+</button>
                     </div>
-                    <div class="cart-price">$${subtotal}</div>
+                    <div class="cart-price">$${subtotal.toLocaleString('es-MX')}</div>
                 </div>
             </div>`;
         });
@@ -1092,28 +1095,55 @@ async function ejecutarExportacionPDF() {
         btn.disabled = true; btn.innerText = "Guardando...";
 
         const batch = writeBatch(db);
-        const transRef = collection(db, "transactions");
-        const accRef = doc(db, "accounts", AppState.pacienteActualId);
-        let granTotal = 0;
+        
+        if (AppState.isModoInterno) {
+            // LÓGICA DE CONSUMO INTERNO (Afecta inventory_losses, no cobra a pacientes)
+            for (const key in AppState.carrito) {
+                const obj = AppState.carrito[key];
+                const lossRef = doc(collection(db, "inventory_losses"));
+                batch.set(lossRef, {
+                    itemId: obj.item.id,
+                    nombre: obj.item.nombre,
+                    cantidad: obj.cantidad,
+                    precio_perdida: obj.item.precio_venta, 
+                    fecha: serverTimestamp(),
+                    usuario_registro: AppState.uidRecepcionista,
+                    motivo: `Consumo Interno (POS Desktop - ${AppState.nombreRecepcionista})`
+                });
+                batch.update(doc(db, "inventory_master", obj.item.id), { stock: increment(-obj.cantidad) });
+            }
+        } else {
+            // LÓGICA NORMAL (Carga a cuenta de paciente)
+            const transRef = collection(db, "transactions");
+            const accRef = doc(db, "accounts", AppState.pacienteActualId);
+            let granTotal = 0;
 
-        for (const key in AppState.carrito) {
-            const obj = AppState.carrito[key];
-            const subtotal = obj.cantidad * obj.item.precio_venta;
-            granTotal += subtotal;
+            for (const key in AppState.carrito) {
+                const obj = AppState.carrito[key];
+                const subtotal = obj.cantidad * obj.item.precio_venta;
+                granTotal += subtotal;
 
-            batch.set(doc(transRef), {
-                pacienteId: AppState.pacienteActualId, itemId: obj.item.id, nombre: obj.item.nombre,
-                cantidad: obj.cantidad, precio_venta: subtotal, usuario_registro: AppState.uidRecepcionista,
-                acreditado_a_id: obj.acreditado_a_id, acreditado_a_nombre: obj.acreditado_a_nombre,
-                timestamp: serverTimestamp(), tipo_operacion: 'cargo_directo'
-            });
-            batch.update(doc(db, "inventory_master", obj.item.id), { stock: increment(-obj.cantidad) });
+                batch.set(doc(transRef), {
+                    pacienteId: AppState.pacienteActualId, itemId: obj.item.id, nombre: obj.item.nombre,
+                    cantidad: obj.cantidad, precio_venta: subtotal, usuario_registro: AppState.uidRecepcionista,
+                    acreditado_a_id: obj.acreditado_a_id, acreditado_a_nombre: obj.acreditado_a_nombre,
+                    timestamp: serverTimestamp(), tipo_operacion: 'cargo_directo'
+                });
+                batch.update(doc(db, "inventory_master", obj.item.id), { stock: increment(-obj.cantidad) });
+            }
+            batch.update(accRef, { total: increment(granTotal) });
         }
-        batch.update(accRef, { total: increment(granTotal) });
 
-        try { await batch.commit(); vaciarCarrito(); } 
-        catch (error) { alert("Error al procesar lote."); } 
-        finally { btn.disabled = false; btn.innerText = "Confirmar Cargos"; }
+        try { 
+            await batch.commit(); 
+            vaciarCarrito(); 
+            if(AppState.isModoInterno) alert("✅ Inventario descontado correctamente como Uso Interno/Merma.");
+        } 
+        catch (error) { console.error(error); } 
+        finally { 
+            btn.disabled = false; 
+            btn.innerText = AppState.isModoInterno ? "Confirmar Merma" : "Confirmar Cargos"; 
+        }
     });
 
     function iniciarReloj() { setInterval(() => { document.getElementById('clock').innerText = new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }); }, 1000); }
