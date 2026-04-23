@@ -558,6 +558,9 @@
     // ==========================================
     // 6. PROCESAR TRANSACCIÓN Y SUBIR A FIREBASE
     // ==========================================
+// ==========================================
+    // 6. PROCESAR TRANSACCIÓN Y SUBIR A FIREBASE
+    // ==========================================
     async function confirmarCargos() {
         const ids = Object.keys(carritoApp);
         if (ids.length === 0) return;
@@ -622,6 +625,12 @@
             } else {
                 alert("✅ Cargos agregados a la cuenta del paciente.");
             }
+            
+            // --- CORRECCIÓN: Vaciamos el carrito de la memoria ANTES de volver ---
+            carritoApp = {}; 
+            actualizarBarraFlotante(); 
+            // ----------------------------------------------------------------------
+            
             volverAPacientes(); 
         } catch (error) {
             console.error(error);
