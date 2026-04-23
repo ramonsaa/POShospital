@@ -16,12 +16,12 @@
         .header-cuarto { text-align: center; font-size: 3em; font-weight: bold; color: var(--primary); border-bottom: 4px solid var(--primary); padding-bottom: 10px; margin-bottom: 20px;}
         .paciente-nombre { font-size: 4em; font-weight: 900; line-height: 1.1; margin-top: 40px; text-transform: uppercase; text-align: center;}
         
-        /* CAJA DE ALERTAS DINÁMICA */
+        /* CAJA DE ALERTAS DINÁMICA (Aquí ocurren los colores) */
         .alertas-box { margin-top: auto; padding: 20px; border-radius: 8px; border-left: 10px solid; transition: all 0.3s; }
         .alertas-title { font-weight: bold; font-size: 1.5em; margin-bottom: 10px; text-transform: uppercase; }
         .alertas-text { font-size: 2em; font-weight: bold; }
 
-        /* Colores según nivel */
+        /* Clases de colores que inyecta JavaScript */
         .alertas-box.alta { background: #fdedec; border-left-color: #c0392b; color: #c0392b;}
         .alertas-box.media { background: #fdf2e9; border-left-color: #d35400; color: #d35400;}
         .alertas-box.baja { background: #ebf5fb; border-left-color: #2980b9; color: #2980b9;}
@@ -144,18 +144,20 @@
                 const docSnap = snapshot.docs[0];
                 pacienteActivo = { id: docSnap.id, ...docSnap.data() };
                 
-                // LÓGICA DE ANONIMATO
+                // LÓGICA DE ANONIMATO EN TABLET
                 if(pacienteActivo.es_anonimo) {
                     document.getElementById('lbl-paciente').innerText = "PACIENTE ANÓNIMO";
                 } else {
                     document.getElementById('lbl-paciente').innerText = pacienteActivo.paciente_nombre;
                 }
                 
-                // LÓGICA DE OBSERVACIONES Y COLORES
+                // LÓGICA DE OBSERVACIONES Y COLORES EN TABLET
                 document.getElementById('lbl-alergias').innerText = pacienteActivo.alergias || "Ninguna registrada.";
                 const cajaAlertas = document.getElementById('caja-alertas');
-                cajaAlertas.classList.remove('alta', 'media', 'baja'); // Limpia clases viejas
-                cajaAlertas.classList.add(pacienteActivo.nivel_observacion || 'baja'); // Asigna el color
+                
+                // Limpia clases viejas (rojo, naranja, azul) y asigna la correcta de Firebase
+                cajaAlertas.classList.remove('alta', 'media', 'baja'); 
+                cajaAlertas.classList.add(pacienteActivo.nivel_observacion || 'baja'); 
                 
                 divVacio.style.display = 'none'; divActivo.style.display = 'flex';
             }
