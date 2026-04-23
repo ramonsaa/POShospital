@@ -13,7 +13,7 @@
             --warning-orange: #d35400;
             --safe-blue: #2980b9;
             --text-dark: #1a252f;
-            --bg-light-blue: #f4f9fc; /* Fondo azul muy claro casi blanco */
+            --bg-light-blue: #f4f9fc;
         }
 
         body { 
@@ -36,7 +36,6 @@
             flex-direction: column;
         }
 
-        /* --- ENCABEZADO: Fondo azul, número blanco --- */
         .idle-header {
             background-color: var(--primary-blue);
             color: white;
@@ -81,7 +80,6 @@
         }
         .anon-mode .room-number { font-size: 10em; color: var(--accent-green); }
 
-        /* --- CUERPO: Nombre pegado a la izquierda --- */
         .idle-body {
             flex: 1;
             padding: 50px;
@@ -99,7 +97,6 @@
             text-align: left;
         }
 
-        /* --- PIE: Observaciones fondo completo --- */
         .observations-footer {
             padding: 25px 50px;
             font-size: 2.2em;
@@ -113,13 +110,15 @@
         .obs-alta { background-color: var(--danger-red); }
 
         /* ==========================================
-           2. MODAL PIN
+           2. MODALES (PIN Y CONFIRMACIÓN)
            ========================================== */
-        #pin-overlay {
+        .modal-overlay {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.9); z-index: 1000; justify-content: center; align-items: center;
+            background: rgba(0,0,0,0.8); z-index: 2000; justify-content: center; align-items: center;
             flex-direction: column;
         }
+        
+        /* Estilos PIN */
         .pin-display { font-size: 4em; letter-spacing: 15px; margin-bottom: 30px; height: 60px; font-weight: bold; color: var(--accent-green);}
         .pin-pad { display: grid; grid-template-columns: repeat(3, 100px); gap: 15px; }
         .pin-btn { 
@@ -132,8 +131,14 @@
         @keyframes shake { 0%, 100% {transform: translateX(0);} 25% {transform: translateX(-10px);} 75% {transform: translateX(10px);} }
         .pin-error { animation: shake 0.4s; background-color: rgba(192, 57, 43, 0.4) !important; }
 
+        /* Estilos Confirmación Checkout */
+        .checkout-modal-content {
+            background: white; padding: 40px; border-radius: 15px; text-align: center;
+            max-width: 500px; width: 90%; box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
         /* ==========================================
-           3. VISTA POS (INSUMOS) Y CONTRASTES
+           3. VISTA POS (INSUMOS)
            ========================================== */
         #pos-view {
             display: none; flex: 1; flex-direction: column; background: #eef2f5; color: var(--text-dark);
@@ -149,7 +154,6 @@
         }
         .item-card:active { transform: scale(0.95); border-color: var(--accent-green); }
         
-        /* Ajuste de Contrastes */
         .item-name { font-weight: 800; font-size: 1.3em; margin-bottom: 10px; color: #1a252f; }
         .item-stock { font-size: 1em; color: #34495e; font-weight: 700; } 
 
@@ -157,7 +161,6 @@
         .cart-header { background: var(--secondary-blue); color: white; padding: 15px; text-align: center; font-size: 1.2em; font-weight: bold;}
         .cart-items { flex: 1; overflow-y: auto; padding: 15px; }
         
-        /* Ajuste Contraste Carrito */
         .cart-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #ccc; font-size: 1.2em; font-weight: 600; color: #1a252f;}
         
         .qty-controls { display: flex; align-items: center; gap: 10px; }
@@ -171,7 +174,6 @@
 <body>
 
     <div id="idle-view">
-        
         <div class="idle-header">
             <div class="btn-top-left" onclick="abrirPin()">💼</div>
             <h1 class="room-number" id="display-room">--</h1>
@@ -185,10 +187,9 @@
         <div class="observations-footer obs-baja" id="display-obs-box" style="display: none;">
             <span id="display-obs-text"></span>
         </div>
-
     </div>
 
-    <div id="pin-overlay">
+    <div id="pin-overlay" class="modal-overlay">
         <div class="pin-display" id="pin-dots"></div>
         <div class="pin-pad">
             <button class="pin-btn" onclick="addPin('1')">1</button>
@@ -205,6 +206,23 @@
         </div>
     </div>
 
+    <div id="checkout-overlay" class="modal-overlay">
+        <div class="checkout-modal-content">
+            <h2 style="color: var(--primary-blue); font-size: 2.5em; margin-top: 0; border-bottom: 2px solid #ccc; padding-bottom: 10px;">📝 Confirmar Cargos</h2>
+            <p style="font-size: 1.5em; color: var(--text-dark); margin: 20px 0;">
+                Se agregarán <strong style="color:var(--primary-blue);"><span id="chk-qty">0</span></strong> insumo(s) a la cuenta de este cuarto.
+            </p>
+            <p style="font-size: 2em; color: var(--accent-green); font-weight: bold; margin: 20px 0;">
+                Total: <span id="chk-total">$0.00</span>
+            </p>
+            
+            <div style="display:flex; gap:15px; margin-top: 30px;">
+                <button class="btn-cancel-pos" style="margin-top:0; flex:1; font-size:1.5em;" onclick="cerrarCheckoutModal()">Cancelar</button>
+                <button class="btn-confirm" style="flex:1; font-size:1.5em;" id="btn-final-checkout" onclick="ejecutarCheckout()">✅ Proceder</button>
+            </div>
+        </div>
+    </div>
+
     <div id="pos-view">
         <header class="pos-header">
             <div>Cuarto: <strong id="pos-room-header">--</strong></div>
@@ -218,7 +236,7 @@
                 <div class="cart-items" id="pos-cart-list">
                     </div>
                 <div class="cart-footer">
-                    <button class="btn-confirm" id="btn-procesar-tablet" onclick="confirmarInsumos()">✅ Confirmar</button>
+                    <button class="btn-confirm" onclick="abrirCheckoutModal()">✅ Confirmar</button>
                     <button class="btn-cancel-pos" onclick="salirPOS()">Cerrar Sesión (Volver)</button>
                 </div>
             </div>
@@ -249,7 +267,9 @@
     window.salirPOS = salirPOS;
     window.agregarItem = agregarItem;
     window.modificarQty = modificarQty;
-    window.confirmarInsumos = confirmarInsumos;
+    window.abrirCheckoutModal = abrirCheckoutModal;
+    window.cerrarCheckoutModal = cerrarCheckoutModal;
+    window.ejecutarCheckout = ejecutarCheckout;
 
     let numCuarto = null;
     let pacienteActualId = null;
@@ -423,12 +443,35 @@
         });
     }
 
-    async function confirmarInsumos() {
-        const items = Object.keys(carritoTablet);
-        if(items.length === 0) return;
+    // ==========================================
+    // SISTEMA DE CONFIRMACIÓN Y CHECKOUT
+    // ==========================================
+    
+    function abrirCheckoutModal() {
+        const ids = Object.keys(carritoTablet);
+        if (ids.length === 0) return alert("El carrito está vacío.");
 
-        const btn = document.getElementById('btn-procesar-tablet');
-        btn.innerText = "⏳ Guardando...";
+        let total = 0;
+        let qty = 0;
+
+        for (const id in carritoTablet) {
+            total += (carritoTablet[id].cantidad * carritoTablet[id].item.precio_venta);
+            qty += carritoTablet[id].cantidad;
+        }
+
+        document.getElementById('chk-qty').innerText = qty;
+        document.getElementById('chk-total').innerText = `$${total.toLocaleString('es-MX')}`;
+        
+        document.getElementById('checkout-overlay').style.display = 'flex';
+    }
+
+    function cerrarCheckoutModal() {
+        document.getElementById('checkout-overlay').style.display = 'none';
+    }
+
+    async function ejecutarCheckout() {
+        const btn = document.getElementById('btn-final-checkout');
+        btn.innerText = "⏳ Procesando...";
         btn.disabled = true;
 
         const batch = writeBatch(db);
@@ -463,11 +506,14 @@
 
         try {
             await batch.commit();
+            cerrarCheckoutModal();
+            alert("✅ Insumos agregados exitosamente a la cuenta.");
             salirPOS();
         } catch (error) {
             console.error(error);
             alert("Error al procesar insumos.");
-            btn.innerText = "✅ Confirmar";
+        } finally {
+            btn.innerText = "✅ Proceder";
             btn.disabled = false;
         }
     }
@@ -477,10 +523,6 @@
         document.getElementById('idle-view').style.display = 'flex';
         empleadoLogueado = null;
         carritoTablet = {};
-        
-        const btn = document.getElementById('btn-procesar-tablet');
-        btn.innerText = "✅ Confirmar";
-        btn.disabled = false;
     }
 
     function toggleFullscreen() {
