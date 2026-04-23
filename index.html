@@ -2,109 +2,149 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hospital POS - Recepción Principal</title>
     <style>
         :root { --primary-blue: #2c3e50; --secondary-blue: #34495e; --accent-green: #27ae60; --light-bg: #f4f7f6; --white: #ffffff; --border-color: #dcdde1; --text-dark: #2f3640; --danger-red: #c0392b; --cart-width: 0px; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background-color: var(--light-bg); color: var(--text-dark); display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
-        header { background-color: var(--primary-blue); color: var(--white); padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid var(--accent-green); z-index: 10;}
-        .header-actions { display: flex; align-items: center; gap: 15px; }
-        .user-info { font-size: 0.9em; color: #aed6f1; font-weight: bold;}
-        button.btn-header { background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 0.85em; }
-        button.btn-header:hover { background: rgba(255,255,255,0.2); }
-        button.btn-logout { background: #c0392b; border-color: #e74c3c; }
-        main { display: grid; grid-template-columns: var(--cart-width) 280px 1fr 380px; gap: 1px; background-color: var(--border-color); flex: 1; overflow: hidden; transition: grid-template-columns 0.3s ease-in-out; }
+        header { background-color: var(--primary-blue); color: var(--white); padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid var(--accent-green); }
+        main { display: grid; grid-template-columns: var(--cart-width) 280px 1fr 380px; gap: 1px; background-color: var(--border-color); flex: 1; transition: grid-template-columns 0.3s ease; }
         section { background-color: var(--white); display: flex; flex-direction: column; overflow: hidden; }
-        .panel-header { background-color: var(--secondary-blue); color: var(--white); padding: 8px 12px; font-size: 0.85em; font-weight: bold; text-transform: uppercase; display: flex; justify-content: space-between; align-items: center; }
-        .search-container { padding: 10px; background: #fdfdfd; border-bottom: 1px solid var(--border-color); }
-        input[type="text"], textarea, select { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid var(--border-color); outline: none; border-radius: 3px;}
+        .panel-header { background-color: var(--secondary-blue); color: var(--white); padding: 8px 12px; font-size: 0.85em; font-weight: bold; text-transform: uppercase; }
         .data-list { flex: 1; overflow-y: auto; }
-        .dual-list-container { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
-        .list-section { flex: 1; display: flex; flex-direction: column; overflow: hidden; border-bottom: 2px solid var(--border-color); }
-        .list-title { background: #eef2f5; padding: 5px 10px; font-size: 0.8em; font-weight: bold; color: var(--secondary-blue); border-bottom: 1px solid var(--border-color); }
         table { width: 100%; border-collapse: collapse; font-size: 0.85em; }
-        th { background-color: #f8f9fa; position: sticky; top: 0; text-align: left; padding: 8px; border-bottom: 1px solid var(--border-color); z-index: 1;}
-        td { padding: 6px 8px; border-bottom: 1px solid #f1f1f1; cursor: pointer; }
+        td { padding: 8px; border-bottom: 1px solid #f1f1f1; cursor: pointer; }
         tr:hover { background-color: #ebf5fb; }
         .selected-row { background-color: #d4e6f1 !important; border-left: 4px solid var(--accent-green); }
-        .account-details { padding: 15px; flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-        .summary-box { display: flex; justify-content: space-between; background: #f8f9fa; padding: 15px; border: 1px solid var(--border-color); margin-bottom: 10px; border-radius: 4px;}
-        .total-amount { font-size: 1.6em; color: var(--primary-blue); font-weight: bold; text-align: right;}
-        .action-bar { padding: 10px; border-top: 1px solid var(--border-color); display: flex; gap: 10px; background: #fdfdfd;}
-        button.btn-action, .btn-modal { padding: 8px 15px; cursor: pointer; border: none; font-size: 0.85em; font-weight: bold; border-radius: 3px; color:white;}
-        .btn-success { background-color: var(--accent-green); }
-        .btn-danger { background-color: var(--danger-red); }
+        .cart-item { background: #1a252f; color: white; padding: 10px; margin-bottom: 5px; }
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 100; justify-content: center; align-items: center; }
-        .modal-content { background: white; border-radius: 5px; padding: 20px; width: 450px; display: flex; flex-direction: column; gap: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); color: black;}
+        .modal-content { background: white; padding: 20px; width: 450px; display: flex; flex-direction: column; gap: 10px; border-radius: 5px; }
     </style>
 </head>
 <body>
-    <header>
-        <div><strong>HOSPITAL POS</strong> | Recepción Principal</div>
-        <div class="header-actions">
-            <a href="inventory-admin.html" style="color: white; font-size: 0.85em; text-decoration: none; border: 1px solid white; padding: 5px; border-radius: 4px;">📦 Inventario</a>
-            <button id="btn-logout" class="btn-header btn-logout">Cerrar Sesión</button>
-        </div>
-    </header>
-    <main>
-        <section id="cart-section"><div class="panel-header">🛒 Pre-Checkout</div><div class="cart-items-container" id="cart-list"></div><div class="cart-summary"><button class="btn-action btn-success" id="btn-procesar-carrito" style="width: 100%;">Confirmar Cargos</button></div></section>
-        <section><div class="panel-header">Pacientes</div><input type="text" id="search-patients" placeholder="Buscar..."><div class="data-list"><table><tbody id="lista-pacientes"></tbody></table></div></section>
-        <section><div class="panel-header" id="header-cuenta">Cuenta</div><div class="account-details"><div class="summary-box" id="resumen-cuenta"></div><div class="data-list"><table><tbody id="lista-transacciones"></tbody></table></div></div></section>
-        <section><div class="panel-header">Catálogo</div><select id="select-empleado"><option value="sistema">Sistema</option></select><input type="text" id="inventory-search"><div class="dual-list-container"><div class="list-section"><div class="list-title">Servicios</div><div class="data-list"><table id="lista-servicios"></table></div></div><div class="list-section"><div class="list-title">Inventario</div><div class="data-list"><table id="lista-inventario"></table></div></div></div></section>
-    </main>
 
-    <div id="edit-patient-modal" class="modal-overlay">
-        <div class="modal-content">
-            <h3>✏️ Editar Paciente</h3>
-            <input type="text" id="edit-nombre" placeholder="Nombre">
-            <input type="text" id="edit-cuarto" placeholder="Cuarto">
-            <label><input type="checkbox" id="edit-anonimo"> Modo Anónimo</label>
-            <select id="edit-nivel"><option value="baja">🔵 Azul</option><option value="media">🟠 Naranja</option><option value="alta">🔴 Rojo</option></select>
-            <textarea id="edit-alergias" rows="3" placeholder="Observaciones"></textarea>
-            <button class="btn-modal btn-success" id="btn-guardar-edicion" onclick="guardarEdicionPaciente()">💾 Guardar</button>
+<header>
+    <div><strong>HOSPITAL POS</strong> | Recepción</div>
+    <div id="user-display">Cargando...</div>
+</header>
+
+<main>
+    <section id="cart-section">
+        <div class="panel-header">🛒 Pre-Checkout</div>
+        <div class="data-list" id="cart-list"></div>
+        <div style="padding:10px;"><button id="btn-procesar-carrito" style="width:100%;">Confirmar Cargos</button></div>
+    </section>
+
+    <section>
+        <div class="panel-header">Pacientes Activos</div>
+        <input type="text" id="search-patients" placeholder="Buscar...">
+        <div class="data-list"><table><tbody id="lista-pacientes"></tbody></table></div>
+    </section>
+
+    <section>
+        <div class="panel-header" id="header-cuenta">Cuenta del Paciente</div>
+        <div id="resumen-cuenta" style="padding:10px;">Seleccione paciente.</div>
+        <div class="data-list"><table><tbody id="lista-transacciones"></tbody></table></div>
+    </section>
+
+    <section>
+        <div class="panel-header">Catálogo</div>
+        <select id="select-empleado"><option value="sistema">Sistema</option></select>
+        <input type="text" id="inventory-search" placeholder="Buscar...">
+        <div class="data-list">
+            <table><tbody id="lista-servicios"></tbody></table>
+            <table><tbody id="lista-inventario"></tbody></table>
         </div>
+    </section>
+</main>
+
+<div id="edit-patient-modal" class="modal-overlay">
+    <div class="modal-content">
+        <h3>Editar Paciente</h3>
+        <input type="text" id="edit-nombre" placeholder="Nombre">
+        <input type="text" id="edit-cuarto" placeholder="Cuarto">
+        <label><input type="checkbox" id="edit-anonimo"> Modo Anónimo</label>
+        <select id="edit-nivel"><option value="baja">🔵 Azul</option><option value="media">🟠 Naranja</option><option value="alta">🔴 Rojo</option></select>
+        <textarea id="edit-alergias" placeholder="Observaciones"></textarea>
+        <button id="btn-guardar-edicion" onclick="guardarEdicionPaciente()">💾 Guardar</button>
+        <button onclick="cerrarModalEdicion()">Cancelar</button>
     </div>
+</div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-        import { initializeFirestore, persistentLocalCache, collection, query, where, onSnapshot, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
-        import { getAuth } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
-        
-        const app = initializeApp({/* TUS CONFIGS */});
-        const db = initializeFirestore(app, { localCache: persistentLocalCache() });
-        const auth = getAuth(app);
-        
-        window.AppState = { pacienteActualId: null, pacienteActualData: null };
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+    import { initializeFirestore, persistentLocalCache, collection, query, where, onSnapshot, doc, updateDoc, increment, serverTimestamp, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
-        window.guardarEdicionPaciente = async () => {
-            const btn = document.getElementById('btn-guardar-edicion');
-            btn.disabled = true; btn.innerText = "Guardando...";
-            try {
-                const updates = {
-                    paciente_nombre: document.getElementById('edit-nombre').value,
-                    cuarto_id: document.getElementById('edit-cuarto').value,
-                    es_anonimo: document.getElementById('edit-anonimo').checked,
-                    nivel_observacion: document.getElementById('edit-nivel').value,
-                    alergias: document.getElementById('edit-alergias').value
-                };
-                await updateDoc(doc(db, "accounts", AppState.pacienteActualId), updates);
-                AppState.pacienteActualData = { ...AppState.pacienteActualData, ...updates };
-                document.getElementById('edit-patient-modal').style.display = 'none';
-                // La UI se actualiza sola gracias al onSnapshot existente
-            } catch(e) { alert("Error"); } finally { btn.disabled = false; btn.innerText = "💾 Guardar"; }
-        };
-        
-        window.abrirModalEdicion = () => {
-            document.getElementById('edit-nombre').value = AppState.pacienteActualData.paciente_nombre;
-            document.getElementById('edit-cuarto').value = AppState.pacienteActualData.cuarto_id;
-            document.getElementById('edit-anonimo').checked = AppState.pacienteActualData.es_anonimo;
-            document.getElementById('edit-nivel').value = AppState.pacienteActualData.nivel_observacion || 'baja';
-            document.getElementById('edit-alergias').value = AppState.pacienteActualData.alergias || '';
-            document.getElementById('edit-patient-modal').style.display = 'flex';
-        };
-        window.cerrarModalEdicion = () => document.getElementById('edit-patient-modal').style.display = 'none';
-        
-        // ... resto de funciones de carga (iniciarSistema, etc)
-    </script>
+    // --- CONFIGURACIÓN ---
+    const firebaseConfig = {
+        apiKey: "AIzaSyA0yq1qdkxcOmwCaUxGiFpYj0mUrVQyD-Q",
+        projectId: "hospital1-admin",
+        storageBucket: "hospital1-admin.firebasestorage.app",
+        messagingSenderId: "804830277427",
+        appId: "1:804830277427:web:819463cca4870d32d25846"
+    };
+    
+    const app = initializeApp(firebaseConfig);
+    const db = initializeFirestore(app, { localCache: persistentLocalCache() });
+    const auth = getAuth(app);
+
+    window.AppState = { pacienteActualId: null, pacienteActualData: null, uid: null, carrito: {} };
+
+    onAuthStateChanged(auth, (user) => {
+        if(user) { AppState.uid = user.uid; iniciarSistema(); } else { window.location.href = "login.html"; }
+    });
+
+    function iniciarSistema() {
+        // Escucha Pacientes
+        onSnapshot(query(collection(db, "accounts"), where("estado", "==", "abierta")), (snap) => {
+            const tbody = document.getElementById('lista-pacientes'); tbody.innerHTML = '';
+            snap.forEach(docSnap => {
+                const data = docSnap.data();
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td>${data.cuarto_id}</td><td>${data.paciente_nombre} ${data.es_anonimo?'🕵️':''}</td>`;
+                tr.onclick = () => { AppState.pacienteActualId = docSnap.id; AppState.pacienteActualData = data; actualizarPanelDerechoUI(data); };
+                tbody.appendChild(tr);
+            });
+        });
+        // (Aquí deberías incluir las funciones de escucharInventario, procesarServicio, etc., que ya tenías)
+    }
+
+    function actualizarPanelDerechoUI(data) {
+        document.getElementById('resumen-cuenta').innerHTML = `
+            <div>Paciente: <strong>${data.paciente_nombre}</strong></div>
+            <button onclick="abrirModalEdicion()">✏️ Editar</button>
+            <div style="color:red;">Obs: ${data.alergias || 'Ninguna'}</div>
+        `;
+    }
+
+    window.abrirModalEdicion = () => {
+        const p = AppState.pacienteActualData;
+        document.getElementById('edit-nombre').value = p.paciente_nombre;
+        document.getElementById('edit-cuarto').value = p.cuarto_id;
+        document.getElementById('edit-anonimo').checked = !!p.es_anonimo;
+        document.getElementById('edit-nivel').value = p.nivel_observacion || 'baja';
+        document.getElementById('edit-alergias').value = p.alergias || '';
+        document.getElementById('edit-patient-modal').style.display = 'flex';
+    };
+
+    window.cerrarModalEdicion = () => document.getElementById('edit-patient-modal').style.display = 'none';
+
+    window.guardarEdicionPaciente = async () => {
+        const btn = document.getElementById('btn-guardar-edicion');
+        btn.disabled = true; btn.innerText = "Guardando...";
+        try {
+            const updates = {
+                paciente_nombre: document.getElementById('edit-nombre').value,
+                cuarto_id: document.getElementById('edit-cuarto').value,
+                es_anonimo: document.getElementById('edit-anonimo').checked,
+                nivel_observacion: document.getElementById('edit-nivel').value,
+                alergias: document.getElementById('edit-alergias').value
+            };
+            await updateDoc(doc(db, "accounts", AppState.pacienteActualId), updates);
+            // El onSnapshot de la lista de pacientes actualizará todo automáticamente
+            cerrarModalEdicion();
+        } catch(e) { alert("Error al guardar."); } finally { btn.disabled = false; btn.innerText = "💾 Guardar"; }
+    };
+</script>
 </body>
 </html>
