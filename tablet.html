@@ -8,28 +8,28 @@
         :root { --primary: #2c3e50; --bg: #fdfdfd; --text: #2c3e50; --alert: #c0392b; --accent: #27ae60; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background-color: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column; overflow: hidden; user-select: none; }
         
-        /* ESTADO INACTIVO (MONITOR) */
         .monitor-view { flex: 1; display: flex; flex-direction: column; padding: 30px; position: relative; }
-        
         .btn-maletin { position: absolute; top: 30px; left: 30px; background: var(--primary); color: white; width: 60px; height: 60px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 2em; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.2); border: none; z-index: 10; }
         .btn-maletin:active { transform: scale(0.95); }
-
         .btn-fullscreen { position: absolute; top: 30px; right: 30px; background: rgba(44, 62, 80, 0.05); color: var(--primary); border: 2px solid var(--primary); padding: 10px 15px; border-radius: 8px; font-weight: bold; cursor: pointer; z-index: 10; font-size: 1em; transition: all 0.2s; }
-        .btn-fullscreen:active { background: var(--primary); color: white; }
-
+        
         .header-cuarto { text-align: center; font-size: 3em; font-weight: bold; color: var(--primary); border-bottom: 4px solid var(--primary); padding-bottom: 10px; margin-bottom: 20px;}
         .paciente-nombre { font-size: 4em; font-weight: 900; line-height: 1.1; margin-top: 40px; text-transform: uppercase; text-align: center;}
         
-        .alertas-box { margin-top: auto; background: #fdedec; border-left: 10px solid var(--alert); padding: 20px; border-radius: 8px; }
-        .alertas-title { color: var(--alert); font-weight: bold; font-size: 1.5em; margin-bottom: 10px; text-transform: uppercase; }
+        /* CAJA DE ALERTAS DINÁMICA */
+        .alertas-box { margin-top: auto; padding: 20px; border-radius: 8px; border-left: 10px solid; transition: all 0.3s; }
+        .alertas-title { font-weight: bold; font-size: 1.5em; margin-bottom: 10px; text-transform: uppercase; }
         .alertas-text { font-size: 2em; font-weight: bold; }
 
-        /* OVERLAYS (MODALES DE PANTALLA COMPLETA) */
+        /* Colores según nivel */
+        .alertas-box.alta { background: #fdedec; border-left-color: #c0392b; color: #c0392b;}
+        .alertas-box.media { background: #fdf2e9; border-left-color: #d35400; color: #d35400;}
+        .alertas-box.baja { background: #ebf5fb; border-left-color: #2980b9; color: #2980b9;}
+
         .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.95); z-index: 100; flex-direction: column; }
         .overlay-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 30px; background: var(--primary); color: white; font-size: 1.5em; font-weight: bold; }
         .btn-close { background: transparent; border: none; color: white; font-size: 1.5em; cursor: pointer; font-weight: bold; }
 
-        /* TECLADO PIN */
         .pin-container { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .pin-display { font-size: 3em; letter-spacing: 15px; margin-bottom: 30px; font-weight: bold; height: 60px; color: var(--primary); }
         .numpad { display: grid; grid-template-columns: repeat(3, 100px); gap: 15px; }
@@ -37,13 +37,11 @@
         .num-key:active { background: var(--primary); color: white; }
         .num-key.action { border-color: var(--alert); color: var(--alert); font-size: 1.5em; }
 
-        /* LISTA DE INSUMOS RÁPIDOS */
         .inventory-grid { flex: 1; padding: 20px; display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px; overflow-y: auto; background: #f0f3f4; }
         .inv-card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); font-size: 1.5em; font-weight: bold; display: flex; flex-direction: column; justify-content: space-between; cursor: pointer; border: 2px solid transparent; }
         .inv-card:active { border-color: var(--accent); background: #eef8f1; }
         .inv-stock { font-size: 0.6em; color: gray; margin-top: 10px; font-weight: normal; }
 
-        /* NOTIFICACIÓN FLOTANTE */
         #toast { position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%); background: var(--accent); color: white; padding: 15px 30px; font-size: 1.5em; border-radius: 50px; font-weight: bold; transition: bottom 0.3s; z-index: 200; box-shadow: 0 5px 15px rgba(0,0,0,0.3);}
     </style>
 </head>
@@ -62,8 +60,8 @@
     <div id="pantalla-activa" style="display:none; flex:1; flex-direction:column;">
         <div class="paciente-nombre" id="lbl-paciente">CARGANDO...</div>
         
-        <div class="alertas-box">
-            <div class="alertas-title">⚠️ Observaciones / Alergias</div>
+        <div class="alertas-box baja" id="caja-alertas">
+            <div class="alertas-title">⚠️ Observaciones del Paciente</div>
             <div class="alertas-text" id="lbl-alergias">Ninguna registrada.</div>
         </div>
     </div>
@@ -98,8 +96,7 @@
         <span id="lbl-enfermera">Seleccionar Insumo</span>
         <button class="btn-close" onclick="cerrarOverlays()">X</button>
     </div>
-    <div class="inventory-grid" id="grid-inventario">
-        </div>
+    <div class="inventory-grid" id="grid-inventario"></div>
 </div>
 
 <div id="toast">✅ Insumo Registrado</div>
@@ -120,37 +117,20 @@
     const app = initializeApp(firebaseConfig);
     const db = initializeFirestore(app, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) });
 
-    /* ==========================================
-       CONFIGURACIÓN DE LA TABLET (VÍA URL)
-       ========================================== */
     const urlParams = new URLSearchParams(window.location.search);
     const NUMERO_CUARTO_ASIGNADO = urlParams.get('cuarto');
 
     if (!NUMERO_CUARTO_ASIGNADO) {
-        document.body.innerHTML = `
-            <div style="display:flex; flex-direction:column; justify-content:center; align-items:center; height:100vh; background:#2c3e50; color:white; font-family:sans-serif; text-align:center;">
-                <h1 style="color:#e74c3c; font-size:4em; margin-bottom:10px;">⚠️ ERROR DE CONFIGURACIÓN</h1>
-                <p style="font-size:1.5em;">Esta tablet no tiene un cuarto asignado.</p>
-                <p style="color:#bdc3c7;">Verifique la URL. Ejemplo de uso correcto:<br><strong style="color:#27ae60;">tablet.html?cuarto=204</strong></p>
-            </div>`;
+        document.body.innerHTML = `<div style="display:flex; flex-direction:column; justify-content:center; align-items:center; height:100vh; background:#2c3e50; color:white; text-align:center;"><h1 style="color:#e74c3c; font-size:4em;">⚠️ ERROR</h1><p style="font-size:1.5em;">Falta parámetro de cuarto en URL.</p></div>`;
         throw new Error("Falta el parámetro 'cuarto' en la URL.");
     }
 
     document.getElementById('lbl-cuarto').innerText = NUMERO_CUARTO_ASIGNADO;
 
-    let pacienteActivo = null;
-    let enfermeraActual = null;
-    let pinIngresado = "";
-    let inventarioCargado = [];
-    let usuariosPermitidos = [];
+    let pacienteActivo = null; let enfermeraActual = null; let pinIngresado = ""; let inventarioCargado = []; let usuariosPermitidos = [];
 
-    document.addEventListener('DOMContentLoaded', () => {
-        escucharCuartoAsignado();
-        cargarInventarioFisico();
-        cargarUsuarios();
-    });
+    document.addEventListener('DOMContentLoaded', () => { escucharCuartoAsignado(); cargarInventarioFisico(); cargarUsuarios(); });
 
-    // 1. Escuchar la cuenta activa de este cuarto
     function escucharCuartoAsignado() {
         const q = query(collection(db, "accounts"), where("cuarto_id", "==", NUMERO_CUARTO_ASIGNADO), where("estado", "==", "abierta"));
         
@@ -159,156 +139,89 @@
             const divActivo = document.getElementById('pantalla-activa');
 
             if (snapshot.empty) {
-                pacienteActivo = null;
-                divVacio.style.display = 'flex';
-                divActivo.style.display = 'none';
+                pacienteActivo = null; divVacio.style.display = 'flex'; divActivo.style.display = 'none';
             } else {
                 const docSnap = snapshot.docs[0];
                 pacienteActivo = { id: docSnap.id, ...docSnap.data() };
                 
-                document.getElementById('lbl-paciente').innerText = pacienteActivo.paciente_nombre;
-                document.getElementById('lbl-alergias').innerText = pacienteActivo.alergias || "Ninguna registrada.";
+                // LÓGICA DE ANONIMATO
+                if(pacienteActivo.es_anonimo) {
+                    document.getElementById('lbl-paciente').innerText = "PACIENTE ANÓNIMO";
+                } else {
+                    document.getElementById('lbl-paciente').innerText = pacienteActivo.paciente_nombre;
+                }
                 
-                divVacio.style.display = 'none';
-                divActivo.style.display = 'flex';
+                // LÓGICA DE OBSERVACIONES Y COLORES
+                document.getElementById('lbl-alergias').innerText = pacienteActivo.alergias || "Ninguna registrada.";
+                const cajaAlertas = document.getElementById('caja-alertas');
+                cajaAlertas.classList.remove('alta', 'media', 'baja'); // Limpia clases viejas
+                cajaAlertas.classList.add(pacienteActivo.nivel_observacion || 'baja'); // Asigna el color
+                
+                divVacio.style.display = 'none'; divActivo.style.display = 'flex';
             }
         });
     }
 
-    // 2. Precargar insumos publicados
     function cargarInventarioFisico() {
-        const q = query(collection(db, "inventory_master"), where("publicado_en_pos", "==", true));
-        onSnapshot(q, (snapshot) => {
-            inventarioCargado = [];
-            snapshot.forEach(docSnap => inventarioCargado.push({ id: docSnap.id, ...docSnap.data() }));
-            renderizarGridInventario();
+        onSnapshot(query(collection(db, "inventory_master"), where("publicado_en_pos", "==", true)), (snapshot) => {
+            inventarioCargado = []; snapshot.forEach(docSnap => inventarioCargado.push({ id: docSnap.id, ...docSnap.data() })); renderizarGridInventario();
         });
     }
 
-    // 3. Precargar Usuarios
     async function cargarUsuarios() {
         try {
             const querySnapshot = await getDocs(collection(db, "users"));
-            usuariosPermitidos = [];
-            querySnapshot.forEach((doc) => {
-                usuariosPermitidos.push({ id: doc.id, ...doc.data() });
-            });
-            if(usuariosPermitidos.length === 0) {
-                usuariosPermitidos.push({ id: "admin_test", nombre: "Enf. Elena G.", pin: "1234" });
-            }
-        } catch(e) { console.error("Error cargando usuarios", e); }
+            usuariosPermitidos = []; querySnapshot.forEach((doc) => { usuariosPermitidos.push({ id: doc.id, ...doc.data() }); });
+            if(usuariosPermitidos.length === 0) usuariosPermitidos.push({ id: "admin_test", nombre: "Enf. Elena G.", pin: "1234" });
+        } catch(e) {}
     }
 
-    /* ==========================================
-       LÓGICA DE INTERFAZ GLOBAL Y MODO QUIOSCO
-       ========================================== */
-    
-    // Función para entrar a pantalla completa
-    window.solicitarFullscreen = () => {
-        if (!document.fullscreenElement) {
-            document.documentElement.requestFullscreen().catch(err => console.warn(err));
-        }
-    };
-
-    // Escuchador inteligente: Oculta o muestra el botón dependiendo del estado de la pantalla
-    document.addEventListener('fullscreenchange', () => {
-        const btn = document.getElementById('btn-fullscreen');
-        if (document.fullscreenElement) {
-            btn.style.display = 'none';
-        } else {
-            btn.style.display = 'block';
-        }
-    });
+    window.solicitarFullscreen = () => { if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(err => console.warn(err)); };
+    document.addEventListener('fullscreenchange', () => { document.getElementById('btn-fullscreen').style.display = document.fullscreenElement ? 'none' : 'block'; });
 
     window.abrirPinPad = () => {
-        if (!pacienteActivo) return alert("La habitación no tiene un paciente asignado.");
-        pinIngresado = "";
-        actualizarPantallaPin();
-        document.getElementById('overlay-pin').style.display = 'flex';
+        if (!pacienteActivo) return alert("Habitación sin paciente.");
+        pinIngresado = ""; actualizarPantallaPin(); document.getElementById('overlay-pin').style.display = 'flex';
     };
 
-    window.cerrarOverlays = () => {
-        document.getElementById('overlay-pin').style.display = 'none';
-        document.getElementById('overlay-inventario').style.display = 'none';
-        enfermeraActual = null;
-    };
-
-    window.teclaPin = (num) => {
-        if (pinIngresado.length < 6) pinIngresado += num;
-        actualizarPantallaPin();
-    };
-
+    window.cerrarOverlays = () => { document.getElementById('overlay-pin').style.display = 'none'; document.getElementById('overlay-inventario').style.display = 'none'; enfermeraActual = null; };
+    window.teclaPin = (num) => { if (pinIngresado.length < 6) pinIngresado += num; actualizarPantallaPin(); };
     window.borrarPin = () => { pinIngresado = ""; actualizarPantallaPin(); };
-
     function actualizarPantallaPin() { document.getElementById('pin-display').innerText = "*".repeat(pinIngresado.length); }
 
     window.validarPin = () => {
         const empleado = usuariosPermitidos.find(u => u.pin === pinIngresado);
         if (empleado) {
-            enfermeraActual = empleado;
-            document.getElementById('lbl-enfermera').innerText = `👤 ${empleado.nombre} - Selecciona Insumo`;
-            document.getElementById('overlay-pin').style.display = 'none';
-            document.getElementById('overlay-inventario').style.display = 'flex';
+            enfermeraActual = empleado; document.getElementById('lbl-enfermera').innerText = `👤 ${empleado.nombre} - Selecciona Insumo`;
+            document.getElementById('overlay-pin').style.display = 'none'; document.getElementById('overlay-inventario').style.display = 'flex';
         } else {
-            document.getElementById('pin-display').innerText = "ERROR";
-            document.getElementById('pin-display').style.color = "var(--alert)";
+            document.getElementById('pin-display').innerText = "ERROR"; document.getElementById('pin-display').style.color = "var(--alert)";
             setTimeout(() => { pinIngresado = ""; document.getElementById('pin-display').style.color = "var(--primary)"; actualizarPantallaPin(); }, 1000);
         }
     };
 
-    /* ==========================================
-       LÓGICA DE CARGO RÁPIDO A LA CUENTA
-       ========================================== */
     function renderizarGridInventario() {
-        const grid = document.getElementById('grid-inventario');
-        grid.innerHTML = '';
-        
+        const grid = document.getElementById('grid-inventario'); grid.innerHTML = '';
         inventarioCargado.forEach(item => {
-            const card = document.createElement('div');
-            card.className = 'inv-card';
-            card.onclick = () => aplicarCargoDirecto(item);
-            card.innerHTML = `<div>${item.nombre}</div><div class="inv-stock">Stock: ${item.stock}</div>`;
-            grid.appendChild(card);
+            const card = document.createElement('div'); card.className = 'inv-card'; card.onclick = () => aplicarCargoDirecto(item);
+            card.innerHTML = `<div>${item.nombre}</div><div class="inv-stock">Stock: ${item.stock}</div>`; grid.appendChild(card);
         });
     }
 
     async function aplicarCargoDirecto(item) {
         if (item.stock <= 0) return alert("Insumo sin stock.");
-        
         try {
-            cerrarOverlays();
-            mostrarToast();
-
-            const batch = writeBatch(db);
-            const refTx = doc(collection(db, "transactions"));
-            
-            batch.set(refTx, {
-                pacienteId: pacienteActivo.id,
-                itemId: item.id,
-                nombre: item.nombre,
-                cantidad: 1,
-                precio_venta: item.precio_venta,
-                usuario_registro: enfermeraActual.id,
-                acreditado_a_nombre: enfermeraActual.nombre,
-                origen: `Tablet_Cuarto_${NUMERO_CUARTO_ASIGNADO}`,
-                timestamp: serverTimestamp(),
-                tipo_operacion: 'cargo_directo'
-            });
-
-            const invRef = doc(db, "inventory_master", item.id);
-            batch.update(invRef, { stock: increment(-1) });
-            
-            const accRef = doc(db, "accounts", pacienteActivo.id);
-            batch.update(accRef, { total: increment(item.precio_venta) });
-
+            cerrarOverlays(); mostrarToast();
+            const batch = writeBatch(db); const refTx = doc(collection(db, "transactions"));
+            batch.set(refTx, { pacienteId: pacienteActivo.id, itemId: item.id, nombre: item.nombre, cantidad: 1, precio_venta: item.precio_venta, usuario_registro: enfermeraActual.id, acreditado_a_nombre: enfermeraActual.nombre, origen: `Tablet_Cuarto_${NUMERO_CUARTO_ASIGNADO}`, timestamp: serverTimestamp(), tipo_operacion: 'cargo_directo' });
+            batch.update(doc(db, "inventory_master", item.id), { stock: increment(-1) });
+            batch.update(doc(db, "accounts", pacienteActivo.id), { total: increment(item.precio_venta) });
             await batch.commit();
-            
-        } catch(error) { console.error("Error al registrar cargo", error); }
+        } catch(error) { console.error(error); }
     }
 
     function mostrarToast() {
-        const toast = document.getElementById('toast');
-        toast.style.bottom = "50px";
+        const toast = document.getElementById('toast'); toast.style.bottom = "50px";
         setTimeout(() => { toast.style.bottom = "-100px"; }, 2500);
     }
 </script>
