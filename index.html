@@ -7,19 +7,14 @@
         :root { --primary-blue: #2c3e50; --secondary-blue: #34495e; --accent-green: #27ae60; --light-bg: #f4f7f6; --white: #ffffff; --border-color: #dcdde1; --text-dark: #2f3640; --danger-red: #c0392b; --cart-width: 0px; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background-color: var(--light-bg); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
         header { background-color: var(--primary-blue); color: white; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid var(--accent-green); }
-        
         main { display: grid; grid-template-columns: var(--cart-width) 280px 1fr 380px; gap: 1px; background-color: var(--border-color); flex: 1; transition: grid-template-columns 0.3s ease; }
         section { background-color: white; display: flex; flex-direction: column; overflow: hidden; }
         .panel-header { background-color: var(--secondary-blue); color: white; padding: 10px; font-size: 0.8em; font-weight: bold; text-transform: uppercase; }
-        
         .data-list { flex: 1; overflow-y: auto; }
-        .list-title { background: #eef2f5; padding: 5px 10px; font-size: 0.8em; font-weight: bold; color: var(--secondary-blue); }
-        
         table { width: 100%; border-collapse: collapse; font-size: 0.85em; }
-        td { padding: 10px; border-bottom: 1px solid #f1f1f1; cursor: pointer; }
+        td { padding: 10px; border-bottom: 1px solid #eee; cursor: pointer; }
         tr:hover { background-color: #ebf5fb; }
         .selected-row { background-color: #d4e6f1 !important; border-left: 4px solid var(--accent-green); }
-        
         .cart-item { background: #1a252f; color: white; padding: 10px; margin-bottom: 5px; border-left: 3px solid var(--accent-green); }
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 100; justify-content: center; align-items: center; }
         .modal-content { background: white; padding: 25px; width: 450px; border-radius: 8px; display: flex; flex-direction: column; gap: 15px; }
@@ -31,7 +26,7 @@
 <header>
     <div><strong>HOSPITAL POS</strong> | Recepción Principal</div>
     <div>
-        <a href="inventory-admin.html" style="color:white; margin-right:15px;">📦 Inventario</a>
+        <a href="inventory-admin.html" style="color:white; margin-right:20px;">📦 Inventario</a>
         <button id="btn-fullscreen">🖵 Pantalla Completa</button>
         <button id="btn-logout" style="background:#c0392b; color:white;">Salir</button>
     </div>
@@ -44,7 +39,7 @@
         <div style="padding:15px; border-top:1px solid #ddd;">
             <div id="cart-total-text" style="font-size:1.5em; font-weight:bold; color:var(--accent-green); text-align:right;">$0.00</div>
             <button class="btn-action" style="width:100%; background:var(--accent-green); color:white;" id="btn-procesar-carrito">Confirmar Cargos</button>
-            <button class="btn-action" style="width:100%; background:#7f8c8d; color:white; margin-top:5px;" onclick="vaciarCarrito()">Vaciar</button>
+            <button class="btn-action" style="width:100%; background:#7f8c8d; color:white; margin-top:5px;" onclick="vaciarCarrito()">Vaciar Lista</button>
         </div>
     </section>
 
@@ -56,7 +51,7 @@
 
     <section>
         <div class="panel-header" id="header-cuenta">Cuenta del Paciente</div>
-        <div id="resumen-cuenta" style="padding:15px; border-bottom:1px solid #ddd;">Seleccione un paciente.</div>
+        <div id="resumen-cuenta" style="padding:15px; border-bottom:1px solid #ddd;">Seleccione paciente.</div>
         <div class="data-list"><table><tbody id="lista-transacciones"></tbody></table></div>
         <div style="padding:15px; border-top:1px solid #ddd;">
             <button class="btn-action" style="width:100%; background:var(--danger-red); color:white;" id="btn-liquidar">Liquidar Cuenta</button>
@@ -68,9 +63,9 @@
         <select id="select-empleado" style="padding:10px; width:100%;"><option value="sistema">Sistema</option></select>
         <input type="text" id="inventory-search" placeholder="Buscar insumo..." style="padding:10px; width:100%;">
         <div class="data-list">
-            <div class="list-title">Servicios</div>
+            <div class="panel-header" style="background:#eee; color:#333;">Servicios y Paquetes</div>
             <table><tbody id="lista-servicios"></tbody></table>
-            <div class="list-title">Inventario</div>
+            <div class="panel-header" style="background:#eee; color:#333;">Inventario Físico</div>
             <table><tbody id="lista-inventario"></tbody></table>
         </div>
     </section>
@@ -94,42 +89,32 @@
     import { initializeFirestore, persistentLocalCache, collection, query, where, onSnapshot, doc, updateDoc, increment, serverTimestamp, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
     import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
-    // --- CONFIGURACIÓN DE FIREBASE ---
-    const firebaseConfig = { 
-        apiKey: "AIzaSyA0yq1qdkxcOmwCaUxGiFpYj0mUrVQyD-Q",
-        projectId: "hospital1-admin",
-        storageBucket: "hospital1-admin.firebasestorage.app",
-        messagingSenderId: "804830277427",
-        appId: "1:804830277427:web:819463cca4870d32d25846"
-    };
-    
+    const firebaseConfig = { /* PEGA AQUÍ TUS CREDENCIALES */ };
     const db = initializeFirestore(initializeApp(firebaseConfig), { localCache: persistentLocalCache() });
     const auth = getAuth(app);
-    
     window.AppState = { pacienteActualId: null, pacienteActualData: null, carrito: {} };
 
     onAuthStateChanged(auth, (user) => { if(user) iniciarSistema(); else window.location.href = "login.html"; });
 
     function iniciarSistema() {
-        // 1. Escucha Pacientes Activos
+        // 1. Pacientes
         onSnapshot(query(collection(db, "accounts"), where("estado", "==", "abierta")), (snap) => {
             const tbody = document.getElementById('lista-pacientes'); tbody.innerHTML = '';
             snap.forEach(d => {
-                const data = d.data();
                 const tr = document.createElement('tr');
-                tr.innerHTML = `<td>${data.cuarto_id}</td><td>${data.paciente_nombre}</td>`;
-                tr.onclick = () => { AppState.pacienteActualId = d.id; AppState.pacienteActualData = data; seleccionarPaciente(d.id, data, tr); };
+                tr.innerHTML = `<td>${d.data().cuarto_id}</td><td>${d.data().paciente_nombre}</td>`;
+                tr.onclick = () => { AppState.pacienteActualId = d.id; AppState.pacienteActualData = d.data(); seleccionarPaciente(d.id, d.data(), tr); };
                 tbody.appendChild(tr);
             });
         });
 
-        // 2. Escucha Servicios
+        // 2. Servicios
         onSnapshot(collection(db, "services_and_kits"), (snap) => {
             const tbody = document.getElementById('lista-servicios'); tbody.innerHTML = '';
-            snap.forEach(d => { const it = {id: d.id, ...d.data()}; const tr = document.createElement('tr'); tr.innerHTML = `<td>${it.nombre}</td><td>$${it.precio_venta}</td>`; tr.onclick = () => procesarServicio(it); tbody.appendChild(tr); });
+            snap.forEach(d => { const it = {id: d.id, ...d.data()}; const tr = document.createElement('tr'); tr.innerHTML = `<td>${it.nombre}</td><td>$${it.precio_venta}</td>`; tr.onclick = () => procesarServicioOKit(it); tbody.appendChild(tr); });
         });
 
-        // 3. Escucha Inventario
+        // 3. Inventario
         onSnapshot(query(collection(db, "inventory_master"), where("publicado_en_pos", "==", true)), (snap) => {
             const tbody = document.getElementById('lista-inventario'); tbody.innerHTML = '';
             snap.forEach(d => { const it = {id: d.id, ...d.data()}; const tr = document.createElement('tr'); tr.innerHTML = `<td>${it.nombre}</td><td>$${it.precio_venta}</td>`; tr.onclick = () => agregarAlCarrito(it); tbody.appendChild(tr); });
@@ -141,10 +126,9 @@
         tr.classList.add('selected-row');
         document.getElementById('header-cuenta').innerText = `Cuenta: ${data.cuarto_id}`;
         actualizarPanelDerechoUI(data);
-        
         onSnapshot(query(collection(db, "transactions"), where("pacienteId", "==", id)), (snap) => {
             const tbody = document.getElementById('lista-transacciones'); tbody.innerHTML = '';
-            snap.forEach(d => { const t = d.data(); tbody.innerHTML += `<tr><td>${t.nombre}</td><td>$${t.precio_venta}</td></tr>`; });
+            snap.forEach(d => { tbody.innerHTML += `<tr><td>${d.data().nombre}</td><td>$${d.data().precio_venta}</td></tr>`; });
         });
     }
 
@@ -157,7 +141,7 @@
     }
 
     window.agregarAlCarrito = (item) => {
-        if(!AppState.pacienteActualId) return alert("Selecciona paciente");
+        if(!AppState.pacienteActualId) return alert("Selecciona paciente primero.");
         AppState.carrito[item.id] = { item, cantidad: (AppState.carrito[item.id]?.cantidad || 0) + 1 };
         renderizarCarrito();
     };
@@ -186,7 +170,7 @@
         vaciarCarrito();
     };
 
-    async function procesarServicio(item) {
+    async function procesarServicioOKit(item) {
         if(!AppState.pacienteActualId) return;
         const batch = writeBatch(db);
         batch.set(doc(collection(db, "transactions")), { pacienteId: AppState.pacienteActualId, nombre: item.nombre, precio_venta: item.precio_venta, timestamp: serverTimestamp() });
@@ -209,13 +193,13 @@
             AppState.pacienteActualData = { ...AppState.pacienteActualData, ...updates };
             actualizarPanelDerechoUI(AppState.pacienteActualData);
             document.getElementById('edit-patient-modal').style.display = 'none';
-        } catch(e) { alert("Error al guardar"); } finally { btn.disabled = false; btn.innerText = "💾 Guardar"; }
+        } catch(e) { alert("Error"); } finally { btn.disabled = false; btn.innerText = "💾 Guardar"; }
     };
     
     window.abrirModalEdicion = () => { 
         document.getElementById('edit-nombre').value = AppState.pacienteActualData.paciente_nombre;
         document.getElementById('edit-cuarto').value = AppState.pacienteActualData.cuarto_id;
-        document.getElementById('edit-anonimo').checked = AppState.pacienteActualData.es_anonimo;
+        document.getElementById('edit-anonimo').checked = !!AppState.pacienteActualData.es_anonimo;
         document.getElementById('edit-nivel').value = AppState.pacienteActualData.nivel_observacion || 'baja';
         document.getElementById('edit-alergias').value = AppState.pacienteActualData.alergias || '';
         document.getElementById('edit-patient-modal').style.display = 'flex'; 
