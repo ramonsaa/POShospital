@@ -12,15 +12,14 @@
             --danger-red: #c0392b;
             --warning-orange: #d35400;
             --safe-blue: #2980b9;
-            --bg-dark: #121212;
-            --text-light: #ecf0f1;
+            --text-dark: #1a252f;
+            --bg-light-blue: #f4f9fc; /* Fondo azul muy claro casi blanco */
         }
 
         body { 
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
             margin: 0; 
-            background-color: var(--bg-dark); 
-            color: var(--text-light); 
+            background-color: var(--bg-light-blue); 
             height: 100vh; 
             display: flex; 
             flex-direction: column;
@@ -28,42 +27,94 @@
             user-select: none;
         }
 
-        /* --- VISTA PRINCIPAL (IDLE) --- */
+        /* ==========================================
+           1. VISTA PRINCIPAL (IDLE) REESTRUCTURADA
+           ========================================== */
         #idle-view {
             flex: 1;
             display: flex;
             flex-direction: column;
+        }
+
+        /* --- ENCABEZADO: Fondo azul, número blanco --- */
+        .idle-header {
+            background-color: var(--primary-blue);
+            color: white;
+            padding: 20px 40px;
+            display: flex;
             justify-content: center;
             align-items: center;
             position: relative;
-            text-align: center;
-            padding: 20px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
         }
 
-        .btn-top-left { position: absolute; top: 20px; left: 20px; font-size: 2.5em; cursor: pointer; background: rgba(255,255,255,0.1); padding: 10px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); }
-        .btn-top-right { position: absolute; top: 20px; right: 20px; font-size: 1.5em; cursor: pointer; background: rgba(255,255,255,0.1); padding: 10px 15px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); color: white; }
-        
-        /* Ocultar botón fullscreen cuando ya está en fullscreen */
+        .btn-top-left { 
+            position: absolute; 
+            left: 20px; 
+            font-size: 2.5em; 
+            cursor: pointer; 
+            background: rgba(255,255,255,0.1); 
+            padding: 10px; 
+            border-radius: 10px; 
+            border: 1px solid rgba(255,255,255,0.2); 
+        }
+
+        .btn-top-right { 
+            position: absolute; 
+            right: 20px; 
+            font-size: 1.5em; 
+            cursor: pointer; 
+            background: rgba(255,255,255,0.1); 
+            padding: 10px 15px; 
+            border-radius: 10px; 
+            border: 1px solid rgba(255,255,255,0.2); 
+            color: white; 
+        }
         :fullscreen .btn-top-right { display: none; }
 
-        .room-number { font-size: 8em; font-weight: bold; margin: 0; color: var(--accent-green); transition: font-size 0.3s; line-height: 1; }
-        .patient-name { font-size: 4em; font-weight: 300; margin: 20px 0; }
-        .anon-mode .room-number { font-size: 15em; } /* Más grande si es anónimo */
-        
-        .observations-box {
-            margin-top: 30px;
-            padding: 20px 40px;
-            border-radius: 15px;
-            font-size: 2em;
-            max-width: 80%;
-            border-left: 10px solid gray;
-            background: rgba(255,255,255,0.05);
+        .room-number { 
+            font-size: 7em; 
+            font-weight: bold; 
+            margin: 0; 
+            line-height: 1; 
+            letter-spacing: 2px;
         }
-        .obs-baja { border-color: var(--safe-blue); }
-        .obs-media { border-color: var(--warning-orange); }
-        .obs-alta { border-color: var(--danger-red); }
+        .anon-mode .room-number { font-size: 10em; color: var(--accent-green); }
 
-        /* --- MODAL PIN --- */
+        /* --- CUERPO: Nombre pegado a la izquierda --- */
+        .idle-body {
+            flex: 1;
+            padding: 50px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: flex-start;
+        }
+
+        .patient-name { 
+            font-size: 5.5em; 
+            font-weight: 600; 
+            margin: 0; 
+            color: var(--text-dark);
+            text-align: left;
+        }
+
+        /* --- PIE: Observaciones fondo completo --- */
+        .observations-footer {
+            padding: 25px 50px;
+            font-size: 2.2em;
+            color: white;
+            font-weight: bold;
+            text-align: left;
+            box-shadow: 0 -4px 10px rgba(0,0,0,0.1);
+        }
+        .obs-baja { background-color: var(--safe-blue); }
+        .obs-media { background-color: var(--warning-orange); }
+        .obs-alta { background-color: var(--danger-red); }
+
+        /* ==========================================
+           2. MODAL PIN
+           ========================================== */
         #pin-overlay {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.9); z-index: 1000; justify-content: center; align-items: center;
@@ -78,53 +129,63 @@
         .pin-btn:active { background: var(--secondary-blue); }
         .pin-btn-cancel { grid-column: 2; background: var(--danger-red); border-color: var(--danger-red); }
         
-        /* Animación de error */
         @keyframes shake { 0%, 100% {transform: translateX(0);} 25% {transform: translateX(-10px);} 75% {transform: translateX(10px);} }
         .pin-error { animation: shake 0.4s; background-color: rgba(192, 57, 43, 0.4) !important; }
 
-        /* --- VISTA POS (INSUMOS) --- */
+        /* ==========================================
+           3. VISTA POS (INSUMOS) Y CONTRASTES
+           ========================================== */
         #pos-view {
-            display: none; flex: 1; flex-direction: column; background: #ecf0f1; color: var(--text-dark);
+            display: none; flex: 1; flex-direction: column; background: #eef2f5; color: var(--text-dark);
         }
-        header { background: var(--primary-blue); color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; font-size: 1.5em; }
+        .pos-header { background: var(--primary-blue); color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; font-size: 1.5em; }
         .main-pos { display: flex; flex: 1; overflow: hidden; }
         
         .inventory-list { flex: 2; padding: 20px; overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; align-content: start; }
+        
         .item-card { 
             background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
             text-align: center; cursor: pointer; border: 2px solid transparent; transition: transform 0.1s;
         }
         .item-card:active { transform: scale(0.95); border-color: var(--accent-green); }
-        .item-name { font-weight: bold; font-size: 1.2em; margin-bottom: 10px; }
-        .item-stock { font-size: 0.9em; color: gray; }
+        
+        /* Ajuste de Contrastes */
+        .item-name { font-weight: 800; font-size: 1.3em; margin-bottom: 10px; color: #1a252f; }
+        .item-stock { font-size: 1em; color: #34495e; font-weight: 700; } 
 
         .cart-sidebar { flex: 1; background: white; border-left: 2px solid var(--border-color); display: flex; flex-direction: column; }
         .cart-header { background: var(--secondary-blue); color: white; padding: 15px; text-align: center; font-size: 1.2em; font-weight: bold;}
         .cart-items { flex: 1; overflow-y: auto; padding: 15px; }
-        .cart-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #eee; font-size: 1.2em;}
-        .qty-controls { display: flex; align-items: center; gap: 10px; }
-        .btn-qty { width: 40px; height: 40px; border: none; background: var(--primary-blue); color: white; font-size: 1.5em; border-radius: 5px; cursor: pointer; }
         
-        .cart-footer { padding: 20px; background: #f8f9fa; border-top: 1px solid #ddd; }
+        /* Ajuste Contraste Carrito */
+        .cart-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #ccc; font-size: 1.2em; font-weight: 600; color: #1a252f;}
+        
+        .qty-controls { display: flex; align-items: center; gap: 10px; }
+        .btn-qty { width: 40px; height: 40px; border: none; background: var(--primary-blue); color: white; font-size: 1.5em; border-radius: 5px; cursor: pointer; font-weight: bold;}
+        
+        .cart-footer { padding: 20px; background: #f8f9fa; border-top: 1px solid #ccc; }
         .btn-confirm { width: 100%; padding: 20px; font-size: 2em; background: var(--accent-green); color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; }
-        .btn-cancel-pos { width: 100%; padding: 15px; font-size: 1.2em; background: var(--danger-red); color: white; border: none; border-radius: 10px; cursor: pointer; margin-top: 10px; }
-
+        .btn-cancel-pos { width: 100%; padding: 15px; font-size: 1.2em; background: var(--danger-red); color: white; border: none; border-radius: 10px; cursor: pointer; margin-top: 10px; font-weight: bold;}
     </style>
 </head>
 <body>
 
     <div id="idle-view">
-        <button class="btn-top-right" onclick="toggleFullscreen()">🖵 Pantalla Completa</button>
-        <div class="btn-top-left" onclick="abrirPin()">💼</div>
-
-        <div id="idle-content">
+        
+        <div class="idle-header">
+            <div class="btn-top-left" onclick="abrirPin()">💼</div>
             <h1 class="room-number" id="display-room">--</h1>
-            <h2 class="patient-name" id="display-name">Esperando paciente...</h2>
-            
-            <div class="observations-box obs-baja" id="display-obs-box" style="display: none;">
-                <span id="display-obs-text"></span>
-            </div>
+            <button class="btn-top-right" onclick="toggleFullscreen()">🖵 Pantalla Completa</button>
         </div>
+
+        <div class="idle-body" id="idle-content">
+            <h2 class="patient-name" id="display-name">Esperando paciente...</h2>
+        </div>
+
+        <div class="observations-footer obs-baja" id="display-obs-box" style="display: none;">
+            <span id="display-obs-text"></span>
+        </div>
+
     </div>
 
     <div id="pin-overlay">
@@ -145,7 +206,7 @@
     </div>
 
     <div id="pos-view">
-        <header>
+        <header class="pos-header">
             <div>Cuarto: <strong id="pos-room-header">--</strong></div>
             <div>Enfermero/a: <strong id="pos-employee-name">--</strong></div>
         </header>
@@ -190,38 +251,30 @@
     window.modificarQty = modificarQty;
     window.confirmarInsumos = confirmarInsumos;
 
-    // ESTADO GLOBAL DE LA TABLET
     let numCuarto = null;
     let pacienteActualId = null;
     let empleadoLogueado = null;
     let carritoTablet = {};
     let pinActual = "";
     
-    // ==========================================
-    // 1. INICIALIZACIÓN (LEER DESDE LA URL)
-    // ==========================================
     const urlParams = new URLSearchParams(window.location.search);
     numCuarto = urlParams.get('room');
 
     if(!numCuarto) {
         document.body.innerHTML = `
-            <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; text-align:center; background-color: #121212;">
+            <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; text-align:center; background-color: #1a252f;">
                 <h1 style="color: var(--danger-red); font-size: 3em;">❌ Error de Configuración</h1>
-                <h2 style="color: gray;">No se especificó el número de cuarto.</h2>
-                <p style="font-size: 1.5em; color: white;">Por favor, agrega el parámetro en la URL.<br><br>Ejemplo: <strong>tablet.html?room=101</strong></p>
+                <h2 style="color: #ecf0f1;">No se especificó el número de cuarto.</h2>
+                <p style="font-size: 1.5em; color: #bdc3c7;">Agrega el parámetro en la URL.<br><br>Ejemplo: <strong>tablet.html?room=101</strong></p>
             </div>`;
-        throw new Error("Ejecución detenida: Falta parámetro ?room en la URL.");
+        throw new Error("Falta parámetro ?room en la URL.");
     }
 
-    // Si hay cuarto, iniciamos la escucha
     document.getElementById('display-room').innerText = numCuarto;
     document.getElementById('pos-room-header').innerText = numCuarto;
     escucharCuentaCuarto();
     escucharInventario();
 
-    // ==========================================
-    // LÓGICA DE LA VISTA PRINCIPAL
-    // ==========================================
     function escucharCuentaCuarto() {
         const q = query(collection(db, "accounts"), where("cuarto_id", "==", numCuarto), where("estado", "==", "abierta"));
         onSnapshot(q, (snap) => {
@@ -253,7 +306,7 @@
                 if(data.alergias && data.alergias.trim() !== "") {
                     obsBox.style.display = "block";
                     obsText.innerText = data.alergias;
-                    obsBox.className = `observations-box obs-${data.nivel_observacion || 'baja'}`;
+                    obsBox.className = `observations-footer obs-${data.nivel_observacion || 'baja'}`;
                 } else {
                     obsBox.style.display = "none";
                 }
@@ -261,9 +314,6 @@
         });
     }
 
-    // ==========================================
-    // LÓGICA DEL PIN
-    // ==========================================
     function abrirPin() {
         if(!pacienteActualId) { alert("No hay paciente activo en este cuarto."); return; }
         pinActual = "";
@@ -280,10 +330,7 @@
         if(pinActual.length < 4) {
             pinActual += digit;
             actualizarPinDisplay();
-            
-            if(pinActual.length === 4) {
-                await validarPin(pinActual);
-            }
+            if(pinActual.length === 4) await validarPin(pinActual);
         }
     }
 
@@ -296,7 +343,6 @@
         const snap = await getDocs(q);
 
         if(snap.empty) {
-            // PIN INCORRECTO
             const overlay = document.getElementById('pin-overlay');
             overlay.classList.add('pin-error');
             setTimeout(() => {
@@ -305,7 +351,6 @@
                 actualizarPinDisplay();
             }, 500);
         } else {
-            // PIN CORRECTO
             const doc = snap.docs[0];
             empleadoLogueado = { id: doc.id, ...doc.data() };
             document.getElementById('pos-employee-name').innerText = empleadoLogueado.nombre;
@@ -318,9 +363,6 @@
         }
     }
 
-    // ==========================================
-    // LÓGICA DE INVENTARIO Y POS
-    // ==========================================
     function escucharInventario() {
         onSnapshot(collection(db, "inventory_master"), (snap) => {
             const grid = document.getElementById('pos-inventory-grid');
@@ -331,10 +373,7 @@
                     const card = document.createElement('div');
                     card.className = 'item-card';
                     card.onclick = () => agregarItem(item);
-                    card.innerHTML = `
-                        <div class="item-name">${item.nombre}</div>
-                        <div class="item-stock">Stock: ${item.stock}</div>
-                    `;
+                    card.innerHTML = `<div class="item-name">${item.nombre}</div><div class="item-stock">Stock: ${item.stock}</div>`;
                     grid.appendChild(card);
                 }
             });
@@ -355,11 +394,8 @@
     function modificarQty(itemId, delta) {
         if(!carritoTablet[itemId]) return;
         const nuevaQty = carritoTablet[itemId].cantidad + delta;
-        if(nuevaQty <= 0) {
-            delete carritoTablet[itemId];
-        } else if(nuevaQty <= carritoTablet[itemId].item.stock) {
-            carritoTablet[itemId].cantidad = nuevaQty;
-        }
+        if(nuevaQty <= 0) delete carritoTablet[itemId];
+        else if(nuevaQty <= carritoTablet[itemId].item.stock) carritoTablet[itemId].cantidad = nuevaQty;
         renderCarrito();
     }
 
@@ -369,7 +405,7 @@
         const items = Object.keys(carritoTablet);
         
         if(items.length === 0) {
-            list.innerHTML = '<div style="color:gray; text-align:center; margin-top:20px;">Toque un insumo para agregarlo.</div>';
+            list.innerHTML = '<div style="color:#7f8c8d; text-align:center; margin-top:20px; font-weight:bold;">Toque un insumo para agregarlo.</div>';
             return;
         }
 
@@ -383,8 +419,7 @@
                         <span style="width: 30px; text-align:center; font-weight:bold;">${row.cantidad}</span>
                         <button class="btn-qty" onclick="modificarQty('${id}', 1)">+</button>
                     </div>
-                </div>
-            `;
+                </div>`;
         });
     }
 
@@ -401,7 +436,6 @@
         const accRef = doc(db, "accounts", pacienteActualId);
         let granTotal = 0;
 
-        // IDENTIDAD UNIFICADA: Usamos el ID del documento del empleado (que debe coincidir con su UID de Auth)
         const masterUID = empleadoLogueado.id; 
 
         for (const id in carritoTablet) {
@@ -452,7 +486,7 @@
     function toggleFullscreen() {
         if (!document.fullscreenElement) {
             document.documentElement.requestFullscreen().catch(err => {
-                console.log(`Error intentando activar pantalla completa: ${err.message}`);
+                console.log(`Error al activar pantalla completa: ${err.message}`);
             });
         } else {
             document.exitFullscreen();
