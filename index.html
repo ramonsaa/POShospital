@@ -84,7 +84,7 @@
         .cart-badge { font-size: 0.7em; color: #95a5a6; display: block; margin-top: 2px;}
         .cart-summary { padding: 15px; background: rgba(0,0,0,0.2); border-top: 1px solid #2c3e50; }
         
-        /* MODAL EDICIÓN AÑADIDO */
+        /* MODAL EDICIÓN/NUEVO */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; justify-content: center; align-items: center; }
         .modal-content { background: white; padding: 25px; width: 400px; border-radius: 8px; display: flex; flex-direction: column; gap: 15px; }
         .modal-content input[type="text"], .modal-content select, .modal-content textarea { width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 4px; box-sizing: border-box; }
@@ -119,8 +119,9 @@
 
     <section>
         <div class="panel-header">Pacientes Activos <span>[F1]</span></div>
-        <div class="search-container">
-            <input type="text" id="search-patients" placeholder="Buscar cuarto o paciente...">
+        <div class="search-container" style="display: flex; gap: 10px;">
+            <input type="text" id="search-patients" placeholder="Buscar cuarto o paciente..." style="flex: 1;">
+            <button class="btn-action btn-success" onclick="abrirModalNuevo()" style="padding: 8px 12px; font-size: 0.85em;">➕ Nuevo</button>
         </div>
         <div class="data-list">
             <table>
@@ -194,23 +195,33 @@
     </section>
 </main>
 
-<div id="edit-patient-modal" class="modal-overlay">
+<div id="patient-modal" class="modal-overlay">
     <div class="modal-content">
-        <h3 style="margin-top:0; color:var(--primary-blue);">✏️ Editar Paciente</h3>
-        <input type="text" id="edit-nombre" placeholder="Nombre completo">
-        <input type="text" id="edit-cuarto" placeholder="Número de Cuarto">
+        <h3 id="modal-title" style="margin-top:0; color:var(--primary-blue);">✏️ Editar Paciente</h3>
+        <input type="text" id="modal-nombre" placeholder="Nombre completo">
+        
+        <div style="display:flex; gap:10px; align-items:center;">
+            <input type="text" id="modal-cuarto" placeholder="Número de Cuarto" style="flex:1;">
+            <label style="display:flex; align-items:center; gap:5px; font-weight:bold; font-size:0.85em; color:var(--secondary-blue);">
+                <input type="checkbox" id="modal-ambulatorio" onchange="toggleAmbulatorio()"> Ambulatorio
+            </label>
+        </div>
+
         <label style="display:flex; align-items:center; gap:10px; font-weight:bold; color:var(--secondary-blue);">
-            <input type="checkbox" id="edit-anonimo" style="width:auto;"> Activar Modo Anónimo
+            <input type="checkbox" id="modal-anonimo" style="width:auto;"> Activar Modo Anónimo (Tablet)
         </label>
-        <select id="edit-nivel">
+        
+        <select id="modal-nivel">
             <option value="baja">🔵 Nivel: Azul (Estable)</option>
             <option value="media">🟠 Nivel: Naranja (Precaución)</option>
             <option value="alta">🔴 Nivel: Rojo (Crítico)</option>
         </select>
-        <textarea id="edit-alergias" rows="3" placeholder="Observaciones / Alergias..."></textarea>
+        
+        <textarea id="modal-alergias" rows="3" placeholder="Observaciones / Alergias..."></textarea>
+        
         <div style="display:flex; gap:10px; margin-top:10px;">
-            <button class="btn-action btn-danger" style="flex:1;" onclick="cerrarModalEdicion()">Cancelar</button>
-            <button class="btn-action btn-success" style="flex:1;" id="btn-guardar-edicion" onclick="guardarEdicionPaciente()">💾 Guardar</button>
+            <button class="btn-action btn-danger" style="flex:1;" onclick="cerrarModalPaciente()">Cancelar</button>
+            <button class="btn-action btn-success" style="flex:1;" id="btn-guardar-paciente" onclick="guardarPaciente()">💾 Guardar</button>
         </div>
     </div>
 </div>
@@ -233,13 +244,16 @@
     const db = getFirestore(app);
     const auth = getAuth(app);
 
+    // EXPORTAMOS LAS FUNCIONES AL ENTORNO GLOBAL
     window.modificarCantidad = modificarCantidad;
     window.vaciarCarrito = vaciarCarrito;
-    
-    // EXPORTAMOS LAS FUNCIONES NUEVAS AL ENTORNO GLOBAL
+    window.abrirModalNuevo = abrirModalNuevo;
     window.abrirModalEdicion = abrirModalEdicion;
-    window.cerrarModalEdicion = cerrarModalEdicion;
-    window.guardarEdicionPaciente = guardarEdicionPaciente;
+    window.cerrarModalPaciente = cerrarModalPaciente;
+    window.guardarPaciente = guardarPaciente;
+    window.toggleAmbulatorio = toggleAmbulatorio;
+
+    let modoModal = 'nuevo'; // Controla si guardamos o actualizamos
 
     window.AppState = {
         pacienteActualId: null,
@@ -287,13 +301,34 @@
         onSnapshot(query(collection(db, "accounts"), where("estado", "==", "abierta")), (snap) => {
             const tbody = document.getElementById('lista-pacientes'); tbody.innerHTML = '';
             snap.forEach((docSnap) => {
-                const data = docSnap.data(); const tr = document.createElement('tr');
+                const data = docSnap.data(); 
+                const tr = document.createElement('tr');
                 if (AppState.pacienteActualId === docSnap.id) tr.classList.add('selected-row');
-                tr.innerHTML = `<td>${data.cuarto_id || 'Amb.'}</td><td>${data.paciente_nombre}</td>`;
+                const cuartoDisplay = data.es_ambulatorio ? 'Amb.' : (data.cuarto_id || 'Amb.');
+                tr.innerHTML = `<td>${cuartoDisplay}</td><td>${data.paciente_nombre}</td>`;
                 tr.onclick = () => seleccionarPaciente(docSnap.id, data, tr);
                 tbody.appendChild(tr);
             });
         });
+    }
+
+    function actualizarUIResumenCuenta() {
+        const data = AppState.pacienteActualData;
+        const cuartoDisplay = data.es_ambulatorio ? 'AMB' : (data.cuarto_id || 'AMB');
+        
+        document.getElementById('header-cuenta').innerHTML = `Cuenta del Paciente <span>CUARTO ${cuartoDisplay}</span>`;
+        document.getElementById('resumen-cuenta').innerHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; width:100%;">
+                <div>
+                    <div style="font-size:1.1em;">Paciente: <strong>${data.paciente_nombre}</strong></div>
+                    <div style="color:${data.nivel_observacion === 'alta' ? 'var(--danger-red)' : data.nivel_observacion === 'media' ? '#d35400' : 'gray'}; font-size:0.85em; margin-top:5px;">
+                        Obs: ${data.alergias || 'Ninguna registrada'}
+                    </div>
+                </div>
+                <button class="btn-action btn-primary" onclick="abrirModalEdicion()" style="padding:5px 10px; font-size:0.8em;">✏️ Editar</button>
+            </div>
+            <div class="total-amount" style="margin-top:10px; align-self:flex-end;">$${(data.total || 0).toLocaleString('es-MX')}</div>
+        `;
     }
 
     function seleccionarPaciente(id, data, filaHtml) {
@@ -305,21 +340,8 @@
         AppState.pacienteActualId = id; AppState.pacienteActualData = data;
         document.querySelectorAll('#lista-pacientes tr').forEach(r => r.classList.remove('selected-row'));
         filaHtml.classList.add('selected-row');
-        document.getElementById('header-cuenta').innerHTML = `Cuenta del Paciente <span>CUARTO ${data.cuarto_id || 'AMB'}</span>`;
         
-        // --- INYECCIÓN DEL BOTÓN EDITAR EN TU CÓDIGO ORIGINAL ---
-        document.getElementById('resumen-cuenta').innerHTML = `
-            <div style="display:flex; justify-content:space-between; align-items:flex-start; width:100%;">
-                <div>
-                    <div style="font-size:1.1em;">Paciente: <strong>${data.es_anonimo ? '🕵️ Anónimo' : data.paciente_nombre}</strong></div>
-                    <div style="color:${data.nivel_observacion === 'alta' ? 'var(--danger-red)' : data.nivel_observacion === 'media' ? '#d35400' : 'gray'}; font-size:0.85em; margin-top:5px;">
-                        Obs: ${data.alergias || 'Ninguna registrada'}
-                    </div>
-                </div>
-                <button class="btn-action btn-primary" onclick="abrirModalEdicion()" style="padding:5px 10px; font-size:0.8em;">✏️ Editar</button>
-            </div>
-            <div class="total-amount" style="margin-top:10px; align-self:flex-end;">$${(data.total || 0).toLocaleString('es-MX')}</div>
-        `;
+        actualizarUIResumenCuenta();
 
         if(AppState.unsubscribeTransacciones) AppState.unsubscribeTransacciones();
         AppState.unsubscribeTransacciones = onSnapshot(query(collection(db, "transactions"), where("pacienteId", "==", id)), (snap) => {
@@ -361,6 +383,93 @@
                 }
             });
         });
+    }
+
+    /* ==========================================
+       LÓGICA UNIFICADA: NUEVO / EDITAR PACIENTE
+       ========================================== */
+    function toggleAmbulatorio() {
+        const isAmbulatorio = document.getElementById('modal-ambulatorio').checked;
+        const inputCuarto = document.getElementById('modal-cuarto');
+        if(isAmbulatorio) {
+            inputCuarto.value = '';
+            inputCuarto.disabled = true;
+            inputCuarto.placeholder = 'N/A (Ambulatorio)';
+        } else {
+            inputCuarto.disabled = false;
+            inputCuarto.placeholder = 'Número de Cuarto';
+        }
+    }
+
+    function abrirModalNuevo() {
+        modoModal = 'nuevo';
+        document.getElementById('modal-title').innerHTML = '➕ Nuevo Paciente';
+        document.getElementById('modal-nombre').value = '';
+        document.getElementById('modal-cuarto').value = '';
+        document.getElementById('modal-ambulatorio').checked = false;
+        document.getElementById('modal-anonimo').checked = false;
+        document.getElementById('modal-nivel').value = 'baja';
+        document.getElementById('modal-alergias').value = '';
+        toggleAmbulatorio();
+        document.getElementById('patient-modal').style.display = 'flex';
+    }
+
+    function abrirModalEdicion() {
+        if(!AppState.pacienteActualData) return;
+        modoModal = 'editar';
+        const d = AppState.pacienteActualData;
+        document.getElementById('modal-title').innerHTML = '✏️ Editar Paciente';
+        document.getElementById('modal-nombre').value = d.paciente_nombre || '';
+        document.getElementById('modal-cuarto').value = d.cuarto_id || '';
+        document.getElementById('modal-ambulatorio').checked = !!d.es_ambulatorio;
+        document.getElementById('modal-anonimo').checked = !!d.es_anonimo;
+        document.getElementById('modal-nivel').value = d.nivel_observacion || 'baja';
+        document.getElementById('modal-alergias').value = d.alergias || '';
+        toggleAmbulatorio();
+        document.getElementById('patient-modal').style.display = 'flex';
+    }
+
+    function cerrarModalPaciente() {
+        document.getElementById('patient-modal').style.display = 'none';
+    }
+
+    async function guardarPaciente() {
+        const btn = document.getElementById('btn-guardar-paciente');
+        btn.disabled = true;
+        btn.innerText = "Guardando...";
+
+        const esAmbulatorio = document.getElementById('modal-ambulatorio').checked;
+        const cuartoVal = esAmbulatorio ? 'AMB' : document.getElementById('modal-cuarto').value;
+
+        const datos = {
+            paciente_nombre: document.getElementById('modal-nombre').value,
+            cuarto_id: cuartoVal,
+            es_ambulatorio: esAmbulatorio,
+            es_anonimo: document.getElementById('modal-anonimo').checked,
+            nivel_observacion: document.getElementById('modal-nivel').value,
+            alergias: document.getElementById('modal-alergias').value
+        };
+
+        try {
+            if(modoModal === 'nuevo') {
+                datos.estado = 'abierta';
+                datos.total = 0;
+                datos.fecha_ingreso = serverTimestamp();
+                await addDoc(collection(db, "accounts"), datos);
+            } else {
+                if(!AppState.pacienteActualId) return;
+                await updateDoc(doc(db, "accounts", AppState.pacienteActualId), datos);
+                AppState.pacienteActualData = { ...AppState.pacienteActualData, ...datos };
+                actualizarUIResumenCuenta(); 
+            }
+            cerrarModalPaciente();
+        } catch (error) {
+            console.error(error);
+            alert("Error al guardar paciente.");
+        } finally {
+            btn.disabled = false;
+            btn.innerText = "💾 Guardar";
+        }
     }
 
     /* ==========================================
@@ -501,69 +610,6 @@
         catch (error) { alert("Error al procesar lote."); } 
         finally { btn.disabled = false; btn.innerText = "Confirmar Cargos"; }
     });
-
-    /* ==========================================
-       LÓGICA NUEVA: EDICIÓN DE PACIENTE
-       ========================================== */
-    function abrirModalEdicion() {
-        if(!AppState.pacienteActualData) return;
-        const d = AppState.pacienteActualData;
-        document.getElementById('edit-nombre').value = d.paciente_nombre || '';
-        document.getElementById('edit-cuarto').value = d.cuarto_id || '';
-        document.getElementById('edit-anonimo').checked = !!d.es_anonimo;
-        document.getElementById('edit-nivel').value = d.nivel_observacion || 'baja';
-        document.getElementById('edit-alergias').value = d.alergias || '';
-        document.getElementById('edit-patient-modal').style.display = 'flex';
-    }
-
-    function cerrarModalEdicion() {
-        document.getElementById('edit-patient-modal').style.display = 'none';
-    }
-
-    async function guardarEdicionPaciente() {
-        if(!AppState.pacienteActualId) return;
-        const btn = document.getElementById('btn-guardar-edicion');
-        btn.disabled = true;
-        btn.innerText = "Guardando...";
-
-        try {
-            const updates = {
-                paciente_nombre: document.getElementById('edit-nombre').value,
-                cuarto_id: document.getElementById('edit-cuarto').value,
-                es_anonimo: document.getElementById('edit-anonimo').checked,
-                nivel_observacion: document.getElementById('edit-nivel').value,
-                alergias: document.getElementById('edit-alergias').value
-            };
-            
-            await updateDoc(doc(db, "accounts", AppState.pacienteActualId), updates);
-            
-            AppState.pacienteActualData = { ...AppState.pacienteActualData, ...updates };
-            
-            // Refrescar el cuadro de resumen visualmente
-            const data = AppState.pacienteActualData;
-            document.getElementById('header-cuenta').innerHTML = `Cuenta del Paciente <span>CUARTO ${data.cuarto_id || 'AMB'}</span>`;
-            document.getElementById('resumen-cuenta').innerHTML = `
-                <div style="display:flex; justify-content:space-between; align-items:flex-start; width:100%;">
-                    <div>
-                        <div style="font-size:1.1em;">Paciente: <strong>${data.es_anonimo ? '🕵️ Anónimo' : data.paciente_nombre}</strong></div>
-                        <div style="color:${data.nivel_observacion === 'alta' ? 'var(--danger-red)' : data.nivel_observacion === 'media' ? '#d35400' : 'gray'}; font-size:0.85em; margin-top:5px;">
-                            Obs: ${data.alergias || 'Ninguna registrada'}
-                        </div>
-                    </div>
-                    <button class="btn-action btn-primary" onclick="abrirModalEdicion()" style="padding:5px 10px; font-size:0.8em;">✏️ Editar</button>
-                </div>
-                <div class="total-amount" style="margin-top:10px; align-self:flex-end;">$${(data.total || 0).toLocaleString('es-MX')}</div>
-            `;
-            
-            cerrarModalEdicion();
-        } catch (error) {
-            console.error(error);
-            alert("Error al actualizar paciente.");
-        } finally {
-            btn.disabled = false;
-            btn.innerText = "💾 Guardar";
-        }
-    }
 
     function iniciarReloj() { setInterval(() => { document.getElementById('clock').innerText = new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }); }, 1000); }
     function configurarPantallaCompleta() {
