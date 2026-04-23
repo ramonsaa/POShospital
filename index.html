@@ -4,118 +4,106 @@
     <meta charset="UTF-8">
     <title>Hospital POS - Recepción Principal</title>
     <style>
-        :root { --primary-blue: #2c3e50; --secondary-blue: #34495e; --accent-green: #27ae60; --light-bg: #f4f7f6; --white: #ffffff; --border-color: #dcdde1; --text-dark: #2f3640; --danger-red: #c0392b; --cart-width: 0px; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background-color: var(--light-bg); color: var(--text-dark); display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+        :root { --primary-blue: #2c3e50; --secondary-blue: #34495e; --accent-green: #27ae60; --light-bg: #f4f7f6; --white: #ffffff; --border-color: #dcdde1; --text-dark: #2f3640; --danger-red: #c0392b; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background-color: var(--light-bg); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
         header { background-color: var(--primary-blue); color: white; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid var(--accent-green); }
-        main { display: grid; grid-template-columns: var(--cart-width) 280px 1fr 380px; gap: 1px; background-color: var(--border-color); flex: 1; transition: grid-template-columns 0.3s ease; }
+        main { display: grid; grid-template-columns: 250px 280px 1fr 380px; gap: 1px; background-color: var(--border-color); flex: 1; }
         section { background-color: white; display: flex; flex-direction: column; overflow: hidden; }
-        .panel-header { background-color: var(--secondary-blue); color: white; padding: 8px 12px; font-size: 0.8em; font-weight: bold; text-transform: uppercase; }
+        .panel-header { background-color: var(--secondary-blue); color: white; padding: 10px; font-size: 0.8em; font-weight: bold; text-transform: uppercase; }
         .data-list { flex: 1; overflow-y: auto; }
-        .list-section { flex: 1; display: flex; flex-direction: column; overflow: hidden; border-bottom: 2px solid var(--border-color); }
-        .list-title { background: #eef2f5; padding: 5px 10px; font-size: 0.8em; font-weight: bold; color: var(--secondary-blue); }
         table { width: 100%; border-collapse: collapse; font-size: 0.85em; }
-        td { padding: 8px; border-bottom: 1px solid #f1f1f1; cursor: pointer; }
+        td { padding: 10px; border-bottom: 1px solid #eee; cursor: pointer; }
         tr:hover { background-color: #ebf5fb; }
         .selected-row { background-color: #d4e6f1 !important; border-left: 4px solid var(--accent-green); }
         .cart-item { background: #1a252f; color: white; padding: 10px; margin-bottom: 5px; border-left: 3px solid var(--accent-green); }
-        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 100; justify-content: center; align-items: center; }
-        .modal-content { background: white; padding: 25px; width: 450px; border-radius: 8px; display: flex; flex-direction: column; gap: 15px; }
-        .btn-modal { padding: 10px; cursor: pointer; border: none; font-weight: bold; border-radius: 4px; color: white; }
+        .action-bar { padding: 10px; border-top: 1px solid #ddd; }
     </style>
 </head>
 <body>
 
 <header>
-    <div><strong>HOSPITAL POS</strong> | Recepción Principal</div>
+    <div><strong>HOSPITAL POS</strong> | Recepción</div>
     <div>
-        <a href="inventory-admin.html" style="color:white; margin-right:20px;">📦 Inventario Maestro</a>
+        <a href="inventory-admin.html" style="color:white; margin-right:20px;">📦 Inventario</a>
         <button id="btn-fullscreen">🖵 Pantalla Completa</button>
         <button id="btn-logout" style="background:#c0392b; color:white;">Salir</button>
     </div>
 </header>
 
 <main>
-    <section id="cart-section">
+    <section>
         <div class="panel-header">🛒 Pre-Checkout</div>
         <div class="data-list" id="cart-list"></div>
         <div style="padding:15px; border-top:1px solid #ddd;">
             <div id="cart-total-text" style="font-size:1.5em; font-weight:bold; color:var(--accent-green); text-align:right;">$0.00</div>
-            <button class="btn-modal" style="width:100%; background:var(--accent-green);" id="btn-procesar-carrito">Confirmar Cargos</button>
+            <button style="width:100%; padding:10px; background:var(--accent-green); color:white; border:none;" id="btn-procesar-carrito">Confirmar Cargos</button>
+            <button style="width:100%; padding:10px; background:#7f8c8d; color:white; border:none; margin-top:5px;" onclick="vaciarCarrito()">Vaciar</button>
         </div>
     </section>
 
     <section>
-        <div class="panel-header">Pacientes</div>
-        <div class="search-container"><input type="text" id="search-patients" placeholder="Buscar..."></div>
+        <div class="panel-header">Pacientes Activos</div>
+        <input type="text" id="search-patients" placeholder="Buscar..." style="padding:10px; width:100%;">
         <div class="data-list"><table><tbody id="lista-pacientes"></tbody></table></div>
     </section>
 
     <section>
         <div class="panel-header" id="header-cuenta">Cuenta del Paciente</div>
-        <div id="resumen-cuenta" style="padding:15px;">Seleccione un paciente.</div>
+        <div id="resumen-cuenta" style="padding:15px; border-bottom:1px solid #ddd;">Seleccione un paciente.</div>
         <div class="data-list"><table><tbody id="lista-transacciones"></tbody></table></div>
-        <div style="padding:15px;"><button class="btn-modal" style="width:100%; background:var(--danger-red);" id="btn-liquidar">Liquidar Cuenta</button></div>
+        <div class="action-bar"><button style="width:100%; padding:10px; background:var(--danger-red); color:white; border:none;" id="btn-liquidar">Liquidar Cuenta</button></div>
     </section>
 
     <section>
         <div class="panel-header">Catálogo</div>
-        <div class="search-container">
-            <select id="select-empleado"><option value="sistema">Sistema</option></select>
-            <input type="text" id="inventory-search" placeholder="Buscar insumo...">
-        </div>
-        <div class="dual-list-container">
-            <div class="list-section"><div class="list-title">Servicios y Paquetes</div><div class="data-list"><table><tbody id="lista-servicios"></tbody></table></div></div>
-            <div class="list-section"><div class="list-title">Inventario Físico</div><div class="data-list"><table><tbody id="lista-inventario"></tbody></table></div></div>
+        <select id="select-empleado" style="padding:10px; width:100%;"><option value="sistema">Sistema</option></select>
+        <input type="text" id="inventory-search" placeholder="Buscar insumo..." style="padding:10px; width:100%;">
+        <div class="data-list">
+            <table><tbody id="lista-servicios"></tbody></table>
+            <table><tbody id="lista-inventario"></tbody></table>
         </div>
     </section>
 </main>
 
-<div id="edit-patient-modal" class="modal-overlay">
-    <div class="modal-content">
-        <h3>✏️ Editar Paciente</h3>
-        <input type="text" id="edit-nombre" placeholder="Nombre">
-        <input type="text" id="edit-cuarto" placeholder="Cuarto">
-        <label><input type="checkbox" id="edit-anonimo"> Modo Anónimo</label>
-        <select id="edit-nivel"><option value="baja">🔵 Azul</option><option value="media">🟠 Naranja</option><option value="alta">🔴 Rojo</option></select>
-        <textarea id="edit-alergias" rows="3" placeholder="Observaciones"></textarea>
-        <button class="btn-modal" style="background:var(--accent-green);" id="btn-guardar-edicion" onclick="guardarEdicionPaciente()">💾 Guardar</button>
-        <button class="btn-modal" style="background:#e74c3c;" onclick="cerrarModalEdicion()">Cancelar</button>
-    </div>
-</div>
-
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-    import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, collection, query, where, onSnapshot, doc, updateDoc, increment, serverTimestamp, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+    import { initializeFirestore, persistentLocalCache, collection, query, where, onSnapshot, doc, writeBatch, increment, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
     import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
-    const firebaseConfig = { /* PEGA AQUÍ TU CONFIG */ };
+    // --- CONFIGURACIÓN (RECUERDA PEGAR TUS CREDENCIALES) ---
+    const firebaseConfig = { 
+        apiKey: "AIzaSyA0yq1qdkxcOmwCaUxGiFpYj0mUrVQyD-Q",
+        projectId: "hospital1-admin",
+        storageBucket: "hospital1-admin.firebasestorage.app",
+        messagingSenderId: "804830277427",
+        appId: "1:804830277427:web:819463cca4870d32d25846"
+    };
     
-    const db = initializeFirestore(initializeApp(firebaseConfig), { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) });
+    const db = initializeFirestore(initializeApp(firebaseConfig), { localCache: persistentLocalCache() });
     const auth = getAuth(app);
     window.AppState = { pacienteActualId: null, pacienteActualData: null, carrito: {} };
 
-    // --- FUNCIONALIDAD COMPLETA ---
     onAuthStateChanged(auth, (user) => { if(user) iniciarSistema(); else window.location.href = "login.html"; });
 
     function iniciarSistema() {
-        // Escucha Pacientes
+        // 1. Escuchar Pacientes
         onSnapshot(query(collection(db, "accounts"), where("estado", "==", "abierta")), (snap) => {
             const tbody = document.getElementById('lista-pacientes'); tbody.innerHTML = '';
             snap.forEach(d => {
-                const data = d.data();
                 const tr = document.createElement('tr');
-                tr.innerHTML = `<td>${data.cuarto_id}</td><td>${data.paciente_nombre}</td>`;
-                tr.onclick = () => { AppState.pacienteActualId = d.id; AppState.pacienteActualData = data; seleccionarPaciente(d.id, data, tr); };
+                tr.innerHTML = `<td>${d.data().cuarto_id}</td><td>${d.data().paciente_nombre}</td>`;
+                tr.onclick = () => { AppState.pacienteActualId = d.id; AppState.pacienteActualData = d.data(); seleccionarPaciente(d.id, d.data(), tr); };
                 tbody.appendChild(tr);
             });
         });
 
-        // Escucha Catálogo
+        // 2. Escuchar Servicios
         onSnapshot(collection(db, "services_and_kits"), (snap) => {
             const tbody = document.getElementById('lista-servicios'); tbody.innerHTML = '';
-            snap.forEach(d => { const it = {id: d.id, ...d.data()}; const tr = document.createElement('tr'); tr.innerHTML = `<td>${it.nombre}</td><td>$${it.precio_venta}</td>`; tr.onclick = () => procesarServicioOKit(it); tbody.appendChild(tr); });
+            snap.forEach(d => { const it = {id: d.id, ...d.data()}; const tr = document.createElement('tr'); tr.innerHTML = `<td>${it.nombre}</td><td>$${it.precio_venta}</td>`; tr.onclick = () => procesarServicio(it); tbody.appendChild(tr); });
         });
 
+        // 3. Escuchar Inventario
         onSnapshot(query(collection(db, "inventory_master"), where("publicado_en_pos", "==", true)), (snap) => {
             const tbody = document.getElementById('lista-inventario'); tbody.innerHTML = '';
             snap.forEach(d => { const it = {id: d.id, ...d.data()}; const tr = document.createElement('tr'); tr.innerHTML = `<td>${it.nombre}</td><td>$${it.precio_venta}</td>`; tr.onclick = () => agregarAlCarrito(it); tbody.appendChild(tr); });
@@ -126,7 +114,7 @@
         document.querySelectorAll('tr').forEach(r => r.classList.remove('selected-row'));
         tr.classList.add('selected-row');
         document.getElementById('header-cuenta').innerText = `Cuenta: ${data.cuarto_id}`;
-        actualizarPanelDerechoUI(data);
+        document.getElementById('resumen-cuenta').innerHTML = `Paciente: <strong>${data.paciente_nombre}</strong><br>Obs: ${data.alergias || 'Ninguna'}`;
         
         onSnapshot(query(collection(db, "transactions"), where("pacienteId", "==", id)), (snap) => {
             const tbody = document.getElementById('lista-transacciones'); tbody.innerHTML = '';
@@ -135,39 +123,44 @@
     }
 
     window.agregarAlCarrito = (item) => {
-        if(!AppState.pacienteActualId) return alert("Selecciona paciente");
+        if(!AppState.pacienteActualId) return alert("Selecciona paciente primero.");
         AppState.carrito[item.id] = { item, cantidad: (AppState.carrito[item.id]?.cantidad || 0) + 1 };
         renderizarCarrito();
     };
 
+    window.vaciarCarrito = () => { AppState.carrito = {}; renderizarCarrito(); };
+
     function renderizarCarrito() {
         const list = document.getElementById('cart-list'); list.innerHTML = '';
+        let total = 0;
         Object.values(AppState.carrito).forEach(c => {
+            total += (c.item.precio_venta * c.cantidad);
             list.innerHTML += `<div class="cart-item">${c.item.nombre} x${c.cantidad}</div>`;
         });
-        document.getElementById('cart-total-text').innerText = "..."; // Calcular total
+        document.getElementById('cart-total-text').innerText = `$${total.toLocaleString()}`;
     }
 
-    // Funciones del Modal
-    window.guardarEdicionPaciente = async () => {
-        const btn = document.getElementById('btn-guardar-edicion');
-        btn.disabled = true; btn.innerText = "Guardando...";
-        try {
-            const updates = { 
-                paciente_nombre: document.getElementById('edit-nombre').value,
-                cuarto_id: document.getElementById('edit-cuarto').value,
-                es_anonimo: document.getElementById('edit-anonimo').checked,
-                nivel_observacion: document.getElementById('edit-nivel').value,
-                alergias: document.getElementById('edit-alergias').value
-            };
-            await updateDoc(doc(db, "accounts", AppState.pacienteActualId), updates);
-            AppState.pacienteActualData = { ...AppState.pacienteActualData, ...updates };
-            actualizarPanelDerechoUI(AppState.pacienteActualData);
-            document.getElementById('edit-patient-modal').style.display = 'none';
-        } catch(e) { alert("Error"); } finally { btn.disabled = false; btn.innerText = "💾 Guardar"; }
+    document.getElementById('btn-procesar-carrito').onclick = async () => {
+        if(!AppState.pacienteActualId) return;
+        const batch = writeBatch(db);
+        Object.values(AppState.carrito).forEach(c => {
+            batch.set(doc(collection(db, "transactions")), { pacienteId: AppState.pacienteActualId, nombre: c.item.nombre, precio_venta: c.item.precio_venta * c.cantidad, timestamp: serverTimestamp() });
+            batch.update(doc(db, "inventory_master", c.item.id), { stock: increment(-c.cantidad) });
+        });
+        await batch.commit();
+        vaciarCarrito();
     };
-    window.abrirModalEdicion = () => { /* Cargar datos al modal */ document.getElementById('edit-patient-modal').style.display = 'flex'; };
-    window.cerrarModalEdicion = () => document.getElementById('edit-patient-modal').style.display = 'none';
+
+    async function procesarServicio(item) {
+        if(!AppState.pacienteActualId) return;
+        const batch = writeBatch(db);
+        batch.set(doc(collection(db, "transactions")), { pacienteId: AppState.pacienteActualId, nombre: item.nombre, precio_venta: item.precio_venta, timestamp: serverTimestamp() });
+        batch.update(doc(db, "accounts", AppState.pacienteActualId), { total: increment(item.precio_venta) });
+        await batch.commit();
+    }
+    
+    document.getElementById('btn-fullscreen').onclick = () => { if(!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen(); };
+    document.getElementById('btn-logout').onclick = () => signOut(auth);
 </script>
 </body>
 </html>
