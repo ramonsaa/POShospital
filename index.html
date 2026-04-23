@@ -6,15 +6,9 @@
     <title>Hospital POS - Recepción Principal</title>
     <style>
         :root {
-            --primary-blue: #2c3e50;
-            --secondary-blue: #34495e;
-            --accent-green: #27ae60;
-            --light-bg: #f4f7f6;
-            --white: #ffffff;
-            --border-color: #dcdde1;
-            --text-dark: #2f3640;
-            --danger-red: #c0392b;
-            --cart-width: 0px; 
+            --primary-blue: #2c3e50; --secondary-blue: #34495e; --accent-green: #27ae60;
+            --light-bg: #f4f7f6; --white: #ffffff; --border-color: #dcdde1; --text-dark: #2f3640;
+            --danger-red: #c0392b; --cart-width: 0px; 
         }
 
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background-color: var(--light-bg); color: var(--text-dark); display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
@@ -27,22 +21,13 @@
         button.btn-logout { background: #c0392b; border-color: #e74c3c; }
         button.btn-logout:hover { background: #a93226; }
 
-        main { 
-            display: grid; 
-            grid-template-columns: var(--cart-width) 280px 1fr 380px; 
-            gap: 1px; 
-            background-color: var(--border-color); 
-            flex: 1; 
-            overflow: hidden; 
-            transition: grid-template-columns 0.3s ease-in-out;
-        }
-
+        main { display: grid; grid-template-columns: var(--cart-width) 280px 1fr 380px; gap: 1px; background-color: var(--border-color); flex: 1; overflow: hidden; transition: grid-template-columns 0.3s ease-in-out; }
         section { background-color: var(--white); display: flex; flex-direction: column; overflow: hidden; }
         .panel-header { background-color: var(--secondary-blue); color: var(--white); padding: 8px 12px; font-size: 0.85em; font-weight: bold; text-transform: uppercase; display: flex; justify-content: space-between; align-items: center; }
         
         .search-container { padding: 10px; background: #fdfdfd; border-bottom: 1px solid var(--border-color); }
-        input[type="text"], textarea, input[type="number"] { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid var(--border-color); outline: none; border-radius: 3px;}
-        input[type="text"]:focus, textarea:focus { border-color: var(--accent-green); }
+        input[type="text"], textarea, input[type="number"], select { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid var(--border-color); outline: none; border-radius: 3px;}
+        input[type="text"]:focus, textarea:focus, select:focus { border-color: var(--accent-green); }
         
         .data-list { flex: 1; overflow-y: auto; }
         .dual-list-container { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
@@ -64,7 +49,6 @@
         .btn-primary { background-color: var(--primary-blue); }
         .btn-success { background-color: var(--accent-green); }
         .btn-danger { background-color: var(--danger-red); }
-        .btn-dark { background-color: #34495e; }
         
         .nurse-badge { font-size: 0.75em; background: #e8f5e9; color: #2e7d32; padding: 2px 6px; border-radius: 3px; font-weight: 600;}
         .system-badge { font-size: 0.75em; background: #e3f2fd; color: #1565c0; padding: 2px 6px; border-radius: 3px; font-weight: 600;}
@@ -82,12 +66,11 @@
         .qty-btn:hover { background: #2c3e50; }
         .qty-val { width: 30px; text-align: center; font-size: 0.85em; font-weight: bold;}
         .cart-price { color: var(--accent-green); font-weight: bold; font-size: 0.9em;}
-        .cart-badge { font-size: 0.7em; color: #95a5a6; display: block; margin-top: 2px;}
         .cart-summary { padding: 15px; background: rgba(0,0,0,0.2); border-top: 1px solid #2c3e50; }
 
         /* MODAL DE EDICIÓN */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 100; justify-content: center; align-items: center; }
-        .modal-content { background: white; border-radius: 5px; padding: 20px; width: 400px; display: flex; flex-direction: column; gap: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); color: black;}
+        .modal-content { background: white; border-radius: 5px; padding: 20px; width: 450px; display: flex; flex-direction: column; gap: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); color: black;}
     </style>
 </head>
 <body>
@@ -125,9 +108,7 @@
         <div class="data-list">
             <table>
                 <thead><tr><th>Cuarto</th><th>Paciente</th></tr></thead>
-                <tbody id="lista-pacientes">
-                    <tr><td colspan="2" style="text-align: center;">Cargando...</td></tr>
-                </tbody>
+                <tbody id="lista-pacientes"><tr><td colspan="2" style="text-align: center;">Cargando...</td></tr></tbody>
             </table>
         </div>
     </section>
@@ -140,9 +121,7 @@
             </div>
             <div class="data-list">
                 <table>
-                    <thead>
-                        <tr><th>Concepto</th><th>Cant.</th><th>Total</th><th>Acreditado a</th></tr>
-                    </thead>
+                    <thead><tr><th>Concepto</th><th>Cant.</th><th>Total</th><th>Acreditado a</th></tr></thead>
                     <tbody id="lista-transacciones"></tbody>
                 </table>
             </div>
@@ -156,7 +135,6 @@
 
     <section>
         <div class="panel-header">Catálogo de Cargos <span>[F2]</span></div>
-        
         <div class="search-container" style="background:#eef2f5; border-bottom: 2px solid var(--primary-blue);">
             <label style="font-size: 0.8em; font-weight: bold; color: var(--primary-blue); display: block; margin-bottom: 5px;">Acreditar movimiento a:</label>
             <select id="select-empleado" style="width:100%; padding:8px; font-size:0.9em; border: 1px solid var(--border-color); border-radius: 3px;">
@@ -165,30 +143,17 @@
                 <option value="dr_arreola">Dr. Arreola</option>
             </select>
         </div>
-
         <div class="search-container">
             <input type="text" id="inventory-search" placeholder="Buscar código o descripción...">
         </div>
-
         <div class="dual-list-container">
             <div class="list-section">
                 <div class="list-title">Servicios y Paquetes (Clic para confirmar)</div>
-                <div class="data-list">
-                    <table id="tabla-servicios-main">
-                        <thead><tr><th>Descripción</th><th>Precio</th></tr></thead>
-                        <tbody id="lista-servicios"></tbody>
-                    </table>
-                </div>
+                <div class="data-list"><table id="tabla-servicios-main"><thead><tr><th>Descripción</th><th>Precio</th></tr></thead><tbody id="lista-servicios"></tbody></table></div>
             </div>
-
             <div class="list-section">
                 <div class="list-title">Inventario Físico (Clic para pre-checkout)</div>
-                <div class="data-list">
-                    <table id="tabla-inventario-main">
-                        <thead><tr><th>Descripción</th><th>Stock</th><th>Precio</th></tr></thead>
-                        <tbody id="lista-inventario"></tbody>
-                    </table>
-                </div>
+                <div class="data-list"><table id="tabla-inventario-main"><thead><tr><th>Descripción</th><th>Stock</th><th>Precio</th></tr></thead><tbody id="lista-inventario"></tbody></table></div>
             </div>
         </div>
     </section>
@@ -196,28 +161,40 @@
 
 <div id="edit-patient-modal" class="modal-overlay">
     <div class="modal-content">
-        <h3 style="margin:0; color:var(--primary-blue);">✏️ Expediente / Datos de Cuenta</h3>
+        <h3 style="margin:0; color:var(--primary-blue);">✏️ Expediente / Configuración de Cuarto</h3>
         
-        <div>
-            <label style="font-size:0.85em; font-weight:bold; display:block; margin-bottom:5px;">Nombre Completo</label>
-            <div style="display:flex; gap:5px;">
+        <div style="display:flex; gap:10px;">
+            <div style="flex:2;">
+                <label style="font-size:0.85em; font-weight:bold; display:block; margin-bottom:5px;">Nombre Real del Paciente</label>
                 <input type="text" id="edit-nombre">
-                <button class="btn-modal btn-dark" onclick="document.getElementById('edit-nombre').value='PACIENTE ANÓNIMO'" style="padding:0 10px;">👤 Anónimo</button>
+            </div>
+            <div style="flex:1;">
+                <label style="font-size:0.85em; font-weight:bold; display:block; margin-bottom:5px;">Cuarto</label>
+                <input type="text" id="edit-cuarto">
             </div>
         </div>
 
         <div>
-            <label style="font-size:0.85em; font-weight:bold; display:block; margin-bottom:5px;">Cuarto / Cama Asignada</label>
-            <input type="text" id="edit-cuarto">
+            <label style="cursor:pointer; display:inline-flex; align-items:center; gap:8px; font-size:0.9em; background:#f4f7f6; padding:8px; border-radius:4px; border:1px solid #ccc; width:100%; box-sizing:border-box;">
+                <input type="checkbox" id="edit-anonimo" style="width:auto;"> 
+                <strong>🕵️ Modo Anónimo</strong> (Ocultar identidad en la Tablet)
+            </label>
         </div>
 
-        <div>
-            <label style="font-size:0.85em; font-weight:bold; display:block; margin-bottom:5px;">Observaciones / Alergias (Visible en Tablet)</label>
-            <textarea id="edit-alergias" rows="3" style="resize:none;" placeholder="Ej. Alérgico a penicilina, dieta líquida..."></textarea>
+        <div style="border-top:1px solid #eee; padding-top:10px;">
+            <label style="font-size:0.85em; font-weight:bold; display:block; margin-bottom:5px;">Nivel de Observación</label>
+            <select id="edit-nivel" style="margin-bottom:10px;">
+                <option value="baja">🔵 Estado General (Azul)</option>
+                <option value="media">🟠 Precaución / Dieta (Naranja)</option>
+                <option value="alta">🔴 Riesgo / Alergia Importante (Rojo)</option>
+            </select>
+            
+            <label style="font-size:0.85em; font-weight:bold; display:block; margin-bottom:5px;">Detalle de Observación (Visible en Tablet)</label>
+            <textarea id="edit-alergias" rows="3" style="resize:none;" placeholder="Ej. Alérgico a penicilina, reposo absoluto..."></textarea>
         </div>
 
         <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:10px;">
-            <button class="btn-modal btn-red" onclick="cerrarModalEdicion()">Cancelar [ESC]</button>
+            <button class="btn-modal btn-danger" onclick="cerrarModalEdicion()">Cancelar [ESC]</button>
             <button class="btn-modal btn-success" onclick="guardarEdicionPaciente()">💾 Guardar [ENTER]</button>
         </div>
     </div>
@@ -241,67 +218,37 @@
     const db = initializeFirestore(app, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) });
     const auth = getAuth(app);
 
-    // Hacer funciones accesibles globalmente
     window.modificarCantidad = modificarCantidad;
     window.vaciarCarrito = vaciarCarrito;
     window.abrirModalEdicion = abrirModalEdicion;
     window.cerrarModalEdicion = cerrarModalEdicion;
     window.guardarEdicionPaciente = guardarEdicionPaciente;
 
-    window.AppState = {
-        pacienteActualId: null,
-        pacienteActualData: null,
-        uidRecepcionista: null,
-        unsubscribeTransacciones: null,
-        carrito: {} 
-    };
+    window.AppState = { pacienteActualId: null, pacienteActualData: null, uidRecepcionista: null, unsubscribeTransacciones: null, carrito: {} };
 
     onAuthStateChanged(auth, (user) => {
         if (user) {
-            document.getElementById('user-display').innerText = user.email;
-            AppState.uidRecepcionista = user.uid;
-            iniciarReloj();
-            configurarPantallaCompleta();
-            configurarBuscadores();
-            iniciarSistema();
-        } else {
-            window.location.href = "login.html";
-        }
+            document.getElementById('user-display').innerText = user.email; AppState.uidRecepcionista = user.uid;
+            iniciarReloj(); configurarPantallaCompleta(); configurarBuscadores(); iniciarSistema();
+        } else { window.location.href = "login.html"; }
     });
 
     document.getElementById('btn-logout').addEventListener('click', () => { signOut(auth); });
     document.getElementById('btn-vaciar-carrito').addEventListener('click', vaciarCarrito);
 
-    /* ==========================================
-       ATAJOS DE TECLADO PARA EL MODAL
-       ========================================== */
     document.addEventListener('keydown', (e) => {
         const modal = document.getElementById('edit-patient-modal');
         if (modal.style.display === 'flex') {
             if (e.key === 'Escape') cerrarModalEdicion();
-            else if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
-                e.preventDefault();
-                guardarEdicionPaciente();
-            }
+            else if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') { e.preventDefault(); guardarEdicionPaciente(); }
         }
     });
 
-    function iniciarSistema() {
-        escucharPacientesActivos();
-        escucharServiciosYPaquetes();
-        escucharInventarioFisico();
-    }
+    function iniciarSistema() { escucharPacientesActivos(); escucharServiciosYPaquetes(); escucharInventarioFisico(); }
 
     function configurarBuscadores() {
-        document.getElementById('search-patients').addEventListener('input', (e) => {
-            const term = e.target.value.toLowerCase();
-            document.querySelectorAll('#lista-pacientes tr').forEach(row => { row.style.display = row.innerText.toLowerCase().includes(term) ? '' : 'none'; });
-        });
-        document.getElementById('inventory-search').addEventListener('input', (e) => {
-            const term = e.target.value.toLowerCase();
-            document.querySelectorAll('#lista-servicios tr').forEach(row => { row.style.display = row.innerText.toLowerCase().includes(term) ? '' : 'none'; });
-            document.querySelectorAll('#lista-inventario tr').forEach(row => { row.style.display = row.innerText.toLowerCase().includes(term) ? '' : 'none'; });
-        });
+        document.getElementById('search-patients').addEventListener('input', (e) => { const term = e.target.value.toLowerCase(); document.querySelectorAll('#lista-pacientes tr').forEach(row => { row.style.display = row.innerText.toLowerCase().includes(term) ? '' : 'none'; }); });
+        document.getElementById('inventory-search').addEventListener('input', (e) => { const term = e.target.value.toLowerCase(); document.querySelectorAll('#lista-servicios tr').forEach(row => { row.style.display = row.innerText.toLowerCase().includes(term) ? '' : 'none'; }); document.querySelectorAll('#lista-inventario tr').forEach(row => { row.style.display = row.innerText.toLowerCase().includes(term) ? '' : 'none'; }); });
     }
 
     function escucharPacientesActivos() {
@@ -310,7 +257,10 @@
             snap.forEach((docSnap) => {
                 const data = docSnap.data(); const tr = document.createElement('tr');
                 if (AppState.pacienteActualId === docSnap.id) tr.classList.add('selected-row');
-                tr.innerHTML = `<td>${data.cuarto_id || 'Amb.'}</td><td>${data.paciente_nombre}</td>`;
+                
+                // Si es anónimo, mostramos el emoji de espía en la lista lateral
+                const iconoAnonimo = data.es_anonimo ? ' 🕵️' : '';
+                tr.innerHTML = `<td>${data.cuarto_id || 'Amb.'}</td><td>${data.paciente_nombre}${iconoAnonimo}</td>`;
                 tr.onclick = () => seleccionarPaciente(docSnap.id, data, tr);
                 tbody.appendChild(tr);
             });
@@ -318,29 +268,14 @@
     }
 
     function seleccionarPaciente(id, data, filaHtml) {
-        if(Object.keys(AppState.carrito).length > 0) {
-            if(!confirm("Tienes insumos pendientes en el carrito. ¿Vaciar y cambiar de paciente?")) return;
-            vaciarCarrito();
-        }
+        if(Object.keys(AppState.carrito).length > 0) { if(!confirm("Tienes insumos en carrito. ¿Vaciar y cambiar de paciente?")) return; vaciarCarrito(); }
 
         AppState.pacienteActualId = id; AppState.pacienteActualData = data;
         document.querySelectorAll('#lista-pacientes tr').forEach(r => r.classList.remove('selected-row'));
-        filaHtml.classList.add('selected-row');
-        document.getElementById('header-cuenta').innerHTML = `Cuenta del Paciente <span>CUARTO ${data.cuarto_id || 'AMB'}</span>`;
+        if(filaHtml) filaHtml.classList.add('selected-row');
         
-        // AQUÍ INYECTAMOS EL BOTÓN DE EDITAR PACIENTE
-        document.getElementById('resumen-cuenta').innerHTML = `
-            <div style="flex:1;">
-                <div style="display:flex; align-items:center; gap:10px;">
-                    <span style="font-size:1.1em;">Paciente: <strong>${data.paciente_nombre}</strong></span>
-                    <button style="background:transparent; border:none; cursor:pointer; font-size:1.2em; padding:0;" onclick="abrirModalEdicion()" title="Editar datos">✏️</button>
-                </div>
-                <div style="font-size:0.85em; color:#7f8c8d; margin-top:5px; max-width: 90%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                    <strong style="color:#c0392b;">Obs:</strong> ${data.alergias || 'Ninguna registrada'}
-                </div>
-            </div>
-            <div class="total-amount">$${(data.total || 0).toLocaleString('es-MX')}</div>
-        `;
+        document.getElementById('header-cuenta').innerHTML = `Cuenta del Paciente <span>CUARTO ${data.cuarto_id || 'AMB'}</span>`;
+        actualizarPanelDerechoUI(data);
 
         if(AppState.unsubscribeTransacciones) AppState.unsubscribeTransacciones();
         AppState.unsubscribeTransacciones = onSnapshot(query(collection(db, "transactions"), where("pacienteId", "==", id)), (snap) => {
@@ -355,63 +290,70 @@
         });
     }
 
-    /* ==========================================
-       LÓGICA DEL MODAL DE EDICIÓN DE PACIENTE
-       ========================================== */
+    function actualizarPanelDerechoUI(data) {
+        let colorObs = '#3498db'; let bgObs = '#ebf5fb';
+        if(data.nivel_observacion === 'alta') { colorObs = '#c0392b'; bgObs = '#fdedec'; }
+        else if(data.nivel_observacion === 'media') { colorObs = '#d35400'; bgObs = '#fdf2e9'; }
+
+        const badgeAnonimo = data.es_anonimo ? `<span style="background:#34495e; color:white; font-size:0.7em; padding:3px 8px; border-radius:10px; margin-left:10px;">🕵️ Modo Anónimo en Tablet</span>` : '';
+
+        document.getElementById('resumen-cuenta').innerHTML = `
+            <div style="flex:1;">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <span style="font-size:1.1em;">Paciente: <strong>${data.paciente_nombre}</strong> ${badgeAnonimo}</span>
+                    <button style="background:var(--primary-blue); border:none; border-radius:4px; color:white; cursor:pointer; font-size:0.8em; padding:4px 8px;" onclick="abrirModalEdicion()" title="Editar datos">✏️ Editar</button>
+                </div>
+                <div style="font-size:0.85em; margin-top:8px; color: ${colorObs}; border: 1px solid ${colorObs}; background: ${bgObs}; padding: 5px 8px; border-radius: 4px; display: inline-block;">
+                    <strong>Observaciones:</strong> ${data.alergias || 'Ninguna registrada'}
+                </div>
+            </div>
+            <div class="total-amount">$${(data.total || 0).toLocaleString('es-MX')}</div>
+        `;
+    }
+
     function abrirModalEdicion() {
         if(!AppState.pacienteActualId) return;
-        document.getElementById('edit-nombre').value = AppState.pacienteActualData.paciente_nombre || '';
-        document.getElementById('edit-cuarto').value = AppState.pacienteActualData.cuarto_id || '';
-        document.getElementById('edit-alergias').value = AppState.pacienteActualData.alergias || '';
+        const p = AppState.pacienteActualData;
+        document.getElementById('edit-nombre').value = p.paciente_nombre || '';
+        document.getElementById('edit-cuarto').value = p.cuarto_id || '';
+        document.getElementById('edit-anonimo').checked = p.es_anonimo || false;
+        document.getElementById('edit-nivel').value = p.nivel_observacion || 'baja';
+        document.getElementById('edit-alergias').value = p.alergias || '';
         
         document.getElementById('edit-patient-modal').style.display = 'flex';
         setTimeout(() => { document.getElementById('edit-nombre').focus(); }, 50);
     }
 
-    function cerrarModalEdicion() {
-        document.getElementById('edit-patient-modal').style.display = 'none';
-    }
+    function cerrarModalEdicion() { document.getElementById('edit-patient-modal').style.display = 'none'; }
 
     async function guardarEdicionPaciente() {
+        const p = AppState.pacienteActualData;
         const nuevoNombre = document.getElementById('edit-nombre').value.trim();
-        const nuevoCuarto = document.getElementById('edit-cuarto').value.trim();
-        const nuevasAlergias = document.getElementById('edit-alergias').value.trim();
+        if(!nuevoNombre) return alert("El paciente debe tener un nombre registrado.");
 
-        if(!nuevoNombre) return alert("El paciente debe tener un nombre o usar 'Paciente Anónimo'.");
+        p.paciente_nombre = nuevoNombre;
+        p.cuarto_id = document.getElementById('edit-cuarto').value.trim();
+        p.es_anonimo = document.getElementById('edit-anonimo').checked;
+        p.nivel_observacion = document.getElementById('edit-nivel').value;
+        p.alergias = document.getElementById('edit-alergias').value.trim();
 
         try {
-            const docRef = doc(db, "accounts", AppState.pacienteActualId);
-            await updateDoc(docRef, {
-                paciente_nombre: nuevoNombre,
-                cuarto_id: nuevoCuarto,
-                alergias: nuevasAlergias
+            await updateDoc(doc(db, "accounts", AppState.pacienteActualId), {
+                paciente_nombre: p.paciente_nombre, cuarto_id: p.cuarto_id,
+                es_anonimo: p.es_anonimo, nivel_observacion: p.nivel_observacion, alergias: p.alergias
             });
-
-            // Actualizamos la variable local en memoria para que la interfaz se refleje rápido
-            AppState.pacienteActualData.paciente_nombre = nuevoNombre;
-            AppState.pacienteActualData.cuarto_id = nuevoCuarto;
-            AppState.pacienteActualData.alergias = nuevasAlergias;
-
+            actualizarPanelDerechoUI(p);
             cerrarModalEdicion();
-            
-        } catch(e) {
-            console.error("Error editando paciente:", e);
-            alert("Error de conexión al guardar.");
-        }
+        } catch(e) { alert("Error al guardar."); }
     }
 
-
-    /* ==========================================
-       RESTO DEL CÓDIGO (Inventario y Cobro)
-       ========================================== */
     function escucharServiciosYPaquetes() {
         onSnapshot(collection(db, "services_and_kits"), (snap) => {
             const tbody = document.getElementById('lista-servicios'); tbody.innerHTML = '';
             snap.forEach((docSnap) => {
                 const item = { id: docSnap.id, ...docSnap.data() };
                 const tr = document.createElement('tr');
-                const icono = item.tipo === 'kit' ? '📦 ' : '🩺 ';
-                tr.innerHTML = `<td>${icono}${item.nombre}</td><td>$${item.precio_venta}</td>`;
+                tr.innerHTML = `<td>${item.tipo === 'kit' ? '📦 ' : '🩺 '}${item.nombre}</td><td>$${item.precio_venta}</td>`;
                 tr.onclick = () => procesarServicioOKit(item); 
                 tbody.appendChild(tr);
             });
@@ -426,8 +368,7 @@
                 if(i.publicado_en_pos) {
                     const tr = document.createElement('tr');
                     tr.innerHTML = `<td>${i.nombre}</td><td class="${i.stock < 10 ? 'stock-warning':''}">${i.stock}</td><td>$${i.precio_venta}</td>`;
-                    tr.onclick = () => agregarAlCarrito(i); 
-                    tbody.appendChild(tr);
+                    tr.onclick = () => agregarAlCarrito(i); tbody.appendChild(tr);
                 }
             });
         });
@@ -435,101 +376,66 @@
 
     async function procesarServicioOKit(item) {
         if (!AppState.pacienteActualId) return alert("Selecciona un paciente primero.");
-        const selector = document.getElementById('select-empleado');
-        const ac_id = selector.value;
-        const ac_nombre = selector.options[selector.selectedIndex].text;
-
-        const tipoTexto = item.tipo === 'kit' ? 'Paquete' : 'Servicio';
-        if(!confirm(`¿Cargar ${tipoTexto} "${item.nombre}" a ${AppState.pacienteActualData.paciente_nombre}?\nAcreditado a: ${ac_nombre}`)) return;
+        const sel = document.getElementById('select-empleado');
+        if(!confirm(`¿Cargar ${item.tipo === 'kit' ? 'Paquete' : 'Servicio'} "${item.nombre}" a ${AppState.pacienteActualData.paciente_nombre}?\nAcreditado a: ${sel.options[sel.selectedIndex].text}`)) return;
 
         try {
             const batch = writeBatch(db);
-            const refTx = doc(collection(db, "transactions"));
-            
-            batch.set(refTx, {
-                pacienteId: AppState.pacienteActualId,
-                itemId: item.id,
-                nombre: item.nombre,
-                cantidad: 1,
-                precio_venta: item.precio_venta,
-                usuario_registro: AppState.uidRecepcionista,
-                acreditado_a_id: ac_id,
-                acreditado_a_nombre: ac_nombre,
-                timestamp: serverTimestamp(),
-                tipo_operacion: item.tipo === 'kit' ? 'cargo_kit' : 'cargo_servicio'
+            batch.set(doc(collection(db, "transactions")), {
+                pacienteId: AppState.pacienteActualId, itemId: item.id, nombre: item.nombre, cantidad: 1, precio_venta: item.precio_venta,
+                usuario_registro: AppState.uidRecepcionista, acreditado_a_id: sel.value, acreditado_a_nombre: sel.options[sel.selectedIndex].text,
+                timestamp: serverTimestamp(), tipo_operacion: item.tipo === 'kit' ? 'cargo_kit' : 'cargo_servicio'
             });
+            batch.update(doc(db, "accounts", AppState.pacienteActualId), { total: increment(item.precio_venta) });
 
-            const accRef = doc(db, "accounts", AppState.pacienteActualId);
-            batch.update(accRef, { total: increment(item.precio_venta) });
-
-            if (item.tipo === 'kit' && item.insumos_vinculados && item.insumos_vinculados.length > 0) {
-                item.insumos_vinculados.forEach(insumoInterno => {
-                    if (insumoInterno.tipo_item === 'fisico') {
-                        const invRef = doc(db, "inventory_master", insumoInterno.id_insumo);
-                        batch.update(invRef, { stock: increment(-insumoInterno.cantidad) });
-                    }
+            if (item.tipo === 'kit' && item.insumos_vinculados) {
+                item.insumos_vinculados.forEach(insumo => {
+                    if (insumo.tipo_item === 'fisico') batch.update(doc(db, "inventory_master", insumo.id_insumo), { stock: increment(-insumo.cantidad) });
                 });
             }
-
             await batch.commit();
-            
-        } catch (error) { 
-            console.error(error);
-            alert("Error procesando el " + (item.tipo === 'kit' ? "paquete." : "servicio.")); 
-        }
+        } catch (error) { alert("Error procesando."); }
     }
 
     function agregarAlCarrito(item) {
         if (!AppState.pacienteActualId) return alert("Selecciona un paciente primero.");
         if (item.stock <= 0) return alert("No hay stock disponible.");
-        const selector = document.getElementById('select-empleado');
-        const cartKey = `${item.id}_${selector.value}`;
+        const sel = document.getElementById('select-empleado');
+        const cartKey = `${item.id}_${sel.value}`;
 
         if (AppState.carrito[cartKey]) {
             if(AppState.carrito[cartKey].cantidad >= item.stock) return alert("Stock máximo alcanzado.");
             AppState.carrito[cartKey].cantidad += 1;
-        } else {
-            AppState.carrito[cartKey] = { item: item, cantidad: 1, acreditado_a_id: selector.value, acreditado_a_nombre: selector.options[selector.selectedIndex].text };
-        }
+        } else AppState.carrito[cartKey] = { item: item, cantidad: 1, acreditado_a_id: sel.value, acreditado_a_nombre: sel.options[sel.selectedIndex].text };
         renderizarCarrito();
     }
 
-    function modificarCantidad(cartKey, delta) {
-        if (!AppState.carrito[cartKey]) return;
-        const obj = AppState.carrito[cartKey];
-        const nuevaCantidad = obj.cantidad + delta;
-
-        if (nuevaCantidad <= 0) delete AppState.carrito[cartKey];
-        else if (nuevaCantidad <= obj.item.stock) obj.cantidad = nuevaCantidad;
-        else alert("No hay suficiente stock en inventario.");
+    function modificarCantidad(k, delta) {
+        if (!AppState.carrito[k]) return;
+        const obj = AppState.carrito[k];
+        const nuevaCant = obj.cantidad + delta;
+        if (nuevaCant <= 0) delete AppState.carrito[k];
+        else if (nuevaCant <= obj.item.stock) obj.cantidad = nuevaCant;
+        else alert("Sin stock suficiente.");
         renderizarCarrito();
     }
 
     function vaciarCarrito() { AppState.carrito = {}; renderizarCarrito(); }
 
     function renderizarCarrito() {
-        const lista = document.getElementById('cart-list');
-        const txtTotal = document.getElementById('cart-total-text');
-        const items = Object.keys(AppState.carrito);
-        lista.innerHTML = ''; let totalCash = 0;
-
+        const lista = document.getElementById('cart-list'); const txtTotal = document.getElementById('cart-total-text');
+        const items = Object.keys(AppState.carrito); lista.innerHTML = ''; let totalCash = 0;
         if(items.length === 0) { document.documentElement.style.setProperty('--cart-width', '0px'); return; }
+        
         document.documentElement.style.setProperty('--cart-width', '300px');
-
         items.forEach(key => {
-            const cObj = AppState.carrito[key];
-            const subtotal = cObj.cantidad * cObj.item.precio_venta;
-            totalCash += subtotal;
+            const cObj = AppState.carrito[key]; const subtotal = cObj.cantidad * cObj.item.precio_venta; totalCash += subtotal;
             lista.innerHTML += `
             <div class="cart-item">
                 <div class="cart-item-title">${cObj.item.nombre}</div>
                 <div class="cart-badge">Acreditado a: ${cObj.acreditado_a_nombre}</div>
                 <div class="cart-controls">
-                    <div class="qty-box">
-                        <button class="qty-btn" onclick="modificarCantidad('${key}', -1)">-</button>
-                        <div class="qty-val">${cObj.cantidad}</div>
-                        <button class="qty-btn" onclick="modificarCantidad('${key}', 1)">+</button>
-                    </div>
+                    <div class="qty-box"><button class="qty-btn" onclick="modificarCantidad('${key}', -1)">-</button><div class="qty-val">${cObj.cantidad}</div><button class="qty-btn" onclick="modificarCantidad('${key}', 1)">+</button></div>
                     <div class="cart-price">$${subtotal}</div>
                 </div>
             </div>`;
@@ -538,32 +444,20 @@
     }
 
     document.getElementById('btn-procesar-carrito').addEventListener('click', async () => {
-        const btn = document.getElementById('btn-procesar-carrito');
-        btn.disabled = true; btn.innerText = "Guardando...";
-
-        const batch = writeBatch(db);
-        const transRef = collection(db, "transactions");
-        const accRef = doc(db, "accounts", AppState.pacienteActualId);
-        let granTotal = 0;
+        const btn = document.getElementById('btn-procesar-carrito'); btn.disabled = true; btn.innerText = "Guardando...";
+        const batch = writeBatch(db); const transRef = collection(db, "transactions"); let granTotal = 0;
 
         for (const key in AppState.carrito) {
-            const obj = AppState.carrito[key];
-            const subtotal = obj.cantidad * obj.item.precio_venta;
-            granTotal += subtotal;
-
+            const obj = AppState.carrito[key]; const subtotal = obj.cantidad * obj.item.precio_venta; granTotal += subtotal;
             batch.set(doc(transRef), {
-                pacienteId: AppState.pacienteActualId, itemId: obj.item.id, nombre: obj.item.nombre,
-                cantidad: obj.cantidad, precio_venta: subtotal, usuario_registro: AppState.uidRecepcionista,
-                acreditado_a_id: obj.acreditado_a_id, acreditado_a_nombre: obj.acreditado_a_nombre,
-                timestamp: serverTimestamp(), tipo_operacion: 'cargo_directo'
+                pacienteId: AppState.pacienteActualId, itemId: obj.item.id, nombre: obj.item.nombre, cantidad: obj.cantidad, precio_venta: subtotal,
+                usuario_registro: AppState.uidRecepcionista, acreditado_a_id: obj.acreditado_a_id, acreditado_a_nombre: obj.acreditado_a_nombre, timestamp: serverTimestamp(), tipo_operacion: 'cargo_directo'
             });
             batch.update(doc(db, "inventory_master", obj.item.id), { stock: increment(-obj.cantidad) });
         }
-        batch.update(accRef, { total: increment(granTotal) });
+        batch.update(doc(db, "accounts", AppState.pacienteActualId), { total: increment(granTotal) });
 
-        try { await batch.commit(); vaciarCarrito(); } 
-        catch (error) { alert("Error al procesar lote."); } 
-        finally { btn.disabled = false; btn.innerText = "Confirmar Cargos"; }
+        try { await batch.commit(); vaciarCarrito(); } catch (error) { alert("Error."); } finally { btn.disabled = false; btn.innerText = "Confirmar Cargos"; }
     });
 
     function iniciarReloj() { setInterval(() => { document.getElementById('clock').innerText = new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }); }, 1000); }
