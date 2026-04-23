@@ -49,6 +49,7 @@
         .btn-primary { background-color: var(--primary-blue); }
         .btn-success { background-color: var(--accent-green); }
         .btn-danger { background-color: var(--danger-red); }
+        .btn-dark { background-color: #34495e; }
         
         .nurse-badge { font-size: 0.75em; background: #e8f5e9; color: #2e7d32; padding: 2px 6px; border-radius: 3px; font-weight: 600;}
         .system-badge { font-size: 0.75em; background: #e3f2fd; color: #1565c0; padding: 2px 6px; border-radius: 3px; font-weight: 600;}
@@ -195,7 +196,7 @@
 
         <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:10px;">
             <button class="btn-modal btn-danger" onclick="cerrarModalEdicion()">Cancelar [ESC]</button>
-            <button class="btn-modal btn-success" onclick="guardarEdicionPaciente()">💾 Guardar [ENTER]</button>
+            <button class="btn-modal btn-success" id="btn-guardar-edicion" onclick="guardarEdicionPaciente()">💾 Guardar [ENTER]</button>
         </div>
     </div>
 </div>
@@ -258,7 +259,6 @@
                 const data = docSnap.data(); const tr = document.createElement('tr');
                 if (AppState.pacienteActualId === docSnap.id) tr.classList.add('selected-row');
                 
-                // Si es anónimo, mostramos el emoji de espía en la lista lateral
                 const iconoAnonimo = data.es_anonimo ? ' 🕵️' : '';
                 tr.innerHTML = `<td>${data.cuarto_id || 'Amb.'}</td><td>${data.paciente_nombre}${iconoAnonimo}</td>`;
                 tr.onclick = () => seleccionarPaciente(docSnap.id, data, tr);
@@ -326,25 +326,52 @@
 
     function cerrarModalEdicion() { document.getElementById('edit-patient-modal').style.display = 'none'; }
 
+    // VERSIÓN A PRUEBA DE BALAS
     async function guardarEdicionPaciente() {
-        const p = AppState.pacienteActualData;
-        const nuevoNombre = document.getElementById('edit-nombre').value.trim();
-        if(!nuevoNombre) return alert("El paciente debe tener un nombre registrado.");
+        const btnGuardar = document.getElementById('btn-guardar-edicion');
+        btnGuardar.innerText = "Guardando...";
+        btnGuardar.disabled = true;
 
-        p.paciente_nombre = nuevoNombre;
-        p.cuarto_id = document.getElementById('edit-cuarto').value.trim();
-        p.es_anonimo = document.getElementById('edit-anonimo').checked;
-        p.nivel_observacion = document.getElementById('edit-nivel').value;
-        p.alergias = document.getElementById('edit-alergias').value.trim();
+        const nuevoNombre = document.getElementById('edit-nombre').value.trim();
+        const nuevoCuarto = document.getElementById('edit-cuarto').value.trim();
+        const esAnonimo = document.getElementById('edit-anonimo').checked;
+        const nuevoNivel = document.getElementById('edit-nivel').value;
+        const nuevasAlergias = document.getElementById('edit-alergias').value.trim();
+
+        if(!nuevoNombre) {
+            alert("El paciente debe tener un nombre registrado.");
+            btnGuardar.innerText = "💾 Guardar [ENTER]";
+            btnGuardar.disabled = false;
+            return;
+        }
 
         try {
-            await updateDoc(doc(db, "accounts", AppState.pacienteActualId), {
-                paciente_nombre: p.paciente_nombre, cuarto_id: p.cuarto_id,
-                es_anonimo: p.es_anonimo, nivel_observacion: p.nivel_observacion, alergias: p.alergias
+            const docRef = doc(db, "accounts", AppState.pacienteActualId);
+            await updateDoc(docRef, {
+                paciente_nombre: nuevoNombre,
+                cuarto_id: nuevoCuarto,
+                es_anonimo: esAnonimo,
+                nivel_observacion: nuevoNivel,
+                alergias: nuevasAlergias
             });
-            actualizarPanelDerechoUI(p);
+
+            // Si Firebase confirma el éxito, actualizamos la memoria local
+            AppState.pacienteActualData.paciente_nombre = nuevoNombre;
+            AppState.pacienteActualData.cuarto_id = nuevoCuarto;
+            AppState.pacienteActualData.es_anonimo = esAnonimo;
+            AppState.pacienteActualData.nivel_observacion = nuevoNivel;
+            AppState.pacienteActualData.alergias = nuevasAlergias;
+
+            actualizarPanelDerechoUI(AppState.pacienteActualData);
             cerrarModalEdicion();
-        } catch(e) { alert("Error al guardar."); }
+            
+        } catch(e) {
+            console.error("Error crítico de Firebase al editar:", e);
+            alert("Error de conexión al intentar guardar. Verifique su red.");
+        } finally {
+            btnGuardar.innerText = "💾 Guardar [ENTER]";
+            btnGuardar.disabled = false;
+        }
     }
 
     function escucharServiciosYPaquetes() {
