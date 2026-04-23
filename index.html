@@ -555,12 +555,17 @@
         document.getElementById('print-modal').style.display = 'none';
     }
 
-    async function ejecutarExportacionPDF() {
+async function ejecutarExportacionPDF() {
         const btn = document.getElementById('btn-generar-pdf');
         btn.innerText = "⏳ Generando...";
         btn.disabled = true;
 
         try {
+            // 1. SEGURO DE LIBRERÍAS: Verificamos que el internet haya cargado jsPDF
+            if (!window.jspdf || !window.jspdf.jsPDF) {
+                throw new Error("La librería de PDF no cargó correctamente. Revisa tu conexión o desactiva tu bloqueador de anuncios.");
+            }
+
             const data = AppState.pacienteActualData;
             
             // Consultar Transacciones
@@ -570,22 +575,29 @@
             snap.forEach(d => txs.push(d.data()));
             txs.sort((a,b) => (a.timestamp?.toMillis()||0) - (b.timestamp?.toMillis()||0));
 
-            // Preparar datos para AutoTable
+            // Preparar datos para la tabla (Con seguro contra fechas pendientes)
             const tableBody = txs.map(tx => [
-                tx.timestamp ? new Date(tx.timestamp.toDate()).toLocaleString('es-MX') : 'Pendiente',
+                (tx.timestamp && typeof tx.timestamp.toDate === 'function') ? new Date(tx.timestamp.toDate()).toLocaleString('es-MX') : 'Pendiente',
                 tx.nombre,
                 tx.cantidad.toString(),
                 tx.acreditado_a_nombre,
                 `$${tx.precio_venta.toLocaleString('es-MX')}`
             ]);
 
-            // Formatear Observaciones (Sustituir enters por diagonales)
-            let observacionesStr = data.alergias || 'Ninguna';
+            // 2. SEGURO DE TEXTOS: Forzamos que las observaciones sean texto antes de buscar "enters"
+            let observacionesStr = data.alergias ? String(data.alergias) : 'Ninguna registrada';
             observacionesStr = observacionesStr.replace(/\n/g, ' / ');
 
-            // Formato de Fechas
+            // 3. SEGURO DE FECHAS: Evaluamos todos los posibles estados de la fecha de ingreso
             const fechaEmision = new Date().toLocaleString('es-MX');
-            const fechaIngreso = data.fecha_ingreso ? new Date(data.fecha_ingreso.toDate()).toLocaleString('es-MX') : 'N/A';
+            let fechaIngreso = 'N/A';
+            if (data.fecha_ingreso) {
+                if (typeof data.fecha_ingreso.toDate === 'function') {
+                    fechaIngreso = new Date(data.fecha_ingreso.toDate()).toLocaleString('es-MX'); // Fecha de Firebase
+                } else if (data.fecha_ingreso instanceof Date) {
+                    fechaIngreso = data.fecha_ingreso.toLocaleString('es-MX'); // Fecha manual recién guardada
+                }
+            }
 
             // Iniciar jsPDF
             const { jsPDF } = window.jspdf;
@@ -612,7 +624,7 @@
             doc.setLineWidth(1.5);
             doc.line(40, 65, pageWidth - 40, 65);
 
-            // Bloque de Información del Paciente (Grid visual)
+            // Bloque de Información del Paciente
             doc.setTextColor(44, 62, 80);
             doc.setFontSize(10);
             
@@ -634,17 +646,21 @@
             doc.setFont("helvetica", "bold");
             doc.text("Estado:", 300, 85);
             doc.setFont("helvetica", "normal");
-            doc.text(data.estado.toUpperCase(), 350, 85);
+            doc.text(data.estado ? data.estado.toUpperCase() : 'DESCONOCIDO', 350, 85);
 
             doc.setFont("helvetica", "bold");
             doc.text("Observaciones:", 300, 100);
             doc.setFont("helvetica", "normal");
             
-            // Multiline en caso de que sea largo aunque tenga diagonales
+            // Multiline de observaciones
             const splitObs = doc.splitTextToSize(observacionesStr, 230);
             doc.text(splitObs, 385, 100);
 
             // Generar Tabla
+            if (typeof doc.autoTable !== 'function') {
+                throw new Error("El plugin de tablas (AutoTable) no se cargó correctamente.");
+            }
+
             doc.autoTable({
                 startY: 135,
                 head: [['Fecha / Hora', 'Concepto', 'Cant.', 'Acreditado a', 'Subtotal']],
@@ -672,7 +688,7 @@
             if(document.getElementById('chk-sig-familiar').checked) firmas.push("Familiar / Responsable");
 
             if (firmas.length > 0) {
-                finalY += 80; // Espacio para firmar
+                finalY += 80; // Espacio vertical para firmar con pluma
                 
                 // Si se va a salir de la hoja, creamos página nueva
                 if (finalY > doc.internal.pageSize.height - 40) {
@@ -685,7 +701,7 @@
                 doc.setFontSize(10);
                 doc.setFont("helvetica", "normal");
 
-                // Distribución algorítmica
+                // Distribución algorítmica perfecta
                 firmas.forEach((firma, index) => {
                     let xPos;
                     if (firmas.length === 1) {
@@ -699,7 +715,7 @@
                     // Línea (Ancho de 140px centrado en xPos)
                     doc.line(xPos - 70, finalY, xPos + 70, finalY);
                     
-                    // Texto
+                    // Texto debajo de la línea
                     doc.text(firma, xPos, finalY + 15, { align: 'center' });
                 });
             }
@@ -711,7 +727,7 @@
 
         } catch(error) {
             console.error("Error al exportar PDF:", error);
-            alert("Ocurrió un error al generar el PDF.");
+            alert(`Ocurrió un error al generar el PDF:\n${error.message}`);
         } finally {
             btn.innerText = "📄 Generar PDF";
             btn.disabled = false;
