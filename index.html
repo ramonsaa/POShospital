@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hospital POS - Panel de Control</title>
+    <title>Hospital POS - Recepción Principal</title>
     <style>
         :root {
             --primary-blue: #2c3e50;
@@ -41,8 +41,8 @@
         .panel-header { background-color: var(--secondary-blue); color: var(--white); padding: 8px 12px; font-size: 0.85em; font-weight: bold; text-transform: uppercase; display: flex; justify-content: space-between; align-items: center; }
         
         .search-container { padding: 10px; background: #fdfdfd; border-bottom: 1px solid var(--border-color); }
-        input[type="text"] { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid var(--border-color); outline: none; }
-        input[type="text"]:focus { border-color: var(--accent-green); }
+        input[type="text"], textarea, input[type="number"] { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid var(--border-color); outline: none; border-radius: 3px;}
+        input[type="text"]:focus, textarea:focus { border-color: var(--accent-green); }
         
         .data-list { flex: 1; overflow-y: auto; }
         .dual-list-container { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
@@ -60,10 +60,11 @@
         .total-amount { font-size: 1.6em; color: var(--primary-blue); font-weight: bold; text-align: right;}
         .action-bar { padding: 10px; border-top: 1px solid var(--border-color); display: flex; gap: 10px; background: #fdfdfd;}
         
-        button.btn-action { padding: 8px 15px; cursor: pointer; border: none; font-size: 0.85em; font-weight: bold; border-radius: 3px;}
-        .btn-primary { background-color: var(--primary-blue); color: white; }
-        .btn-success { background-color: var(--accent-green); color: white; }
-        .btn-danger { background-color: var(--danger-red); color: white; }
+        button.btn-action, .btn-modal { padding: 8px 15px; cursor: pointer; border: none; font-size: 0.85em; font-weight: bold; border-radius: 3px; color:white;}
+        .btn-primary { background-color: var(--primary-blue); }
+        .btn-success { background-color: var(--accent-green); }
+        .btn-danger { background-color: var(--danger-red); }
+        .btn-dark { background-color: #34495e; }
         
         .nurse-badge { font-size: 0.75em; background: #e8f5e9; color: #2e7d32; padding: 2px 6px; border-radius: 3px; font-weight: 600;}
         .system-badge { font-size: 0.75em; background: #e3f2fd; color: #1565c0; padding: 2px 6px; border-radius: 3px; font-weight: 600;}
@@ -83,12 +84,16 @@
         .cart-price { color: var(--accent-green); font-weight: bold; font-size: 0.9em;}
         .cart-badge { font-size: 0.7em; color: #95a5a6; display: block; margin-top: 2px;}
         .cart-summary { padding: 15px; background: rgba(0,0,0,0.2); border-top: 1px solid #2c3e50; }
+
+        /* MODAL DE EDICIÓN */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 100; justify-content: center; align-items: center; }
+        .modal-content { background: white; border-radius: 5px; padding: 20px; width: 400px; display: flex; flex-direction: column; gap: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); color: black;}
     </style>
 </head>
 <body>
 
 <header>
-    <div><strong>HOSPITAL POS</strong> | Panel Administrativo</div>
+    <div><strong>HOSPITAL POS</strong> | Recepción Principal</div>
     <div class="header-actions">
         <a href="inventory-admin.html" style="color: white; font-size: 0.85em; text-decoration: none; border: 1px solid white; padding: 5px; border-radius: 4px;">📦 Ir a Inventario Maestro</a>
         <span class="user-info"> | <span id="user-display">Verificando sesión...</span></span>
@@ -189,9 +194,38 @@
     </section>
 </main>
 
+<div id="edit-patient-modal" class="modal-overlay">
+    <div class="modal-content">
+        <h3 style="margin:0; color:var(--primary-blue);">✏️ Expediente / Datos de Cuenta</h3>
+        
+        <div>
+            <label style="font-size:0.85em; font-weight:bold; display:block; margin-bottom:5px;">Nombre Completo</label>
+            <div style="display:flex; gap:5px;">
+                <input type="text" id="edit-nombre">
+                <button class="btn-modal btn-dark" onclick="document.getElementById('edit-nombre').value='PACIENTE ANÓNIMO'" style="padding:0 10px;">👤 Anónimo</button>
+            </div>
+        </div>
+
+        <div>
+            <label style="font-size:0.85em; font-weight:bold; display:block; margin-bottom:5px;">Cuarto / Cama Asignada</label>
+            <input type="text" id="edit-cuarto">
+        </div>
+
+        <div>
+            <label style="font-size:0.85em; font-weight:bold; display:block; margin-bottom:5px;">Observaciones / Alergias (Visible en Tablet)</label>
+            <textarea id="edit-alergias" rows="3" style="resize:none;" placeholder="Ej. Alérgico a penicilina, dieta líquida..."></textarea>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:10px;">
+            <button class="btn-modal btn-red" onclick="cerrarModalEdicion()">Cancelar [ESC]</button>
+            <button class="btn-modal btn-success" onclick="guardarEdicionPaciente()">💾 Guardar [ENTER]</button>
+        </div>
+    </div>
+</div>
+
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-    import { getFirestore, collection, query, where, onSnapshot, doc, addDoc, updateDoc, increment, serverTimestamp, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+    import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, collection, query, where, onSnapshot, doc, updateDoc, increment, serverTimestamp, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
     import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
     const firebaseConfig = {
@@ -204,11 +238,15 @@
     };
     
     const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
+    const db = initializeFirestore(app, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) });
     const auth = getAuth(app);
 
+    // Hacer funciones accesibles globalmente
     window.modificarCantidad = modificarCantidad;
     window.vaciarCarrito = vaciarCarrito;
+    window.abrirModalEdicion = abrirModalEdicion;
+    window.cerrarModalEdicion = cerrarModalEdicion;
+    window.guardarEdicionPaciente = guardarEdicionPaciente;
 
     window.AppState = {
         pacienteActualId: null,
@@ -233,6 +271,20 @@
 
     document.getElementById('btn-logout').addEventListener('click', () => { signOut(auth); });
     document.getElementById('btn-vaciar-carrito').addEventListener('click', vaciarCarrito);
+
+    /* ==========================================
+       ATAJOS DE TECLADO PARA EL MODAL
+       ========================================== */
+    document.addEventListener('keydown', (e) => {
+        const modal = document.getElementById('edit-patient-modal');
+        if (modal.style.display === 'flex') {
+            if (e.key === 'Escape') cerrarModalEdicion();
+            else if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
+                e.preventDefault();
+                guardarEdicionPaciente();
+            }
+        }
+    });
 
     function iniciarSistema() {
         escucharPacientesActivos();
@@ -275,7 +327,20 @@
         document.querySelectorAll('#lista-pacientes tr').forEach(r => r.classList.remove('selected-row'));
         filaHtml.classList.add('selected-row');
         document.getElementById('header-cuenta').innerHTML = `Cuenta del Paciente <span>CUARTO ${data.cuarto_id || 'AMB'}</span>`;
-        document.getElementById('resumen-cuenta').innerHTML = `<div>Paciente: <strong>${data.paciente_nombre}</strong></div><div class="total-amount">$${(data.total || 0).toLocaleString('es-MX')}</div>`;
+        
+        // AQUÍ INYECTAMOS EL BOTÓN DE EDITAR PACIENTE
+        document.getElementById('resumen-cuenta').innerHTML = `
+            <div style="flex:1;">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <span style="font-size:1.1em;">Paciente: <strong>${data.paciente_nombre}</strong></span>
+                    <button style="background:transparent; border:none; cursor:pointer; font-size:1.2em; padding:0;" onclick="abrirModalEdicion()" title="Editar datos">✏️</button>
+                </div>
+                <div style="font-size:0.85em; color:#7f8c8d; margin-top:5px; max-width: 90%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                    <strong style="color:#c0392b;">Obs:</strong> ${data.alergias || 'Ninguna registrada'}
+                </div>
+            </div>
+            <div class="total-amount">$${(data.total || 0).toLocaleString('es-MX')}</div>
+        `;
 
         if(AppState.unsubscribeTransacciones) AppState.unsubscribeTransacciones();
         AppState.unsubscribeTransacciones = onSnapshot(query(collection(db, "transactions"), where("pacienteId", "==", id)), (snap) => {
@@ -290,6 +355,55 @@
         });
     }
 
+    /* ==========================================
+       LÓGICA DEL MODAL DE EDICIÓN DE PACIENTE
+       ========================================== */
+    function abrirModalEdicion() {
+        if(!AppState.pacienteActualId) return;
+        document.getElementById('edit-nombre').value = AppState.pacienteActualData.paciente_nombre || '';
+        document.getElementById('edit-cuarto').value = AppState.pacienteActualData.cuarto_id || '';
+        document.getElementById('edit-alergias').value = AppState.pacienteActualData.alergias || '';
+        
+        document.getElementById('edit-patient-modal').style.display = 'flex';
+        setTimeout(() => { document.getElementById('edit-nombre').focus(); }, 50);
+    }
+
+    function cerrarModalEdicion() {
+        document.getElementById('edit-patient-modal').style.display = 'none';
+    }
+
+    async function guardarEdicionPaciente() {
+        const nuevoNombre = document.getElementById('edit-nombre').value.trim();
+        const nuevoCuarto = document.getElementById('edit-cuarto').value.trim();
+        const nuevasAlergias = document.getElementById('edit-alergias').value.trim();
+
+        if(!nuevoNombre) return alert("El paciente debe tener un nombre o usar 'Paciente Anónimo'.");
+
+        try {
+            const docRef = doc(db, "accounts", AppState.pacienteActualId);
+            await updateDoc(docRef, {
+                paciente_nombre: nuevoNombre,
+                cuarto_id: nuevoCuarto,
+                alergias: nuevasAlergias
+            });
+
+            // Actualizamos la variable local en memoria para que la interfaz se refleje rápido
+            AppState.pacienteActualData.paciente_nombre = nuevoNombre;
+            AppState.pacienteActualData.cuarto_id = nuevoCuarto;
+            AppState.pacienteActualData.alergias = nuevasAlergias;
+
+            cerrarModalEdicion();
+            
+        } catch(e) {
+            console.error("Error editando paciente:", e);
+            alert("Error de conexión al guardar.");
+        }
+    }
+
+
+    /* ==========================================
+       RESTO DEL CÓDIGO (Inventario y Cobro)
+       ========================================== */
     function escucharServiciosYPaquetes() {
         onSnapshot(collection(db, "services_and_kits"), (snap) => {
             const tbody = document.getElementById('lista-servicios'); tbody.innerHTML = '';
@@ -298,7 +412,6 @@
                 const tr = document.createElement('tr');
                 const icono = item.tipo === 'kit' ? '📦 ' : '🩺 ';
                 tr.innerHTML = `<td>${icono}${item.nombre}</td><td>$${item.precio_venta}</td>`;
-                // LÓGICA INTELIGENTE: Si es un KIT, le pasamos toda su data (incluyendo 'insumos_vinculados')
                 tr.onclick = () => procesarServicioOKit(item); 
                 tbody.appendChild(tr);
             });
@@ -310,7 +423,6 @@
             const tbody = document.getElementById('lista-inventario'); tbody.innerHTML = '';
             snap.forEach((docSnap) => {
                 const i = { id: docSnap.id, ...docSnap.data(), tipo: 'fisico' };
-                // Solo mostrar en la tabla de recepción si está marcado como 'publicado_en_pos'
                 if(i.publicado_en_pos) {
                     const tr = document.createElement('tr');
                     tr.innerHTML = `<td>${i.nombre}</td><td class="${i.stock < 10 ? 'stock-warning':''}">${i.stock}</td><td>$${i.precio_venta}</td>`;
@@ -321,9 +433,6 @@
         });
     }
 
-    /* ==========================================
-       LÓGICA HÍBRIDA: SERVICIOS Y PAQUETES (KITS)
-       ========================================== */
     async function procesarServicioOKit(item) {
         if (!AppState.pacienteActualId) return alert("Selecciona un paciente primero.");
         const selector = document.getElementById('select-empleado');
@@ -337,7 +446,6 @@
             const batch = writeBatch(db);
             const refTx = doc(collection(db, "transactions"));
             
-            // 1. Cobrar el Kit o Servicio a la cuenta (Se cobra 1 solo monto general)
             batch.set(refTx, {
                 pacienteId: AppState.pacienteActualId,
                 itemId: item.id,
@@ -351,19 +459,15 @@
                 tipo_operacion: item.tipo === 'kit' ? 'cargo_kit' : 'cargo_servicio'
             });
 
-            // Sumar el dinero al total del paciente
             const accRef = doc(db, "accounts", AppState.pacienteActualId);
             batch.update(accRef, { total: increment(item.precio_venta) });
 
-            // 2. Si es KIT, descontar el stock de las tripas (insumos vinculados físicos)
             if (item.tipo === 'kit' && item.insumos_vinculados && item.insumos_vinculados.length > 0) {
                 item.insumos_vinculados.forEach(insumoInterno => {
                     if (insumoInterno.tipo_item === 'fisico') {
-                        // Restar el inventario físico master sin cobrarlo (ya se cobró en el precio total del kit)
                         const invRef = doc(db, "inventory_master", insumoInterno.id_insumo);
                         batch.update(invRef, { stock: increment(-insumoInterno.cantidad) });
                     }
-                    // Si el insumo interno es un 'servicio', no hacemos nada más, ya se incluyó en el Kit.
                 });
             }
 
@@ -375,9 +479,6 @@
         }
     }
 
-    /* ==========================================
-       LÓGICA DEL CARRITO (INSUMOS FÍSICOS)
-       ========================================== */
     function agregarAlCarrito(item) {
         if (!AppState.pacienteActualId) return alert("Selecciona un paciente primero.");
         if (item.stock <= 0) return alert("No hay stock disponible.");
