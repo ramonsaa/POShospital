@@ -55,7 +55,6 @@
         /* ==================== SCREEN 1: PACIENTES ==================== */
         #screen-patients { display: block; padding: 15px; }
         
-        /* Botón de Consumo Interno */
         .btn-internal-use {
             background: var(--warning); color: white; border: none; width: 100%; padding: 15px; 
             border-radius: 10px; font-size: 1.05em; font-weight: bold; cursor: pointer;
@@ -89,9 +88,14 @@
         .pos-p-name { font-weight: bold; font-size: 1.1em; margin: 0; }
         .pos-p-room { font-size: 0.85em; color: gray; margin: 0; }
         
-        /* Modificador visual para cuando es Consumo Interno */
         .internal-mode .pos-top-bar { background: #fffcf5; border-bottom: 2px solid var(--warning); }
         .internal-mode .pos-p-name { color: var(--warning); }
+
+        /* Botón Ver Cuenta para Admin */
+        #btn-ver-cuenta {
+            background: var(--primary); color: white; border: none; padding: 8px 12px;
+            border-radius: 6px; font-weight: bold; font-size: 0.85em; cursor: pointer;
+        }
 
         .inventory-container { padding: 10px 15px 100px 15px; flex: 1; overflow-y: auto; } 
         
@@ -124,8 +128,13 @@
         .btn-confirm { background: var(--accent); color: white; border: none; padding: 15px 25px; border-radius: 8px; font-weight: bold; font-size: 1.1em; }
         .internal-mode .btn-confirm { background: var(--warning); }
 
-        /* Utilerías */
+        /* Utilerías y Modales */
         .loader-text { text-align: center; padding: 20px; color: gray; font-style: italic; }
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; justify-content: center; align-items: center; }
+        .modal-content { background: white; padding: 20px; width: 90%; max-width: 450px; border-radius: 12px; display: flex; flex-direction: column; gap: 10px; max-height: 85vh; box-sizing: border-box; }
+        .tx-table { width: 100%; border-collapse: collapse; font-size: 0.85em; }
+        .tx-table th { border-bottom: 2px solid var(--border); padding: 8px 4px; text-align: left; color: var(--secondary); position: sticky; top: 0; background: white; }
+        .tx-table td { border-bottom: 1px solid var(--border); padding: 8px 4px; }
     </style>
 </head>
 <body>
@@ -157,7 +166,6 @@
         <div class="main-content">
             
             <div id="screen-patients">
-                
                 <button class="btn-internal-use" onclick="abrirConsumoInterno()">
                     <span>📋</span> Extraer para Consumo Interno / Merma
                 </button>
@@ -175,6 +183,7 @@
                         <p class="pos-p-name" id="pos-patient-name">--</p>
                         <p class="pos-p-room" id="pos-patient-room">--</p>
                     </div>
+                    <button id="btn-ver-cuenta" style="display: none;" onclick="abrirModalCuenta()">📄 Cuenta</button>
                 </div>
                 
                 <div class="inventory-container" id="list-inventory">
@@ -191,6 +200,31 @@
             <button class="btn-confirm" id="btn-confirmar-cargos" onclick="confirmarCargos()">Confirmar ✅</button>
         </div>
 
+    </div>
+
+    <div id="account-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h3 style="margin:0; color:var(--primary); font-size:1.3em;">Detalle de Cuenta</h3>
+            <p style="margin:0 0 10px 0; color:gray; font-size:0.9em;" id="modal-account-patient">--</p>
+            
+            <div style="flex:1; overflow-y:auto; border: 1px solid var(--border); border-radius: 8px;">
+                <table class="tx-table">
+                    <thead>
+                        <tr>
+                            <th>Item</th>
+                            <th style="text-align:center;">Cant</th>
+                            <th style="text-align:right;">Subtotal</th>
+                        </tr>
+                    </thead>
+                    <tbody id="modal-account-list">
+                        <tr><td colspan="3" style="text-align:center; color:gray;">Cargando...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <h2 style="text-align:right; color:var(--accent); margin: 10px 0 15px 0;">Total: <span id="modal-account-total">$0.00</span></h2>
+            <button class="btn-login" style="background:gray; margin:0;" onclick="cerrarModalCuenta()">Cerrar</button>
+        </div>
     </div>
 
 <script type="module">
@@ -216,14 +250,17 @@
     window.modificarCantidad = modificarCantidad;
     window.confirmarCargos = confirmarCargos;
     window.abrirPaciente = abrirPaciente;
-    window.abrirConsumoInterno = abrirConsumoInterno; // Exportamos la nueva función
+    window.abrirConsumoInterno = abrirConsumoInterno; 
+    window.abrirModalCuenta = abrirModalCuenta;
+    window.cerrarModalCuenta = cerrarModalCuenta;
 
     // ESTADO GLOBAL DE LA APP MÓVIL
     let empleadoActual = null; 
     let pacienteActual = null; 
     let inventarioMaestro = []; 
     let carritoApp = {}; 
-    let isModoInterno = false; // NUEVO FLAG
+    let isModoInterno = false; 
+    let unsubscribeCuentaMovil = null;
 
     // ==========================================
     // 1. GESTIÓN DE SESIÓN (LOGIN / LOGOUT)
@@ -235,7 +272,8 @@
 
             if (docSnap.exists()) {
                 const data = docSnap.data();
-                empleadoActual = { uid: user.uid, nombre: data.nombre, rol: data.rol };
+                // GUARDAMOS EL FLAG es_admin
+                empleadoActual = { uid: user.uid, nombre: data.nombre, rol: data.rol, es_admin: data.es_admin === true };
                 
                 document.getElementById('login-view').style.display = 'none';
                 document.getElementById('app-view').style.display = 'flex';
@@ -326,7 +364,6 @@
                     inventarioMaestro.push(item);
                 }
             });
-            // Si ya estamos en la pantalla 2, refrescamos la lista
             if (pacienteActual || isModoInterno) {
                 renderizarInventarioPOS();
             }
@@ -345,6 +382,13 @@
         document.getElementById('pos-patient-name').innerText = nombre;
         document.getElementById('pos-patient-room').innerText = `Cuarto: ${cuarto}`;
         
+        // Habilitar botón de ver cuenta si es Administrador
+        if (empleadoActual.es_admin) {
+            document.getElementById('btn-ver-cuenta').style.display = 'block';
+        } else {
+            document.getElementById('btn-ver-cuenta').style.display = 'none';
+        }
+        
         renderizarInventarioPOS();
         actualizarBarraFlotante();
 
@@ -352,16 +396,15 @@
         document.getElementById('screen-pos').style.display = 'flex';
     }
 
-    // NUEVA FUNCIÓN: ABRIR MODO CONSUMO INTERNO
     function abrirConsumoInterno() {
         isModoInterno = true;
-        pacienteActual = null; // No hay paciente
+        pacienteActual = null; 
         carritoApp = {}; 
         
-        // Cambiamos el estilo a Naranja (Warning)
         document.getElementById('screen-pos').classList.add('internal-mode');
         document.getElementById('pos-patient-name').innerText = "Consumo Interno / Merma";
         document.getElementById('pos-patient-room').innerText = "No se cobrará a ningún paciente";
+        document.getElementById('btn-ver-cuenta').style.display = 'none'; // Ocultar siempre en consumo interno
         
         renderizarInventarioPOS();
         actualizarBarraFlotante();
@@ -408,7 +451,63 @@
     }
 
     // ==========================================
-    // 4. LÓGICA DEL CARRITO EN LÍNEA
+    // 4. VER CUENTA (SOLO ADMIN)
+    // ==========================================
+    async function abrirModalCuenta() {
+        if (!pacienteActual) return;
+        
+        document.getElementById('modal-account-patient').innerText = pacienteActual.nombre;
+        document.getElementById('account-modal').style.display = 'flex';
+
+        // 1. Obtener Total general de la cuenta
+        const accRef = doc(db, "accounts", pacienteActual.id);
+        getDoc(accRef).then(snap => {
+            if(snap.exists()) {
+                document.getElementById('modal-account-total').innerText = `$${(snap.data().total || 0).toLocaleString('es-MX')}`;
+            }
+        });
+
+        // 2. Escuchar las transacciones en tiempo real
+        if(unsubscribeCuentaMovil) unsubscribeCuentaMovil();
+        
+        unsubscribeCuentaMovil = onSnapshot(query(collection(db, "transactions"), where("pacienteId", "==", pacienteActual.id)), (snap) => {
+            const tbody = document.getElementById('modal-account-list'); 
+            tbody.innerHTML = '';
+            
+            if (snap.empty) {
+                tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; color:gray;">Sin cargos registrados.</td></tr>';
+                return;
+            }
+
+            const txs = []; 
+            snap.forEach(d => txs.push(d.data()));
+            txs.sort((a,b) => (b.timestamp?.toMillis()||0) - (a.timestamp?.toMillis()||0));
+            
+            txs.forEach((tx) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td style="font-weight:bold; color:var(--primary); font-size:0.95em;">
+                        ${tx.nombre}
+                        <div style="font-size:0.8em; color:gray; font-weight:normal;">${tx.acreditado_a_nombre}</div>
+                    </td>
+                    <td style="text-align:center;">${tx.cantidad || 1}</td>
+                    <td style="text-align:right;">$${tx.precio_venta.toLocaleString('es-MX')}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        });
+    }
+
+    function cerrarModalCuenta() {
+        document.getElementById('account-modal').style.display = 'none';
+        if(unsubscribeCuentaMovil) {
+            unsubscribeCuentaMovil();
+            unsubscribeCuentaMovil = null;
+        }
+    }
+
+    // ==========================================
+    // 5. LÓGICA DEL CARRITO EN LÍNEA
     // ==========================================
     function modificarCantidad(itemEncoded, delta) {
         const item = JSON.parse(decodeURIComponent(itemEncoded));
@@ -448,18 +547,16 @@
 
         ids.forEach(id => {
             const data = carritoApp[id];
-            // Si es interno, visualmente podemos mostrar $0.00 o el valor que representa la extracción
             total += (data.cantidad * data.itemObj.precio_venta);
         });
 
-        // Si es interno, le decimos que es el valor extraído. Si es paciente, es el total a cobrar.
         document.getElementById('checkout-total-val').innerText = isModoInterno ? `Extraído: $${total.toLocaleString('es-MX')}` : `$${total.toLocaleString('es-MX')}`;
         document.getElementById('checkout-items-val').innerText = `${cantInsumosDistintos} concepto(s) listos`;
         bar.classList.add('visible');
     }
 
     // ==========================================
-    // 5. PROCESAR TRANSACCIÓN Y SUBIR A FIREBASE
+    // 6. PROCESAR TRANSACCIÓN Y SUBIR A FIREBASE
     // ==========================================
     async function confirmarCargos() {
         const ids = Object.keys(carritoApp);
@@ -472,10 +569,7 @@
         const batch = writeBatch(db);
         let granTotal = 0;
 
-        // BIFURCACIÓN DE LÓGICA: ¿ES PACIENTE O ES CONSUMO INTERNO?
         if (isModoInterno) {
-            
-            // LÓGICA DE CONSUMO INTERNO (Afecta inventory_losses, no cobra a pacientes)
             for (const id in carritoApp) {
                 const info = carritoApp[id];
                 const lossRef = doc(collection(db, "inventory_losses"));
@@ -490,13 +584,10 @@
                     motivo: `Consumo Interno (App Móvil - ${empleadoActual.nombre})`
                 });
                 
-                // Descontar inventario
                 batch.update(doc(db, "inventory_master", info.itemObj.id), { stock: increment(-info.cantidad) });
             }
 
         } else {
-
-            // LÓGICA NORMAL (Cobra al paciente)
             const transRef = collection(db, "transactions");
             const accRef = doc(db, "accounts", pacienteActual.id);
 
@@ -518,11 +609,9 @@
                     tipo_operacion: 'cargo_directo_movil'
                 });
                 
-                // Descontar inventario
                 batch.update(doc(db, "inventory_master", info.itemObj.id), { stock: increment(-info.cantidad) });
             }
             
-            // Sumar a la cuenta del paciente
             batch.update(accRef, { total: increment(granTotal) });
         }
 
