@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Directorio Maestro - Hospital POS</title>
+    <style>
+        :root {
+            --primary-blue: #2c3e50;
+            --secondary-blue: #34495e;
+            --accent-green: #27ae60;
+            --danger-red: #c0392b;
+            --safe-blue: #2980b9;
+            --light-bg: #f4f7f6;
+            --white: #ffffff;
+            --border-color: #dcdde1;
+            --text-dark: #2f3640;
+        }
+
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            margin: 0; 
+            background-color: var(--light-bg); 
+            color: var(--text-dark); 
+            display: flex; 
+            flex-direction: column; 
+            min-height: 100vh;
+        }
+        
+        header { 
+            background-color: var(--primary-blue); 
+            color: var(--white); 
+            padding: 20px 40px; 
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        header h1 { margin: 0; font-size: 2em; letter-spacing: 1px; }
+        header p { color: #aed6f1; margin: 10px 0 0 0; font-size: 1.1em; }
+
+        main { 
+            padding: 40px; 
+            flex: 1;
+            display: flex;
+            justify-content: center;
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 25px;
+            max-width: 1200px;
+            width: 100%;
+        }
+
+        .card {
+            background: var(--white);
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            border: 1px solid var(--border-color);
+            border-top: 5px solid var(--primary-blue);
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+
+        .card-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+        }
+
+        .card-title {
+            font-size: 1.4em;
+            font-weight: bold;
+            color: var(--primary-blue);
+            margin-bottom: 10px;
+        }
+
+        .card-desc {
+            color: #7f8c8d;
+            font-size: 0.95em;
+            line-height: 1.5;
+            flex: 1;
+            margin-bottom: 20px;
+        }
+
+        .card-btn {
+            background-color: var(--accent-green);
+            color: white;
+            text-decoration: none;
+            padding: 12px 20px;
+            border-radius: 6px;
+            font-weight: bold;
+            text-align: center;
+            display: block;
+            transition: background-color 0.2s;
+        }
+
+        .card-btn:hover {
+            background-color: #219a52;
+        }
+
+        /* Colores específicos por tarjeta */
+        .card.pos { border-top-color: var(--safe-blue); }
+        .card.pos .card-btn { background-color: var(--safe-blue); }
+        .card.pos .card-btn:hover { background-color: #1f6391; }
+
+        .card.admin { border-top-color: #8e44ad; }
+        .card.admin .card-btn { background-color: #8e44ad; }
+        .card.admin .card-btn:hover { background-color: #732d91; }
+
+        .card.mobile { border-top-color: #f39c12; }
+        .card.mobile .card-btn { background-color: #f39c12; }
+        .card.mobile .card-btn:hover { background-color: #d68910; }
+
+        .card.tablet { border-top-color: #16a085; }
+        .card.tablet .card-btn { background-color: #16a085; }
+        .card.tablet .card-btn:hover { background-color: #117a65; }
+
+        .card.reports { border-top-color: var(--danger-red); }
+        .card.reports .card-btn { background-color: var(--danger-red); }
+        .card.reports .card-btn:hover { background-color: #a93226; }
+
+        footer {
+            text-align: center;
+            padding: 20px;
+            color: gray;
+            font-size: 0.85em;
+            border-top: 1px solid var(--border-color);
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Directorio Maestro del Sistema</h1>
+        <p>Ecosistema Hospital POS - Enlaces de Acceso Rápido</p>
+    </header>
+
+    <main>
+        <div class="grid-container">
+
+            <div class="card pos">
+                <div class="card-icon">🖥️</div>
+                <div class="card-title">POS Principal</div>
+                <div class="card-desc">Panel de control maestro. Gestión de cuentas de pacientes, cobros directos, liquidación y exportación de reportes PDF. (Requiere permisos de Admin).</div>
+                <a href="index.html" class="card-btn">Abrir POS</a>
+            </div>
+
+            <div class="card">
+                <div class="card-icon">📦</div>
+                <div class="card-title">Inventario Maestro</div>
+                <div class="card-desc">Administración de stock físico, creación de servicios médicos y armado de paquetes/kits. (Requiere permisos de Admin).</div>
+                <a href="inventory-admin.html" class="card-btn">Ir a Inventario</a>
+            </div>
+
+            <div class="card admin">
+                <div class="card-icon">👥</div>
+                <div class="card-title">Gestión de Personal</div>
+                <div class="card-desc">Alta y baja de empleados. Unificación de base de datos y Authentication. Asignación de PINs y permisos. (Requiere permisos de Admin).</div>
+                <a href="admin-personal.html" class="card-btn">Gestionar Empleados</a>
+            </div>
+
+            <div class="card reports">
+                <div class="card-icon">📊</div>
+                <div class="card-title">Reportes Financieros</div>
+                <div class="card-desc">Análisis de ingresos, cálculo de costos de insumos y utilidad neta. Filtros por fecha y por empleado. (Requiere permisos de Admin).</div>
+                <a href="reportes.html" class="card-btn">Ver Reportes</a>
+            </div>
+
+            <div class="card mobile">
+                <div class="card-icon">📱</div>
+                <div class="card-title">App Móvil (Enfermería)</div>
+                <div class="card-desc">Interfaz diseñada para teléfonos. Catálogo interactivo para cargar insumos físicos a las cuentas activas desde cualquier lugar.</div>
+                <a href="mobile.html" class="card-btn">Abrir App Móvil</a>
+            </div>
+
+            <div class="card tablet">
+                <div class="card-icon">💊</div>
+                <div class="card-title">Tablet Cuarto (Kiosco)</div>
+                <div class="card-desc">Interfaz de pared para habitaciones. Requiere inicio de sesión silencioso y funciona mediante PIN de empleado.<br><br><em>*Este botón abre el Cuarto 101 por defecto.</em></div>
+                <a href="tablet.html?room=101" class="card-btn">Abrir Tablet (Cuarto 101)</a>
+            </div>
+
+        </div>
+    </main>
+
+    <footer>
+        <p>Sistema protegido por reglas de seguridad de Firebase. Si tu sesión expiró, el sistema redirigirá automáticamente a <strong>login.html</strong>.</p>
+    </footer>
+
+</body>
+</html>
