@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>App Médica - Insumos</title>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #34495e;
+            --accent: #27ae60;
+            --danger: #c0392b;
+            --bg: #f4f7f6;
+            --text-dark: #2c3e50;
+            --border: #dcdde1;
+        }
+
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            margin: 0; 
+            background-color: var(--bg); 
+            color: var(--text-dark);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* ==================== LOGIN VIEW ==================== */
+        #login-view {
+            flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; background: white;
+        }
+        .login-box { width: 100%; max-width: 400px; text-align: center; }
+        .login-box h1 { color: var(--primary); margin-bottom: 5px; }
+        .login-box p { color: gray; margin-bottom: 30px; font-size: 0.9em; }
+        .input-group { margin-bottom: 15px; text-align: left; }
+        .input-group label { display: block; font-weight: bold; margin-bottom: 5px; font-size: 0.85em; color: var(--secondary); }
+        .input-group input { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; box-sizing: border-box; font-size: 1em; }
+        .btn-login { width: 100%; background: var(--primary); color: white; border: none; padding: 15px; border-radius: 8px; font-size: 1.1em; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        .btn-login:active { background: var(--secondary); }
+
+        /* ==================== APP LAYOUT ==================== */
+        #app-view { display: none; flex-direction: column; height: 100vh; }
+        
+        header { 
+            background: var(--primary); color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); z-index: 10;
+        }
+        .user-badge { font-weight: bold; font-size: 1.1em; }
+        .btn-logout { background: rgba(255,255,255,0.2); border: none; color: white; padding: 5px 10px; border-radius: 5px; font-size: 0.85em; }
+
+        .main-content { flex: 1; overflow-y: auto; background: var(--bg); position: relative; }
+
+        /* ==================== SCREEN 1: PACIENTES ==================== */
+        #screen-patients { display: block; padding: 15px; }
+        .screen-title { font-size: 1.2em; color: var(--secondary); margin: 0 0 15px 0; border-bottom: 2px solid var(--border); padding-bottom: 10px; }
+        
+        .patient-list { display: flex; flex-direction: column; gap: 10px; }
+        .patient-card { 
+            background: white; border-radius: 10px; padding: 15px; display: flex; align-items: center; gap: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid var(--border); cursor: pointer; transition: background 0.2s;
+        }
+        .patient-card:active { background: #eef2f5; }
+        .room-badge { 
+            background: #eef2f5; color: var(--primary); font-weight: bold; font-size: 1.2em; padding: 10px 15px; border-radius: 8px; min-width: 45px; text-align: center; border: 1px solid var(--border);
+        }
+        .patient-info { flex: 1; }
+        .patient-name { font-weight: bold; font-size: 1.1em; color: var(--primary); margin-bottom: 4px; }
+        .patient-obs { font-size: 0.8em; color: gray; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+        .chevron { color: #bdc3c7; font-weight: bold; font-size: 1.5em; }
+
+        /* ==================== SCREEN 2: INSUMOS (POS) ==================== */
+        #screen-pos { display: none; flex-direction: column; height: 100%; }
+        
+        .pos-top-bar { background: white; padding: 15px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 15px; position: sticky; top: 0; z-index: 5;}
+        .btn-back { background: none; border: none; font-size: 1.5em; color: var(--primary); padding: 0 10px 0 0; cursor: pointer; }
+        .pos-patient-details { flex: 1; }
+        .pos-p-name { font-weight: bold; font-size: 1.1em; margin: 0; }
+        .pos-p-room { font-size: 0.85em; color: gray; margin: 0; }
+
+        .inventory-container { padding: 10px 15px 100px 15px; flex: 1; overflow-y: auto; } /* Padding bottom extra para la barra fija */
+        
+        .item-card { 
+            background: white; border-radius: 10px; padding: 15px; margin-bottom: 10px; border: 1px solid var(--border);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .item-card.active-cart { border-color: var(--accent); background: #f9fdfa; }
+        .item-details { flex: 1; padding-right: 10px;}
+        .item-name { font-weight: bold; color: var(--text-dark); margin-bottom: 4px; font-size: 1.05em;}
+        .item-stock { font-size: 0.85em; color: #7f8c8d; }
+        
+        .qty-controls { display: flex; align-items: center; background: #eef2f5; border-radius: 8px; border: 1px solid var(--border); overflow: hidden;}
+        .btn-qty { width: 35px; height: 35px; border: none; background: transparent; font-size: 1.5em; color: var(--primary); display: flex; justify-content: center; align-items: center; }
+        .btn-qty:active { background: #dcdde1; }
+        .qty-val { width: 30px; text-align: center; font-weight: bold; font-size: 1.1em; color: var(--primary); }
+
+        /* Barra Flotante de Confirmación */
+        .bottom-checkout-bar {
+            position: fixed; bottom: 0; left: 0; width: 100%; background: white; border-top: 1px solid var(--border);
+            padding: 15px; box-sizing: border-box; display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1); transform: translateY(100%); transition: transform 0.3s ease; z-index: 20;
+        }
+        .bottom-checkout-bar.visible { transform: translateY(0); }
+        .checkout-info { flex: 1; }
+        .checkout-total { font-weight: bold; font-size: 1.3em; color: var(--primary); margin: 0;}
+        .checkout-items-count { font-size: 0.85em; color: gray; margin: 0;}
+        .btn-confirm { background: var(--accent); color: white; border: none; padding: 15px 25px; border-radius: 8px; font-weight: bold; font-size: 1.1em; }
+
+        /* Utilerías */
+        .loader-text { text-align: center; padding: 20px; color: gray; font-style: italic; }
+    </style>
+</head>
+<body>
+
+    <div id="login-view">
+        <div class="login-box">
+            <h1>App Personal</h1>
+            <p>Acceso exclusivo para personal médico</p>
+            <form id="form-login">
+                <div class="input-group">
+                    <label>Correo Electrónico</label>
+                    <input type="email" id="login-email" placeholder="ejemplo@hospital.com" required>
+                </div>
+                <div class="input-group">
+                    <label>Contraseña</label>
+                    <input type="password" id="login-password" placeholder="••••••" required>
+                </div>
+                <button type="submit" class="btn-login" id="btn-login">Iniciar Sesión</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="app-view">
+        <header>
+            <div class="user-badge" id="display-user-name">🧑‍⚕️ Cargando...</div>
+            <button class="btn-logout" id="btn-logout">Salir</button>
+        </header>
+
+        <div class="main-content">
+            
+            <div id="screen-patients">
+                <h2 class="screen-title">Pacientes Activos</h2>
+                <div class="patient-list" id="list-patients">
+                    <div class="loader-text">Buscando pacientes...</div>
+                </div>
+            </div>
+
+            <div id="screen-pos">
+                <div class="pos-top-bar">
+                    <button class="btn-back" onclick="volverAPacientes()">❮</button>
+                    <div class="pos-patient-details">
+                        <p class="pos-p-name" id="pos-patient-name">--</p>
+                        <p class="pos-p-room" id="pos-patient-room">--</p>
+                    </div>
+                </div>
+                
+                <div class="inventory-container" id="list-inventory">
+                    </div>
+            </div>
+
+        </div>
+
+        <div class="bottom-checkout-bar" id="checkout-bar">
+            <div class="checkout-info">
+                <p class="checkout-total" id="checkout-total-val">$0.00</p>
+                <p class="checkout-items-count" id="checkout-items-val">0 insumos listos</p>
+            </div>
+            <button class="btn-confirm" id="btn-confirmar-cargos" onclick="confirmarCargos()">Confirmar ✅</button>
+        </div>
+
+    </div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+    import { getFirestore, collection, query, where, onSnapshot, doc, getDoc, writeBatch, serverTimestamp, increment } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyA0yq1qdkxcOmwCaUxGiFpYj0mUrVQyD-Q",
+        authDomain: "hospital1-admin.firebaseapp.com",
+        projectId: "hospital1-admin",
+        storageBucket: "hospital1-admin.firebasestorage.app",
+        messagingSenderId: "804830277427",
+        appId: "1:804830277427:web:819463cca4870d32d25846"
+    };
+    
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    // EXPORTACIONES A WINDOW
+    window.volverAPacientes = volverAPacientes;
+    window.modificarCantidad = modificarCantidad;
+    window.confirmarCargos = confirmarCargos;
+    window.abrirPaciente = abrirPaciente;
+
+    // ESTADO GLOBAL DE LA APP MÓVIL
+    let empleadoActual = null; // Guardará { uid, nombre, rol }
+    let pacienteActual = null; // Guardará { id, nombre, cuarto }
+    let inventarioMaestro = []; // Guardará el array de todos los insumos físicos
+    let carritoApp = {}; // Formato: { itemId: { itemObj, cantidad } }
+
+    // ==========================================
+    // 1. GESTIÓN DE SESIÓN (LOGIN / LOGOUT)
+    // ==========================================
+    onAuthStateChanged(auth, async (user) => {
+        if (user) {
+            // Usuario validado en Auth, verificamos su perfil en Firestore
+            const docRef = doc(db, "employees", user.uid);
+            const docSnap = await getDoc(docRef);
+
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                empleadoActual = { uid: user.uid, nombre: data.nombre, rol: data.rol };
+                
+                // Mostrar App
+                document.getElementById('login-view').style.display = 'none';
+                document.getElementById('app-view').style.display = 'flex';
+                document.getElementById('display-user-name').innerText = `🧑‍⚕️ ${empleadoActual.nombre}`;
+                
+                // Iniciar escuchas de datos
+                escucharPacientes();
+                escucharInventario();
+            } else {
+                alert("Tu cuenta no tiene un perfil de empleado válido. Contacta al administrador.");
+                signOut(auth);
+            }
+        } else {
+            // No hay sesión
+            document.getElementById('login-view').style.display = 'flex';
+            document.getElementById('app-view').style.display = 'none';
+            empleadoActual = null;
+        }
+    });
+
+    document.getElementById('form-login').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById('btn-login');
+        btn.innerText = "Verificando...";
+        btn.disabled = true;
+
+        const email = document.getElementById('login-email').value;
+        const pass = document.getElementById('login-password').value;
+
+        try {
+            await signInWithEmailAndPassword(auth, email, pass);
+        } catch (error) {
+            alert("Credenciales incorrectas o error de conexión.");
+            console.error(error);
+        } finally {
+            btn.innerText = "Iniciar Sesión";
+            btn.disabled = false;
+        }
+    });
+
+    document.getElementById('btn-logout').addEventListener('click', () => {
+        if(confirm("¿Deseas cerrar sesión?")) {
+            signOut(auth);
+        }
+    });
+
+    // ==========================================
+    // 2. ESCUCHAR DATOS (PACIENTES E INVENTARIO)
+    // ==========================================
+    function escucharPacientes() {
+        const q = query(collection(db, "accounts"), where("estado", "==", "abierta"));
+        onSnapshot(q, (snap) => {
+            const contenedor = document.getElementById('list-patients');
+            contenedor.innerHTML = '';
+
+            if (snap.empty) {
+                contenedor.innerHTML = '<div class="loader-text">No hay pacientes activos en este momento.</div>';
+                return;
+            }
+
+            snap.forEach((docSnap) => {
+                const data = docSnap.data();
+                const cuarto = data.es_ambulatorio ? 'AMB' : (data.cuarto_id || 'AMB');
+                const nombre = data.es_anonimo ? 'Paciente Anónimo' : data.paciente_nombre;
+                const observaciones = data.alergias ? `Obs: ${data.alergias}` : 'Sin observaciones';
+
+                const card = document.createElement('div');
+                card.className = 'patient-card';
+                // Convertimos la data a JSON stringificado seguro para pasarlo a la función
+                card.onclick = () => abrirPaciente(docSnap.id, nombre, cuarto);
+                
+                card.innerHTML = `
+                    <div class="room-badge">${cuarto}</div>
+                    <div class="patient-info">
+                        <div class="patient-name">${nombre}</div>
+                        <div class="patient-obs">${observaciones}</div>
+                    </div>
+                    <div class="chevron">›</div>
+                `;
+                contenedor.appendChild(card);
+            });
+        });
+    }
+
+    function escucharInventario() {
+        onSnapshot(collection(db, "inventory_master"), (snap) => {
+            inventarioMaestro = [];
+            snap.forEach((docSnap) => {
+                const item = { id: docSnap.id, ...docSnap.data() };
+                if (item.publicado_en_pos) {
+                    inventarioMaestro.push(item);
+                }
+            });
+            // Si ya estamos en la pantalla de un paciente, refrescamos la lista visual
+            if (pacienteActual) {
+                renderizarInventarioPOS();
+            }
+        });
+    }
+
+    // ==========================================
+    // 3. NAVEGACIÓN Y RENDERIZADO DEL POS MÓVIL
+    // ==========================================
+    function abrirPaciente(id, nombre, cuarto) {
+        pacienteActual = { id, nombre, cuarto };
+        carritoApp = {}; // Vaciamos el carrito al entrar a un nuevo paciente
+        
+        // Actualizamos encabezado del POS
+        document.getElementById('pos-patient-name').innerText = nombre;
+        document.getElementById('pos-patient-room').innerText = `Cuarto: ${cuarto}`;
+        
+        // Renderizamos la lista de insumos interactiva
+        renderizarInventarioPOS();
+        actualizarBarraFlotante();
+
+        // Cambiamos de pantalla
+        document.getElementById('screen-patients').style.display = 'none';
+        document.getElementById('screen-pos').style.display = 'flex';
+    }
+
+    function volverAPacientes() {
+        if(Object.keys(carritoApp).length > 0) {
+            if(!confirm("Tienes insumos seleccionados sin confirmar. ¿Descartar y salir?")) return;
+        }
+        pacienteActual = null;
+        document.getElementById('screen-pos').style.display = 'none';
+        document.getElementById('screen-patients').style.display = 'block';
+    }
+
+    function renderizarInventarioPOS() {
+        const contenedor = document.getElementById('list-inventory');
+        contenedor.innerHTML = '';
+
+        inventarioMaestro.forEach(item => {
+            // Buscamos si este item ya está en el carrito local
+            const qtyEnCarrito = carritoApp[item.id] ? carritoApp[item.id].cantidad : 0;
+            const isActivo = qtyEnCarrito > 0 ? 'active-cart' : '';
+
+            const card = document.createElement('div');
+            card.className = `item-card ${isActivo}`;
+            // Convertimos el item a base64 para evitar errores de comillas al pasarlo por HTML
+            const itemString = encodeURIComponent(JSON.stringify(item));
+
+            card.innerHTML = `
+                <div class="item-details">
+                    <div class="item-name">${item.nombre}</div>
+                    <div class="item-stock">Disp: ${item.stock} | $${item.precio_venta}</div>
+                </div>
+                <div class="qty-controls">
+                    <button class="btn-qty" onclick="modificarCantidad('${itemString}', -1)">-</button>
+                    <div class="qty-val">${qtyEnCarrito}</div>
+                    <button class="btn-qty" onclick="modificarCantidad('${itemString}', 1)">+</button>
+                </div>
+            `;
+            contenedor.appendChild(card);
+        });
+    }
+
+    // ==========================================
+    // 4. LÓGICA DEL CARRITO EN LÍNEA
+    // ==========================================
+    function modificarCantidad(itemEncoded, delta) {
+        const item = JSON.parse(decodeURIComponent(itemEncoded));
+        
+        if (!carritoApp[item.id]) {
+            // Si no existe y quiere restar, ignoramos
+            if (delta < 0) return;
+            // Si el stock es 0, no dejamos agregar
+            if (item.stock <= 0) return alert("Sin stock en inventario.");
+            
+            // Lo creamos en el carrito
+            carritoApp[item.id] = { itemObj: item, cantidad: 1 };
+        } else {
+            const nuevaCantidad = carritoApp[item.id].cantidad + delta;
+            
+            if (nuevaCantidad <= 0) {
+                // Lo borramos del carrito
+                delete carritoApp[item.id];
+            } else if (nuevaCantidad <= item.stock) {
+                carritoApp[item.id].cantidad = nuevaCantidad;
+            } else {
+                return alert("Stock máximo alcanzado.");
+            }
+        }
+
+        // Refrescar la vista para mostrar los números actualizados
+        renderizarInventarioPOS();
+        actualizarBarraFlotante();
+    }
+
+    function actualizarBarraFlotante() {
+        const bar = document.getElementById('checkout-bar');
+        const ids = Object.keys(carritoApp);
+        
+        if (ids.length === 0) {
+            bar.classList.remove('visible');
+            return;
+        }
+
+        let total = 0;
+        let cantInsumosDistintos = ids.length;
+
+        ids.forEach(id => {
+            const data = carritoApp[id];
+            total += (data.cantidad * data.itemObj.precio_venta);
+        });
+
+        document.getElementById('checkout-total-val').innerText = `$${total.toLocaleString('es-MX')}`;
+        document.getElementById('checkout-items-val').innerText = `${cantInsumosDistintos} concepto(s) listos`;
+        bar.classList.add('visible');
+    }
+
+    // ==========================================
+    // 5. PROCESAR TRANSACCIÓN Y SUBIR A FIREBASE
+    // ==========================================
+    async function confirmarCargos() {
+        const ids = Object.keys(carritoApp);
+        if (ids.length === 0) return;
+
+        const btn = document.getElementById('btn-confirmar-cargos');
+        btn.disabled = true;
+        btn.innerText = "⏳ Guardando...";
+
+        const batch = writeBatch(db);
+        const transRef = collection(db, "transactions");
+        const accRef = doc(db, "accounts", pacienteActual.id);
+        let granTotal = 0;
+
+        for (const id in carritoApp) {
+            const info = carritoApp[id];
+            const subtotal = info.cantidad * info.itemObj.precio_venta;
+            granTotal += subtotal;
+
+            batch.set(doc(transRef), {
+                pacienteId: pacienteActual.id,
+                itemId: info.itemObj.id,
+                nombre: info.itemObj.nombre,
+                cantidad: info.cantidad,
+                precio_venta: subtotal,
+                usuario_registro: empleadoActual.uid,   // UID UNIFICADO
+                acreditado_a_id: empleadoActual.uid,    // UID UNIFICADO
+                acreditado_a_nombre: empleadoActual.nombre,
+                timestamp: serverTimestamp(),
+                tipo_operacion: 'cargo_directo_movil'
+            });
+            
+            batch.update(doc(db, "inventory_master", info.itemObj.id), { stock: increment(-info.cantidad) });
+        }
+        
+        batch.update(accRef, { total: increment(granTotal) });
+
+        try {
+            await batch.commit();
+            alert("✅ Cargos agregados a la cuenta.");
+            volverAPacientes(); // Nos regresa a la lista
+        } catch (error) {
+            console.error(error);
+            alert("❌ Error al procesar insumos.");
+        } finally {
+            btn.disabled = false;
+            btn.innerText = "Confirmar ✅";
+        }
+    }
+
+</script>
+</body>
+</html>
