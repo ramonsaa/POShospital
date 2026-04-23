@@ -28,7 +28,7 @@
         }
 
         /* ==========================================
-           1. VISTA PRINCIPAL (IDLE)
+           1. VISTA PRINCIPAL (IDLE) REESTRUCTURADA
            ========================================== */
         #idle-view {
             flex: 1;
@@ -252,8 +252,10 @@
     </div>
 
 <script type="module">
+    // 1. IMPORTAMOS AUTH PARA EL LOGIN SILENCIOSO (MODO KIOSCO)
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
     import { getFirestore, collection, query, where, onSnapshot, getDocs, doc, writeBatch, serverTimestamp, increment } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+    import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyA0yq1qdkxcOmwCaUxGiFpYj0mUrVQyD-Q",
@@ -266,6 +268,7 @@
     
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
+    const auth = getAuth(app);
 
     // EXPORTAR A VENTANA GLOBAL
     window.toggleFullscreen = toggleFullscreen;
@@ -314,7 +317,9 @@
         });
     };
 
-
+    // ==========================================
+    // INICIALIZACIÓN Y URL
+    // ==========================================
     const urlParams = new URLSearchParams(window.location.search);
     numCuarto = urlParams.get('room');
 
@@ -328,10 +333,31 @@
         throw new Error("Falta parámetro ?room en la URL.");
     }
 
-    document.getElementById('display-room').innerText = numCuarto;
-    document.getElementById('pos-room-header').innerText = numCuarto;
-    escucharCuentaCuarto();
-    escucharInventario();
+    // ==========================================
+    // LOGIN SILENCIOSO (MODO KIOSCO)
+    // ==========================================
+    // NOTA: Asegúrate de crear este usuario en tu panel de administración.
+    const CUENTA_TABLET = "tablet@hospital.com"; 
+    const PASS_TABLET = "hospital1234";
+
+    signInWithEmailAndPassword(auth, CUENTA_TABLET, PASS_TABLET)
+        .then(() => {
+            console.log("✅ Tablet autenticada en Firebase (Modo Kiosco)");
+            
+            document.getElementById('display-room').innerText = numCuarto;
+            document.getElementById('pos-room-header').innerText = numCuarto;
+            escucharCuentaCuarto();
+            escucharInventario();
+        })
+        .catch((error) => {
+            console.error("Error al iniciar sesión de tablet:", error);
+            document.body.innerHTML = `
+                <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; text-align:center; background-color: #1a252f;">
+                    <h1 style="color: var(--danger-red); font-size: 3em;">❌ Error de Conexión</h1>
+                    <h2 style="color: #ecf0f1;">La cuenta de Kiosco no existe o la contraseña es incorrecta.</h2>
+                    <p style="font-size: 1.5em; color: #bdc3c7;">Ve al panel de administrador y crea el empleado:<br><strong>${CUENTA_TABLET}</strong><br>con contraseña <strong>${PASS_TABLET}</strong></p>
+                </div>`;
+        });
 
     function escucharCuentaCuarto() {
         const q = query(collection(db, "accounts"), where("cuarto_id", "==", numCuarto), where("estado", "==", "abierta"));
