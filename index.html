@@ -225,9 +225,9 @@
 </div>
 
 <script type="module">
-    // IMPORTANTE: Se agregó setDoc a la lista de importaciones
+    // IMPORTANTE: Se agregó getDoc a la importación
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-    import { getFirestore, collection, query, where, onSnapshot, doc, addDoc, updateDoc, increment, serverTimestamp, writeBatch, setDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+    import { getFirestore, collection, query, where, onSnapshot, doc, getDoc, addDoc, updateDoc, increment, serverTimestamp, writeBatch, setDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
     import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
     const firebaseConfig = {
@@ -243,7 +243,6 @@
     const db = getFirestore(app);
     const auth = getAuth(app);
 
-    // EXPORTAMOS LAS FUNCIONES AL ENTORNO GLOBAL
     window.modificarCantidad = modificarCantidad;
     window.vaciarCarrito = vaciarCarrito;
     window.abrirModalNuevo = abrirModalNuevo;
@@ -258,19 +257,55 @@
         pacienteActualId: null,
         pacienteActualData: null,
         uidRecepcionista: null,
+        nombreRecepcionista: null,
         unsubscribeTransacciones: null,
         carrito: {} 
     };
 
-    onAuthStateChanged(auth, (user) => {
+    // ==========================================
+    // SISTEMA DE SEGURIDAD Y BLINDAJE DE ACCESO
+    // ==========================================
+    onAuthStateChanged(auth, async (user) => {
         if (user) {
-            document.getElementById('user-display').innerText = user.email;
-            AppState.uidRecepcionista = user.uid;
-            iniciarReloj();
-            configurarPantallaCompleta();
-            configurarBuscadores();
-            iniciarSistema();
+            try {
+                document.getElementById('user-display').innerText = "Validando permisos...";
+                
+                // 1. Buscamos el perfil del empleado en Firestore usando su Auth UID
+                const docRef = doc(db, "employees", user.uid);
+                const docSnap = await getDoc(docRef);
+
+                if (docSnap.exists()) {
+                    const empleado = docSnap.data();
+
+                    // 2. Comprobamos la variable de permisos
+                    if (empleado.es_admin === true) {
+                        // ACCESO PERMITIDO
+                        document.getElementById('user-display').innerText = `👤 ${empleado.nombre}`; // Mostramos Nombre
+                        AppState.uidRecepcionista = user.uid;
+                        AppState.nombreRecepcionista = empleado.nombre;
+                        
+                        iniciarReloj();
+                        configurarPantallaCompleta();
+                        configurarBuscadores();
+                        iniciarSistema();
+                    } else {
+                        // ACCESO DENEGADO (Es doctor o enfermera)
+                        alert(`Acceso Denegado\n\nHola ${empleado.nombre}, tu perfil de ${empleado.rol || 'empleado'} no tiene permisos de administrador para entrar al POS Web.\n\nPor favor, utiliza la Tablet de tu cuarto o la App Móvil.`);
+                        await signOut(auth);
+                        window.location.href = "login.html";
+                    }
+                } else {
+                    // El usuario existe en Auth pero no en la base de datos de empleados
+                    alert("Acceso Denegado: Tu cuenta no tiene un perfil de empleado asignado. Contacta a soporte.");
+                    await signOut(auth);
+                    window.location.href = "login.html";
+                }
+            } catch (error) {
+                console.error("Error al verificar permisos:", error);
+                alert("Hubo un error de conexión al verificar tus permisos.");
+            }
         } else {
+            // No hay sesión
             window.location.href = "login.html";
         }
     });
@@ -282,7 +317,7 @@
         escucharPacientesActivos();
         escucharServiciosYPaquetes();
         escucharInventarioFisico();
-        escucharEmpleados(); // <--- Llamada a la nueva función
+        escucharEmpleados(); 
     }
 
     function configurarBuscadores() {
@@ -297,43 +332,27 @@
         });
     }
 
-    // ==========================================
-    // NUEVA FUNCIÓN: ESCUCHAR EMPLEADOS Y AUTO-CREAR
-    // ==========================================
     function escucharEmpleados() {
         onSnapshot(collection(db, "employees"), async (snap) => {
             
-            // LÓGICA DE AUTO-CREACIÓN SI ESTÁ VACÍO
             if (snap.empty) {
-                console.log("Colección employees vacía. Creando Dr. Admin por defecto...");
-                try {
-                    // Usamos setDoc para simular un UID maestro de Auth (ej: 'demo_admin_uid_12345')
-                    await setDoc(doc(db, "employees", "demo_admin_uid_12345"), {
-                        nombre: "Dr. Admin (Demo)",
-                        pin: "1234",
-                        rol: "admin",
-                        email: "admin@hospital.com"
-                    });
-                } catch (error) {
-                    console.error("Error creando el usuario por defecto:", error);
-                }
-                return; // Cortamos aquí, el listener se volverá a disparar solo porque acabamos de escribir en la DB.
+                console.log("Colección employees vacía.");
+                return; 
             }
 
-            // SI HAY EMPLEADOS, POBLAMOS EL SELECTOR
             const selector = document.getElementById('select-empleado');
             selector.innerHTML = '';
             
+            // Ponemos a la persona que inició sesión como la primera opción
             const optionYo = document.createElement('option');
-            optionYo.value = AppState.uidRecepcionista || "sistema";
-            optionYo.text = "Recepcionista en turno (Yo)";
+            optionYo.value = AppState.uidRecepcionista;
+            optionYo.text = `${AppState.nombreRecepcionista} (Yo)`;
             selector.appendChild(optionYo);
 
             snap.forEach((docSnap) => {
                 const emp = docSnap.data();
                 const uid = docSnap.id;
                 
-                // Evitamos poner al recepcionista actual 2 veces en la lista
                 if(uid !== AppState.uidRecepcionista) { 
                     const option = document.createElement('option');
                     option.value = uid; 
@@ -397,7 +416,7 @@
             txs.sort((a,b) => (b.timestamp?.toMillis()||0) - (a.timestamp?.toMillis()||0));
             txs.forEach((tx) => {
                 const tr = document.createElement('tr');
-                tr.innerHTML = `<td>${tx.nombre}</td><td>${tx.cantidad || 1}</td><td>$${tx.precio_venta}</td><td><span class="${tx.acreditado_a_nombre==='Sistema (Recepción)'?'system-badge':'nurse-badge'}">${tx.acreditado_a_nombre}</span></td>`;
+                tr.innerHTML = `<td>${tx.nombre}</td><td>${tx.cantidad || 1}</td><td>$${tx.precio_venta}</td><td><span class="${tx.acreditado_a_nombre===AppState.nombreRecepcionista?'system-badge':'nurse-badge'}">${tx.acreditado_a_nombre}</span></td>`;
                 tbody.appendChild(tr);
             });
         });
