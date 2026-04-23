@@ -28,7 +28,7 @@
         }
 
         /* ==========================================
-           1. VISTA PRINCIPAL (IDLE) REESTRUCTURADA
+           1. VISTA PRINCIPAL (IDLE)
            ========================================== */
         #idle-view {
             flex: 1;
@@ -110,7 +110,7 @@
         .obs-alta { background-color: var(--danger-red); }
 
         /* ==========================================
-           2. MODALES (PIN Y CONFIRMACIÓN)
+           2. MODALES
            ========================================== */
         .modal-overlay {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -131,7 +131,7 @@
         @keyframes shake { 0%, 100% {transform: translateX(0);} 25% {transform: translateX(-10px);} 75% {transform: translateX(10px);} }
         .pin-error { animation: shake 0.4s; background-color: rgba(192, 57, 43, 0.4) !important; }
 
-        /* Estilos Confirmación Checkout */
+        /* Estilos Confirmación y Alertas */
         .checkout-modal-content {
             background: white; padding: 40px; border-radius: 15px; text-align: center;
             max-width: 500px; width: 90%; box-shadow: 0 10px 30px rgba(0,0,0,0.3);
@@ -223,6 +223,14 @@
         </div>
     </div>
 
+    <div id="custom-alert-overlay" class="modal-overlay" style="z-index: 3000;">
+        <div class="checkout-modal-content" style="max-width: 400px; padding: 30px;">
+            <div id="custom-alert-icon" style="font-size: 4em; margin-bottom: 10px;">✅</div>
+            <p id="custom-alert-msg" style="font-size: 1.5em; color: var(--text-dark); margin-bottom: 25px; font-weight: bold;"></p>
+            <button id="btn-custom-alert" class="btn-confirm" style="width: 100%; font-size: 1.5em;">Entendido</button>
+        </div>
+    </div>
+
     <div id="pos-view">
         <header class="pos-header">
             <div>Cuarto: <strong id="pos-room-header">--</strong></div>
@@ -277,6 +285,36 @@
     let carritoTablet = {};
     let pinActual = "";
     
+    // ==========================================
+    // SISTEMA DE ALERTAS PERSONALIZADO (NO ROMPE FULLSCREEN)
+    // ==========================================
+    window.customAlert = function(mensaje, tipo = 'success') {
+        return new Promise((resolve) => {
+            const overlay = document.getElementById('custom-alert-overlay');
+            const msgEl = document.getElementById('custom-alert-msg');
+            const iconEl = document.getElementById('custom-alert-icon');
+            const btn = document.getElementById('btn-custom-alert');
+
+            msgEl.innerText = mensaje;
+            
+            if (tipo === 'error') {
+                iconEl.innerText = '❌';
+                btn.style.backgroundColor = 'var(--danger-red)';
+            } else {
+                iconEl.innerText = '✅';
+                btn.style.backgroundColor = 'var(--accent-green)';
+            }
+
+            overlay.style.display = 'flex';
+
+            btn.onclick = () => {
+                overlay.style.display = 'none';
+                resolve();
+            };
+        });
+    };
+
+
     const urlParams = new URLSearchParams(window.location.search);
     numCuarto = urlParams.get('room');
 
@@ -335,7 +373,10 @@
     }
 
     function abrirPin() {
-        if(!pacienteActualId) { alert("No hay paciente activo en este cuarto."); return; }
+        if(!pacienteActualId) { 
+            customAlert("No hay paciente activo en este cuarto.", "error"); 
+            return; 
+        }
         pinActual = "";
         actualizarPinDisplay();
         document.getElementById('pin-overlay').style.display = 'flex';
@@ -401,9 +442,15 @@
     }
 
     function agregarItem(item) {
-        if(item.stock <= 0) return;
+        if(item.stock <= 0) {
+            customAlert("No hay stock disponible.", "error");
+            return;
+        }
         if(carritoTablet[item.id]) {
-            if(carritoTablet[item.id].cantidad >= item.stock) return;
+            if(carritoTablet[item.id].cantidad >= item.stock) {
+                customAlert("Stock máximo alcanzado.", "error");
+                return;
+            }
             carritoTablet[item.id].cantidad++;
         } else {
             carritoTablet[item.id] = { item: item, cantidad: 1 };
@@ -449,7 +496,10 @@
     
     function abrirCheckoutModal() {
         const ids = Object.keys(carritoTablet);
-        if (ids.length === 0) return alert("El carrito está vacío.");
+        if (ids.length === 0) {
+            customAlert("El carrito está vacío.", "error");
+            return;
+        }
 
         let total = 0;
         let qty = 0;
@@ -507,11 +557,13 @@
         try {
             await batch.commit();
             cerrarCheckoutModal();
-            alert("✅ Insumos agregados exitosamente a la cuenta.");
+            // Usamos nuestra nueva alerta in-app, esperamos a que el usuario le de "Entendido" y lo sacamos a la principal
+            await customAlert("Insumos agregados exitosamente a la cuenta.", "success");
             salirPOS();
         } catch (error) {
             console.error(error);
-            alert("Error al procesar insumos.");
+            cerrarCheckoutModal();
+            await customAlert("Error al procesar insumos.", "error");
         } finally {
             btn.innerText = "✅ Proceder";
             btn.disabled = false;
