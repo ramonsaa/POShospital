@@ -1,29 +1,48 @@
-function escucharCuartoAsignado() {
-        const q = query(collection(db, "accounts"), where("cuarto_id", "==", NUMERO_CUARTO_ASIGNADO), where("estado", "==", "abierta"));
-        
-        onSnapshot(q, (snapshot) => {
-            const divVacio = document.getElementById('pantalla-vacia');
-            const divActivo = document.getElementById('pantalla-activa');
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitor Cuarto</title>
+    <style>
+        .alertas-box { padding: 20px; border-radius: 8px; border-left: 10px solid; }
+        .alta { background: #fdedec; border-left-color: #c0392b; color: #c0392b; }
+        .media { background: #fdf2e9; border-left-color: #d35400; color: #d35400; }
+        .baja { background: #ebf5fb; border-left-color: #2980b9; color: #2980b9; }
+    </style>
+</head>
+<body>
+    <div id="pantalla-activa" style="display:none;">
+        <h1 id="lbl-paciente"></h1>
+        <div id="caja-alertas" class="alertas-box baja">
+            <p id="lbl-alergias"></p>
+        </div>
+    </div>
 
-            if (snapshot.empty) {
-                console.log("No se encontró paciente activo para el cuarto:", NUMERO_CUARTO_ASIGNADO);
-                pacienteActivo = null; divVacio.style.display = 'flex'; divActivo.style.display = 'none';
-            } else {
-                const docSnap = snapshot.docs[0];
-                pacienteActivo = { id: docSnap.id, ...docSnap.data() };
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { initializeFirestore, persistentLocalCache, collection, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
+        const db = initializeFirestore(initializeApp({/* CONFIGS */}), { localCache: persistentLocalCache() });
+        const cuarto = new URLSearchParams(window.location.search).get('cuarto');
+
+        onSnapshot(query(collection(db, "accounts"), where("cuarto_id", "==", cuarto), where("estado", "==", "abierta")), (snapshot) => {
+            if (!snapshot.empty) {
+                const data = snapshot.docs[0].data();
                 
-                // DEPURACIÓN: Esto nos dirá si realmente vienen los datos
-                console.log("Datos recibidos del paciente:", pacienteActivo);
+                // Actualización Nombre
+                document.getElementById('lbl-paciente').innerText = data.es_anonimo ? "PACIENTE ANÓNIMO" : (data.paciente_nombre || "SIN NOMBRE");
                 
-                // Aplicar datos
-                document.getElementById('lbl-paciente').innerText = pacienteActivo.es_anonimo ? "PACIENTE ANÓNIMO" : pacienteActivo.paciente_nombre;
-                document.getElementById('lbl-alergias').innerText = pacienteActivo.alergias || "Ninguna registrada.";
+                // Actualización Observaciones
+                document.getElementById('lbl-alergias').innerText = data.alergias || "Sin observaciones.";
                 
-                // Colores
-                const cajaAlertas = document.getElementById('caja-alertas');
-                cajaAlertas.className = 'alertas-box ' + (pacienteActivo.nivel_observacion || 'baja');
+                // Actualización Colores (Limpieza total de clases y reinyección)
+                const caja = document.getElementById('caja-alertas');
+                caja.className = 'alertas-box ' + (data.nivel_observacion || 'baja');
                 
-                divVacio.style.display = 'none'; divActivo.style.display = 'flex';
+                document.getElementById('pantalla-activa').style.display = 'block';
             }
         });
-    }
+    </script>
+</body>
+</html>
