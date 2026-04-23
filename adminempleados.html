@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hospital - Gestión de Personal</title>
+    <style>
+        :root {
+            --primary-blue: #2c3e50;
+            --secondary-blue: #34495e;
+            --accent-green: #27ae60;
+            --danger-red: #c0392b;
+            --light-bg: #f4f7f6;
+            --border-color: #dcdde1;
+        }
+
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--light-bg); margin: 0; padding: 20px; color: #2f3640; }
+        
+        /* Pantalla de carga inicial */
+        #loading-screen { display: flex; flex-direction: column; justify-content: center; align-items: center; height: 90vh; font-size: 1.5em; color: var(--secondary-blue); }
+        
+        /* Contenido oculto por defecto hasta validar permisos */
+        #app-content { display: none; flex-direction: column; }
+
+        header { background-color: var(--primary-blue); color: white; padding: 15px 20px; border-radius: 8px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .btn-header { background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 8px 15px; border-radius: 4px; cursor: pointer; font-size: 0.85em; text-decoration: none; }
+        .btn-header:hover { background: rgba(255,255,255,0.2); }
+        
+        .container { display: flex; gap: 20px; align-items: flex-start; }
+        
+        .panel { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); border: 1px solid var(--border-color); }
+        .form-panel { flex: 1; min-width: 320px; }
+        .list-panel { flex: 2; overflow-x: auto; }
+
+        h2 { margin-top: 0; color: var(--primary-blue); font-size: 1.2em; border-bottom: 2px solid var(--border-color); padding-bottom: 10px; }
+
+        .form-group { margin-bottom: 15px; }
+        label { display: block; font-weight: bold; margin-bottom: 5px; font-size: 0.9em; color: var(--secondary-blue); }
+        input[type="text"], input[type="email"], input[type="password"], select { width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 4px; box-sizing: border-box; background-color: white; }
+        select { cursor: pointer; }
+        
+        .checkbox-group { display: flex; align-items: center; gap: 10px; background: #eef2f5; padding: 15px; border-radius: 4px; border: 1px solid var(--border-color); }
+        .checkbox-group input { width: 20px; height: 20px; cursor: pointer; }
+        
+        button { background-color: var(--accent-green); color: white; border: none; padding: 12px 20px; width: 100%; font-size: 1em; font-weight: bold; border-radius: 4px; cursor: pointer; transition: 0.2s; }
+        button:hover { background-color: #219a52; }
+        button:disabled { background-color: #95a5a6; cursor: not-allowed; }
+        
+        .btn-delete { background-color: var(--danger-red); width: auto; padding: 6px 10px; font-size: 0.8em; }
+        .btn-delete:hover { background-color: #a93226; }
+
+        table { width: 100%; border-collapse: collapse; font-size: 0.9em; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border-color); }
+        th { background-color: #f8f9fa; color: var(--secondary-blue); }
+        .badge-admin { background: #e3f2fd; color: #1565c0; padding: 4px 8px; border-radius: 4px; font-size: 0.8em; font-weight: bold; }
+        .badge-user { background: #f2f4f4; color: #7f8c8d; padding: 4px 8px; border-radius: 4px; font-size: 0.8em; font-weight: bold; }
+        .uid-text { font-family: monospace; color: gray; font-size: 0.85em; }
+        .rol-text { font-size: 1.1em; color: var(--primary-blue); font-weight: bold; margin-bottom: 4px; }
+    </style>
+</head>
+<body>
+
+    <div id="loading-screen">
+        <h2>🔒 Verificando credenciales de seguridad...</h2>
+    </div>
+
+    <div id="app-content">
+        <header>
+            <div>
+                <h1 style="margin: 0; font-size: 1.5em;">Gestión de Personal y Permisos</h1>
+                <span style="font-size: 0.85em; color: #aed6f1;">Panel de Administración Avanzada</span>
+            </div>
+            <div style="display: flex; gap: 15px; align-items: center;">
+                <span style="font-weight: bold; color: #aed6f1;" id="admin-name-display"></span>
+                <a href="index.html" class="btn-header">Volver al POS</a>
+                <button id="btn-logout" class="btn-header" style="background: var(--danger-red); border-color: #e74c3c;">Cerrar Sesión</button>
+            </div>
+        </header>
+
+        <div class="container">
+            <div class="panel form-panel">
+                <h2>➕ Alta de Empleado</h2>
+                <form id="form-empleado">
+                    <div class="form-group">
+                        <label>Nombre Completo</label>
+                        <input type="text" id="emp-nombre" placeholder="Ej. Dr. Arreola" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Puesto</label>
+                        <select id="emp-rol" required>
+                            <option value="" disabled selected>Seleccione un puesto...</option>
+                            <option value="Doctor">Doctor</option>
+                            <option value="Enfermera">Enfermera</option>
+                            <option value="Recepcion">Recepción</option>
+                            <option value="Administrador">Administrador</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Correo Electrónico (Login Móvil)</label>
+                        <input type="email" id="emp-email" placeholder="correo@hospital.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Contraseña (Mínimo 6 caracteres)</label>
+                        <input type="password" id="emp-password" placeholder="••••••" required minlength="6">
+                    </div>
+                    <div class="form-group">
+                        <label>PIN de Acceso (Tablet Cuartos)</label>
+                        <input type="text" id="emp-pin" placeholder="Ej. 1234" required maxlength="4" pattern="\d{4}" title="Debe ser un PIN de 4 números">
+                    </div>
+                    
+                    <div class="form-group checkbox-group">
+                        <input type="checkbox" id="emp-admin">
+                        <div>
+                            <strong style="color: var(--primary-blue);">Permisos de Administrador</strong>
+                            <div style="font-size: 0.8em; color: gray;">Si se marca, podrá entrar al POS Web y gestionar personal.</div>
+                        </div>
+                    </div>
+
+                    <button type="submit" id="btn-registrar">Registrar Empleado</button>
+                </form>
+            </div>
+
+            <div class="panel list-panel">
+                <h2>👥 Plantilla Registrada</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>PIN</th>
+                            <th>Correo / UID</th>
+                            <th>Puesto y Permisos</th>
+                            <th>Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-empleados">
+                        <tr><td colspan="5" style="text-align: center;">Cargando empleados...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+    import { getFirestore, collection, onSnapshot, doc, getDoc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+
+    // 1. CONFIGURACIÓN DE FIREBASE
+    const firebaseConfig = {
+        apiKey: "AIzaSyA0yq1qdkxcOmwCaUxGiFpYj0mUrVQyD-Q",
+        authDomain: "hospital1-admin.firebaseapp.com",
+        projectId: "hospital1-admin",
+        storageBucket: "hospital1-admin.firebasestorage.app",
+        messagingSenderId: "804830277427",
+        appId: "1:804830277427:web:819463cca4870d32d25846"
+    };
+    
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    // APP SECUNDARIA (Para registrar sin cerrar la sesión actual del administrador)
+    const secondaryApp = initializeApp(firebaseConfig, "SecondaryApp");
+    const secondaryAuth = getAuth(secondaryApp);
+
+    window.eliminarEmpleado = eliminarEmpleado;
+
+    // ==========================================
+    // SISTEMA DE SEGURIDAD Y BLINDAJE
+    // ==========================================
+    onAuthStateChanged(auth, async (user) => {
+        if (user) {
+            try {
+                const docRef = doc(db, "employees", user.uid);
+                const docSnap = await getDoc(docRef);
+
+                if (docSnap.exists() && docSnap.data().es_admin === true) {
+                    // ¡ACCESO PERMITIDO!
+                    document.getElementById('admin-name-display').innerText = `👤 ${docSnap.data().nombre}`;
+                    document.getElementById('loading-screen').style.display = 'none';
+                    document.getElementById('app-content').style.display = 'flex';
+                    
+                    escucharEmpleados(); // Arranca la tabla
+                } else {
+                    // ACCESO DENEGADO
+                    alert("Acceso Denegado: No tienes privilegios de Administrador para ver esta página.");
+                    await signOut(auth);
+                    window.location.href = "login.html";
+                }
+            } catch (error) {
+                console.error("Error al verificar permisos:", error);
+                alert("Error de conexión al verificar credenciales.");
+            }
+        } else {
+            // NO HAY SESIÓN
+            window.location.href = "login.html";
+        }
+    });
+
+    document.getElementById('btn-logout').addEventListener('click', () => { signOut(auth); });
+
+    // UX: AUTO-MARCAR ADMIN SI EL PUESTO ES ADMINISTRADOR
+    document.getElementById('emp-rol').addEventListener('change', (e) => {
+        const adminCheckbox = document.getElementById('emp-admin');
+        if(e.target.value === 'Administrador') {
+            adminCheckbox.checked = true;
+        }
+    });
+
+    // 2. ESCUCHAR EMPLEADOS EN TIEMPO REAL
+    function escucharEmpleados() {
+        onSnapshot(collection(db, "employees"), (snap) => {
+            const tbody = document.getElementById('tabla-empleados');
+            tbody.innerHTML = '';
+            
+            if(snap.empty) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color:gray;">No hay empleados registrados.</td></tr>';
+                return;
+            }
+
+            snap.forEach((docSnap) => {
+                const emp = docSnap.data();
+                const uid = docSnap.id;
+                
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><strong>${emp.nombre}</strong></td>
+                    <td style="font-size: 1.2em; font-weight: bold; color: var(--accent-green); letter-spacing: 2px;">${emp.pin}</td>
+                    <td>
+                        <div>${emp.email}</div>
+                        <div class="uid-text">UID: ${uid}</div>
+                    </td>
+                    <td>
+                        <div class="rol-text">${emp.rol || 'Sin Puesto'}</div>
+                        <span class="${emp.es_admin ? 'badge-admin' : 'badge-user'}">
+                            ${emp.es_admin ? '⭐ Acceso Total' : 'Acceso Restringido'}
+                        </span>
+                    </td>
+                    <td>
+                        <button class="btn-delete" onclick="eliminarEmpleado('${uid}', '${emp.nombre}')">Borrar Perfil</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        });
+    }
+
+    // 3. REGISTRAR UNIFICANDO AUTH Y FIRESTORE
+    document.getElementById('form-empleado').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const btn = document.getElementById('btn-registrar');
+        btn.disabled = true;
+        btn.innerText = "⏳ Creando y unificando...";
+
+        const nombre = document.getElementById('emp-nombre').value;
+        const rol = document.getElementById('emp-rol').value;
+        const email = document.getElementById('emp-email').value;
+        const password = document.getElementById('emp-password').value;
+        const pin = document.getElementById('emp-pin').value;
+        const esAdmin = document.getElementById('emp-admin').checked;
+
+        try {
+            // Se crea en la app secundaria para no desloguear al administrador actual
+            const userCredential = await createUserWithEmailAndPassword(secondaryAuth, email, password);
+            const uidMaestro = userCredential.user.uid;
+
+            await signOut(secondaryAuth);
+
+            await setDoc(doc(db, "employees", uidMaestro), {
+                nombre: nombre,
+                rol: rol,
+                email: email,
+                pin: pin,
+                es_admin: esAdmin
+            });
+
+            alert(`✅ Empleado ${nombre} registrado con éxito.\nUID Unificado: ${uidMaestro}`);
+            document.getElementById('form-empleado').reset();
+
+        } catch (error) {
+            console.error("Error al registrar:", error);
+            if (error.code === 'auth/email-already-in-use') {
+                alert("❌ Error: Este correo ya está registrado en el sistema.");
+            } else {
+                alert(`❌ Error al crear empleado: ${error.message}`);
+            }
+        } finally {
+            btn.disabled = false;
+            btn.innerText = "Registrar Empleado";
+        }
+    });
+
+    // 4. ELIMINAR PERFIL EN FIRESTORE
+    async function eliminarEmpleado(uid, nombre) {
+        if(confirm(`¿Estás seguro de eliminar los permisos y perfil de ${nombre}?\n\nNota: Esto le revocará el acceso al sistema inmediatamente.`)) {
+            try {
+                await deleteDoc(doc(db, "employees", uid));
+            } catch (error) {
+                console.error(error);
+                alert("Error al eliminar el empleado. ¿Tienes permisos suficientes?");
+            }
+        }
+    }
+</script>
+</body>
+</html>
