@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hospital POS - Reportes Financieros</title>
+    <style>
+        :root {
+            --primary-blue: #2c3e50;
+            --secondary-blue: #34495e;
+            --accent-green: #27ae60;
+            --danger-red: #c0392b;
+            --warning-orange: #d35400;
+            --safe-blue: #2980b9;
+            --light-bg: #f4f7f6;
+            --white: #ffffff;
+            --border-color: #dcdde1;
+            --text-dark: #2f3640;
+        }
+
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background-color: var(--light-bg); color: var(--text-dark); display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+        
+        /* HEADER */
+        header { background-color: var(--primary-blue); color: var(--white); padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid var(--accent-green); z-index: 10;}
+        .header-actions { display: flex; align-items: center; gap: 15px; }
+        .user-info { font-size: 0.9em; color: #aed6f1; font-weight: bold;}
+        .btn-header { background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 0.85em; text-decoration: none; transition: 0.2s;}
+        .btn-header:hover { background: rgba(255,255,255,0.2); }
+        .btn-logout { background: var(--danger-red); border-color: #e74c3c; }
+        .btn-logout:hover { background: #a93226; }
+
+        /* MAIN LAYOUT */
+        main { display: flex; flex-direction: column; flex: 1; padding: 20px; overflow-y: auto; gap: 20px; }
+
+        /* FILTERS SECTION */
+        .filters-card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 1px solid var(--border-color); display: flex; gap: 20px; align-items: flex-end; flex-wrap: wrap;}
+        .filter-group { display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 200px;}
+        .filter-group label { font-weight: bold; font-size: 0.85em; color: var(--secondary-blue); }
+        .filter-group input, .filter-group select { padding: 10px; border: 1px solid var(--border-color); border-radius: 4px; font-size: 1em; outline: none; }
+        .filter-group input:focus, .filter-group select:focus { border-color: var(--accent-green); }
+        .btn-generar { background: var(--accent-green); color: white; border: none; padding: 12px 30px; font-size: 1em; font-weight: bold; border-radius: 4px; cursor: pointer; height: 42px; transition: 0.2s;}
+        .btn-generar:hover { background: #219a52; }
+
+        /* KPI WIDGETS */
+        .kpi-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; }
+        .kpi-card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 1px solid var(--border-color); border-left: 5px solid var(--primary-blue); display: flex; flex-direction: column; justify-content: center;}
+        .kpi-title { font-size: 0.85em; color: gray; font-weight: bold; text-transform: uppercase; margin-bottom: 5px;}
+        .kpi-value { font-size: 2em; font-weight: bold; color: var(--primary-blue); margin: 0;}
+        .kpi-card.profit { border-left-color: var(--accent-green); }
+        .kpi-card.profit .kpi-value { color: var(--accent-green); }
+        .kpi-card.cost { border-left-color: var(--danger-red); }
+
+        /* DATA TABLE */
+        .table-card { background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 1px solid var(--border-color); flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 400px;}
+        .table-header { background: #f8f9fa; padding: 15px 20px; font-weight: bold; color: var(--secondary-blue); border-bottom: 1px solid var(--border-color); }
+        .table-wrapper { flex: 1; overflow-y: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.9em; }
+        th { background-color: var(--primary-blue); color: white; position: sticky; top: 0; text-align: left; padding: 12px; z-index: 1;}
+        td { padding: 12px; border-bottom: 1px solid #f1f1f1; }
+        tr:hover { background-color: #fdfdfd; }
+        .text-right { text-align: right; }
+        .text-center { text-align: center; }
+        .profit-positive { color: var(--accent-green); font-weight: bold; }
+        .profit-zero { color: gray; }
+
+        /* LOCK SCREEN & MODALS */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; justify-content: center; align-items: center; flex-direction: column; }
+        #lock-screen { background: var(--primary-blue); }
+        .lock-title { color: white; font-size: 2.5em; margin-bottom: 10px; }
+        .lock-subtitle { color: #aed6f1; margin-bottom: 30px; font-size: 1.2em; }
+        #unlock-pin { font-size: 2em; width: 180px; text-align: center; letter-spacing: 10px; border-radius: 8px; border: none; padding: 15px; outline: none; }
+        #unlock-pin:focus { border: 3px solid var(--accent-green); }
+        .btn-unlock { background: var(--accent-green); color: white; border: none; padding: 0 25px; font-size: 1.2em; font-weight: bold; border-radius: 8px; cursor: pointer;}
+        
+        #loading-screen { background: var(--bg-light-blue); z-index: 10000; color: var(--primary-blue); }
+    </style>
+</head>
+<body>
+
+<div id="lock-screen" class="modal-overlay">
+    <h1 class="lock-title">🔒 Sistema Bloqueado</h1>
+    <p class="lock-subtitle">Sesión inactiva. Ingrese su PIN para reanudar.</p>
+    <div style="display: flex; gap: 15px;">
+        <input type="password" id="unlock-pin" placeholder="PIN" maxlength="4" autocomplete="off">
+        <button class="btn-unlock" onclick="desbloquearSistema()">Desbloquear</button>
+    </div>
+</div>
+
+<header>
+    <div>
+        <h1 style="margin: 0; font-size: 1.5em;">HOSPITAL POS | Finanzas y Reportes</h1>
+    </div>
+    <div class="header-actions">
+        <a href="index.html" class="btn-header">Volver al POS</a>
+        <a href="admin-personal.html" class="btn-header">Gestión de Personal</a>
+        <span class="user-info"> | <span id="user-display">Verificando sesión...</span></span>
+        <button id="btn-logout" class="btn-header btn-logout">Cerrar Sesión</button>
+    </div>
+</header>
+
+<main>
+    <div class="filters-card">
+        <div class="filter-group">
+            <label>Fecha de Inicio</label>
+            <input type="date" id="date-start">
+        </div>
+        <div class="filter-group">
+            <label>Fecha Final</label>
+            <input type="date" id="date-end">
+        </div>
+        <div class="filter-group">
+            <label>Filtrar por Empleado</label>
+            <select id="select-employee">
+                <option value="ALL">🏥 Total del Hospital (Todos)</option>
+                </select>
+        </div>
+        <button class="btn-generar" id="btn-generar" onclick="generarReporte()">📊 Generar Reporte</button>
+    </div>
+
+    <div class="kpi-container">
+        <div class="kpi-card">
+            <div class="kpi-title">Total de Ingresos (Ventas)</div>
+            <div class="kpi-value" id="kpi-ventas">$0.00</div>
+        </div>
+        <div class="kpi-card cost">
+            <div class="kpi-title">Costo de Insumos</div>
+            <div class="kpi-value" style="color: var(--danger-red);" id="kpi-costos">$0.00</div>
+        </div>
+        <div class="kpi-card profit">
+            <div class="kpi-title">Utilidad Neta (Ganancia)</div>
+            <div class="kpi-value" id="kpi-utilidad">$0.00</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-title">Movimientos Registrados</div>
+            <div class="kpi-value" style="color: var(--secondary-blue);" id="kpi-movimientos">0</div>
+        </div>
+    </div>
+
+    <div class="table-card">
+        <div class="table-header">Desglose de Transacciones Financieras</div>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Fecha y Hora</th>
+                        <th>Concepto</th>
+                        <th>Realizado por</th>
+                        <th class="text-center">Cant.</th>
+                        <th class="text-right">Costo Unit.</th>
+                        <th class="text-right">Ingreso Venta</th>
+                        <th class="text-right">Utilidad Neta</th>
+                    </tr>
+                </thead>
+                <tbody id="table-body">
+                    <tr><td colspan="7" class="text-center" style="color: gray; padding: 40px;">Selecciona las fechas y haz clic en "Generar Reporte"</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</main>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+    import { getFirestore, collection, query, where, getDocs, doc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyA0yq1qdkxcOmwCaUxGiFpYj0mUrVQyD-Q",
+        authDomain: "hospital1-admin.firebaseapp.com",
+        projectId: "hospital1-admin",
+        storageBucket: "hospital1-admin.firebasestorage.app",
+        messagingSenderId: "804830277427",
+        appId: "1:804830277427:web:819463cca4870d32d25846"
+    };
+    
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    // EXPORTACIONES A WINDOW
+    window.generarReporte = generarReporte;
+    window.desbloquearSistema = desbloquearSistema;
+
+    let pinRecepcionista = null;
+
+    // ==========================================
+    // SISTEMA DE SEGURIDAD (SOLO ADMINS)
+    // ==========================================
+    onAuthStateChanged(auth, async (user) => {
+        if (user) {
+            try {
+                const docRef = doc(db, "employees", user.uid);
+                const docSnap = await getDoc(docRef);
+
+                if (docSnap.exists() && docSnap.data().es_admin === true) {
+                    document.getElementById('user-display').innerText = `👤 ${docSnap.data().nombre}`;
+                    pinRecepcionista = docSnap.data().pin;
+                    
+                    configurarFechasPorDefecto();
+                    cargarListaEmpleados();
+                    iniciarControlInactividad(); 
+                } else {
+                    alert("Acceso Denegado: No tienes permisos de Administrador para ver reportes.");
+                    await signOut(auth);
+                    window.location.href = "login.html";
+                }
+            } catch (error) {
+                console.error("Error de permisos:", error);
+            }
+        } else {
+            window.location.href = "login.html";
+        }
+    });
+
+    document.getElementById('btn-logout').addEventListener('click', () => { signOut(auth); });
+
+    // ==========================================
+    // CONTROL DE INACTIVIDAD
+    // ==========================================
+    let timeoutInactividad;
+    function resetearInactividad() {
+        clearTimeout(timeoutInactividad);
+        if(document.getElementById('lock-screen').style.display !== 'flex') {
+            timeoutInactividad = setTimeout(() => {
+                document.getElementById('lock-screen').style.display = 'flex';
+                document.getElementById('unlock-pin').value = '';
+                document.getElementById('unlock-pin').focus();
+            }, 5 * 60 * 1000); // 5 Minutos
+        }
+    }
+
+    function desbloquearSistema() {
+        if(document.getElementById('unlock-pin').value === pinRecepcionista) {
+            document.getElementById('lock-screen').style.display = 'none';
+            resetearInactividad();
+        } else {
+            alert("❌ PIN Incorrecto.");
+            document.getElementById('unlock-pin').value = '';
+        }
+    }
+
+    document.getElementById('unlock-pin').addEventListener('keypress', (e) => { if (e.key === 'Enter') desbloquearSistema(); });
+    ['mousemove', 'keypress', 'click'].forEach(evt => document.addEventListener(evt, resetearInactividad));
+
+    // ==========================================
+    // INICIALIZACIÓN DE LA UI
+    // ==========================================
+    function configurarFechasPorDefecto() {
+        // Por defecto, muestra el día de hoy
+        const hoy = new Date();
+        const strHoy = hoy.toISOString().split('T')[0];
+        document.getElementById('date-start').value = strHoy;
+        document.getElementById('date-end').value = strHoy;
+    }
+
+    function cargarListaEmpleados() {
+        onSnapshot(collection(db, "employees"), (snap) => {
+            const select = document.getElementById('select-employee');
+            // Mantenemos la opción "ALL" intacta
+            select.innerHTML = '<option value="ALL">🏥 Total del Hospital (Todos)</option>';
+            
+            snap.forEach(docSnap => {
+                const emp = docSnap.data();
+                const option = document.createElement('option');
+                option.value = docSnap.id; // Su UID de Auth / Documento
+                option.text = `${emp.nombre} (${emp.rol || 'Empleado'})`;
+                select.appendChild(option);
+            });
+        });
+    }
+
+    // ==========================================
+    // GENERACIÓN DEL REPORTE FINANCIERO
+    // ==========================================
+    async function generarReporte() {
+        const btn = document.getElementById('btn-generar');
+        btn.innerText = "⏳ Consultando...";
+        btn.disabled = true;
+
+        const strStart = document.getElementById('date-start').value;
+        const strEnd = document.getElementById('date-end').value;
+        const employeeId = document.getElementById('select-employee').value;
+
+        if (!strStart || !strEnd) {
+            alert("Por favor, selecciona un rango de fechas válido.");
+            btn.innerText = "📊 Generar Reporte";
+            btn.disabled = false;
+            return;
+        }
+
+        // Convertir strings a objetos Date cubriendo todo el día
+        const startDate = new Date(strStart + 'T00:00:00');
+        const endDate = new Date(strEnd + 'T23:59:59');
+
+        try {
+            // 1. Consultar transacciones en el rango de fechas
+            const q = query(
+                collection(db, "transactions"), 
+                where("timestamp", ">=", startDate), 
+                where("timestamp", "<=", endDate)
+            );
+            
+            const snap = await getDocs(q);
+            
+            // Si quieres optimizar, idealmente bajamos un diccionario maestro de costos 
+            // en caso de que la transacción no tenga guardado el costo histórico.
+            const invSnap = await getDocs(collection(db, "inventory_master"));
+            const catalogoCostos = {};
+            invSnap.forEach(d => {
+                const data = d.data();
+                // Si el administrador llenó el campo "costo", lo usamos. Si no, es 0.
+                catalogoCostos[d.id] = data.costo || 0; 
+            });
+
+            let totalVentas = 0;
+            let totalCostos = 0;
+            let totalUtilidad = 0;
+            let conteoMovimientos = 0;
+            const filasTabla = [];
+
+            snap.forEach(docSnap => {
+                const tx = docSnap.data();
+
+                // 2. Filtro Local por Empleado
+                // Si está en "ALL", pasan todos. Si hay un ID específico, solo pasan los que coincidan.
+                if (employeeId !== "ALL" && tx.acreditado_a_id !== employeeId && tx.usuario_registro !== employeeId) {
+                    return; // Saltamos esta transacción
+                }
+
+                conteoMovimientos++;
+
+                // 3. Cálculos Financieros
+                const ventaTotalTx = tx.precio_venta || 0; 
+                
+                // Buscar el costo. Prioridad 1: Si se guardó en la transacción en el pasado. 
+                // Prioridad 2: Buscarlo en el catálogo actual. Si no existe, es 0.
+                const costoUnitario = tx.costo_unitario !== undefined ? tx.costo_unitario : (catalogoCostos[tx.itemId] || 0);
+                const costoTotalTx = costoUnitario * (tx.cantidad || 1);
+                
+                const utilidadTx = ventaTotalTx - costoTotalTx;
+
+                // Sumar a los Acumulados (KPIs)
+                totalVentas += ventaTotalTx;
+                totalCostos += costoTotalTx;
+                totalUtilidad += utilidadTx;
+
+                // 4. Preparar visualización para la tabla
+                const fechaFormat = tx.timestamp ? new Date(tx.timestamp.toDate()).toLocaleString('es-MX') : 'Desconocida';
+                const utilidadClass = utilidadTx > 0 ? 'profit-positive' : (utilidadTx === 0 ? 'profit-zero' : '');
+
+                filasTabla.push(`
+                    <tr>
+                        <td>${fechaFormat}</td>
+                        <td><strong>${tx.nombre}</strong></td>
+                        <td>${tx.acreditado_a_nombre || 'Sistema'}</td>
+                        <td class="text-center">${tx.cantidad}</td>
+                        <td class="text-right" style="color: gray;">$${costoUnitario.toLocaleString('es-MX')}</td>
+                        <td class="text-right font-weight-bold">$${ventaTotalTx.toLocaleString('es-MX')}</td>
+                        <td class="text-right ${utilidadClass}">$${utilidadTx.toLocaleString('es-MX')}</td>
+                    </tr>
+                `);
+            });
+
+            // 5. Actualizar la Interfaz Gráfica (KPIs y Tabla)
+            document.getElementById('kpi-ventas').innerText = `$${totalVentas.toLocaleString('es-MX', {minimumFractionDigits: 2})}`;
+            document.getElementById('kpi-costos').innerText = `$${totalCostos.toLocaleString('es-MX', {minimumFractionDigits: 2})}`;
+            document.getElementById('kpi-utilidad').innerText = `$${totalUtilidad.toLocaleString('es-MX', {minimumFractionDigits: 2})}`;
+            document.getElementById('kpi-movimientos').innerText = conteoMovimientos;
+
+            const tbody = document.getElementById('table-body');
+            if (filasTabla.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center" style="color: gray; padding: 40px;">No se encontraron ventas para este periodo/empleado.</td></tr>`;
+            } else {
+                // Ordenar de más reciente a más antiguo (opcional, Firebase ya suele traerlos ordenados por el índice)
+                tbody.innerHTML = filasTabla.reverse().join('');
+            }
+
+        } catch (error) {
+            console.error("Error generando reporte:", error);
+            // Firebase a menudo requiere crear un "Índice Compuesto" cuando filtras por fechas.
+            // Si el error es por falta de índice, Firebase te dará un link directo en la consola para crearlo.
+            if (error.message.includes("index")) {
+                alert("⚠️ Firebase requiere crear un índice para buscar por fechas. Abre la consola F12, haz clic en el link azul que arroja el error y espera 5 minutos a que se genere.");
+            } else {
+                alert("Ocurrió un error al consultar la base de datos.");
+            }
+        } finally {
+            btn.innerText = "📊 Generar Reporte";
+            btn.disabled = false;
+        }
+    }
+</script>
+</body>
+</html>
