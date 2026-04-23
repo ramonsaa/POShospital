@@ -360,7 +360,6 @@
     // CAPTURA DE TECLAS (F1, F2) Y BLOQUEO
     // ==========================================
     document.addEventListener('keydown', (e) => {
-        // Bloquear comportamiento por defecto del navegador en F1 y F2 y enfocar buscadores
         if (e.key === 'F1') {
             e.preventDefault();
             document.getElementById('search-patients').focus();
@@ -368,8 +367,6 @@
             e.preventDefault();
             document.getElementById('inventory-search').focus();
         }
-        
-        // Reiniciar inactividad al teclear
         resetearInactividad();
     });
 
@@ -466,12 +463,14 @@
         });
     }
 
+    // CORRECCIÓN: Evitar que se quede en "Cargando personal..." si falla o está vacío.
     function escucharEmpleados() {
-        onSnapshot(collection(db, "employees"), async (snap) => {
-            if (snap.empty) return; 
-            const selector = document.getElementById('select-empleado');
+        const selector = document.getElementById('select-empleado');
+        
+        onSnapshot(collection(db, "employees"), (snap) => {
             selector.innerHTML = '';
             
+            // Forzamos siempre al usuario actual (Yo) primero
             const optionYo = document.createElement('option');
             optionYo.value = AppState.uidRecepcionista;
             optionYo.text = `${AppState.nombreRecepcionista} (Yo)`;
@@ -487,6 +486,12 @@
                     selector.appendChild(option);
                 }
             });
+        }, (error) => {
+            console.error("Error cargando empleados:", error);
+            // Si hay un error, nos aseguramos que al menos el usuario "(Yo)" se quede en la lista
+            if(selector.options.length === 0) {
+                selector.innerHTML = `<option value="${AppState.uidRecepcionista}">${AppState.nombreRecepcionista} (Yo)</option>`;
+            }
         });
     }
 
