@@ -225,7 +225,7 @@
                 document.getElementById('lock-screen').style.display = 'flex';
                 document.getElementById('unlock-pin').value = '';
                 document.getElementById('unlock-pin').focus();
-            }, 5 * 60 * 1000); // 5 Minutos
+            }, 5 * 60 * 1000); 
         }
     }
 
@@ -246,7 +246,6 @@
     // INICIALIZACIÓN DE LA UI
     // ==========================================
     function configurarFechasPorDefecto() {
-        // Por defecto, muestra el día de hoy
         const hoy = new Date();
         const strHoy = hoy.toISOString().split('T')[0];
         document.getElementById('date-start').value = strHoy;
@@ -256,17 +255,28 @@
     function cargarListaEmpleados() {
         onSnapshot(collection(db, "employees"), (snap) => {
             const select = document.getElementById('select-employee');
-            // Mantenemos la opción "ALL" intacta
             select.innerHTML = '<option value="ALL">🏥 Total del Hospital (Todos)</option>';
-            
             snap.forEach(docSnap => {
                 const emp = docSnap.data();
                 const option = document.createElement('option');
-                option.value = docSnap.id; // Su UID de Auth / Documento
+                option.value = docSnap.id; 
                 option.text = `${emp.nombre} (${emp.rol || 'Empleado'})`;
                 select.appendChild(option);
             });
         });
+    }
+
+    // ==========================================
+    // FUNCIONES DE PARSEO FINANCIERO BLINDADAS
+    // ==========================================
+    // Esta función se encarga de que no importa si guardaste el precio con "$" o texto, siempre devuelva un número real.
+    function limpiarDinero(valor) {
+        if (valor === undefined || valor === null) return 0;
+        if (typeof valor === 'number') return valor;
+        // Quita todo lo que no sea número, punto o signo negativo
+        const extraido = String(valor).replace(/[^0-9.-]+/g,"");
+        const num = parseFloat(extraido);
+        return isNaN(num) ? 0 : num;
     }
 
     // ==========================================
@@ -288,12 +298,10 @@
             return;
         }
 
-        // Convertir strings a objetos Date cubriendo todo el día
         const startDate = new Date(strStart + 'T00:00:00');
         const endDate = new Date(strEnd + 'T23:59:59');
 
         try {
-            // 1. Consultar transacciones en el rango de fechas
             const q = query(
                 collection(db, "transactions"), 
                 where("timestamp", ">=", startDate), 
@@ -302,14 +310,14 @@
             
             const snap = await getDocs(q);
             
-            // Si quieres optimizar, idealmente bajamos un diccionario maestro de costos 
-            // en caso de que la transacción no tenga guardado el costo histórico.
+            // 🚨 SOLUCIÓN AL COSTO: Bajar catálogo y forzar limpieza financiera
             const invSnap = await getDocs(collection(db, "inventory_master"));
             const catalogoCostos = {};
             invSnap.forEach(d => {
                 const data = d.data();
-                // Si el administrador llenó el campo "costo", lo usamos. Si no, es 0.
-                catalogoCostos[d.id] = data.costo || 0; 
+                // Buscamos bajo diferentes nombres posibles por si cambió tu base de datos
+                const costoRaw = data.costo !== undefined ? data.costo : (data.precio_compra || data.costo_compra || 0);
+                catalogoCostos[d.id] = limpiarDinero(costoRaw); 
             });
 
             let totalVentas = 0;
@@ -321,30 +329,32 @@
             snap.forEach(docSnap => {
                 const tx = docSnap.data();
 
-                // 2. Filtro Local por Empleado
-                // Si está en "ALL", pasan todos. Si hay un ID específico, solo pasan los que coincidan.
                 if (employeeId !== "ALL" && tx.acreditado_a_id !== employeeId && tx.usuario_registro !== employeeId) {
-                    return; // Saltamos esta transacción
+                    return; 
                 }
 
                 conteoMovimientos++;
 
-                // 3. Cálculos Financieros
-                const ventaTotalTx = tx.precio_venta || 0; 
+                // Lógica financiera forzando números estrictos
+                const ventaTotalTx = limpiarDinero(tx.precio_venta); 
+                const cantidadTx = limpiarDinero(tx.cantidad) || 1;
                 
-                // Buscar el costo. Prioridad 1: Si se guardó en la transacción en el pasado. 
-                // Prioridad 2: Buscarlo en el catálogo actual. Si no existe, es 0.
-                const costoUnitario = tx.costo_unitario !== undefined ? tx.costo_unitario : (catalogoCostos[tx.itemId] || 0);
-                const costoTotalTx = costoUnitario * (tx.cantidad || 1);
-                
+                // Prioridad para buscar costo
+                let costoUnitario = 0;
+                if (tx.costo_unitario !== undefined) {
+                    costoUnitario = limpiarDinero(tx.costo_unitario);
+                } else if (catalogoCostos[tx.itemId] !== undefined) {
+                    costoUnitario = catalogoCostos[tx.itemId];
+                }
+
+                const costoTotalTx = costoUnitario * cantidadTx;
                 const utilidadTx = ventaTotalTx - costoTotalTx;
 
-                // Sumar a los Acumulados (KPIs)
+                // Acumuladores
                 totalVentas += ventaTotalTx;
                 totalCostos += costoTotalTx;
                 totalUtilidad += utilidadTx;
 
-                // 4. Preparar visualización para la tabla
                 const fechaFormat = tx.timestamp ? new Date(tx.timestamp.toDate()).toLocaleString('es-MX') : 'Desconocida';
                 const utilidadClass = utilidadTx > 0 ? 'profit-positive' : (utilidadTx === 0 ? 'profit-zero' : '');
 
@@ -353,15 +363,15 @@
                         <td>${fechaFormat}</td>
                         <td><strong>${tx.nombre}</strong></td>
                         <td>${tx.acreditado_a_nombre || 'Sistema'}</td>
-                        <td class="text-center">${tx.cantidad}</td>
-                        <td class="text-right" style="color: gray;">$${costoUnitario.toLocaleString('es-MX')}</td>
-                        <td class="text-right font-weight-bold">$${ventaTotalTx.toLocaleString('es-MX')}</td>
-                        <td class="text-right ${utilidadClass}">$${utilidadTx.toLocaleString('es-MX')}</td>
+                        <td class="text-center">${cantidadTx}</td>
+                        <td class="text-right" style="color: gray;">$${costoUnitario.toLocaleString('es-MX', {minimumFractionDigits: 2})}</td>
+                        <td class="text-right font-weight-bold">$${ventaTotalTx.toLocaleString('es-MX', {minimumFractionDigits: 2})}</td>
+                        <td class="text-right ${utilidadClass}">$${utilidadTx.toLocaleString('es-MX', {minimumFractionDigits: 2})}</td>
                     </tr>
                 `);
             });
 
-            // 5. Actualizar la Interfaz Gráfica (KPIs y Tabla)
+            // Escribimos en el HTML formateando como moneda real
             document.getElementById('kpi-ventas').innerText = `$${totalVentas.toLocaleString('es-MX', {minimumFractionDigits: 2})}`;
             document.getElementById('kpi-costos').innerText = `$${totalCostos.toLocaleString('es-MX', {minimumFractionDigits: 2})}`;
             document.getElementById('kpi-utilidad').innerText = `$${totalUtilidad.toLocaleString('es-MX', {minimumFractionDigits: 2})}`;
@@ -371,14 +381,11 @@
             if (filasTabla.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="7" class="text-center" style="color: gray; padding: 40px;">No se encontraron ventas para este periodo/empleado.</td></tr>`;
             } else {
-                // Ordenar de más reciente a más antiguo (opcional, Firebase ya suele traerlos ordenados por el índice)
                 tbody.innerHTML = filasTabla.reverse().join('');
             }
 
         } catch (error) {
             console.error("Error generando reporte:", error);
-            // Firebase a menudo requiere crear un "Índice Compuesto" cuando filtras por fechas.
-            // Si el error es por falta de índice, Firebase te dará un link directo en la consola para crearlo.
             if (error.message.includes("index")) {
                 alert("⚠️ Firebase requiere crear un índice para buscar por fechas. Abre la consola F12, haz clic en el link azul que arroja el error y espera 5 minutos a que se genere.");
             } else {
