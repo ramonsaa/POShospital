@@ -147,18 +147,20 @@
 
     <section>
         <div class="panel-header">Pacientes Activos <span>[F1]</span></div>
+        
         <div class="search-container" style="display: flex; flex-direction: column; gap: 10px;">
             <div style="display: flex; gap: 10px;">
-                <button class="btn-action btn-warning" onclick="activarModoInterno()" style="flex: 1; padding: 8px 12px; font-size: 0.85em; justify-content: center;" title="Extraer insumos sin cuenta de paciente">📋 Uso Interno</button>
-                <button class="btn-action btn-success" onclick="abrirModalNuevo()" style="flex: 1; padding: 8px 12px; font-size: 0.85em; justify-content: center;">➕ Nuevo</button>
+                <button class="btn-action btn-warning" onclick="activarModoInterno()" style="flex: 1; justify-content: center;" title="Extraer insumos sin cuenta de paciente">📋 Uso Interno</button>
+                <button class="btn-action btn-success" onclick="abrirModalNuevo()" style="flex: 1; justify-content: center;">➕ Nuevo</button>
             </div>
-            <input type="text" id="search-patients" placeholder="Buscar cuarto o paciente... (Presiona F1)">
+            <input type="text" id="search-patients" placeholder="Buscar cuarto o paciente... [F1]">
         </div>
+        
         <div class="data-list">
             <table>
                 <thead><tr><th>Cuarto</th><th>Paciente</th></tr></thead>
                 <tbody id="lista-pacientes">
-                    <tr><td colspan="2" style="text-align: center;">Cargando...</td></tr>
+                    <tr><td colspan="2" style="text-align: center; color: gray;">Cargando pacientes...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -197,7 +199,7 @@
         </div>
 
         <div class="search-container">
-            <input type="text" id="inventory-search" placeholder="Buscar código o descripción... (Presiona F2)">
+            <input type="text" id="inventory-search" placeholder="Buscar código o descripción... [F2]">
         </div>
 
         <div class="dual-list-container">
@@ -206,7 +208,9 @@
                 <div class="data-list">
                     <table id="tabla-servicios-main">
                         <thead><tr><th>Descripción</th><th>Precio</th></tr></thead>
-                        <tbody id="lista-servicios"></tbody>
+                        <tbody id="lista-servicios">
+                            <tr><td colspan="2" style="text-align: center; color: gray;">Cargando servicios...</td></tr>
+                        </tbody>
                     </table>
                 </div>
             </div>
@@ -216,7 +220,9 @@
                 <div class="data-list">
                     <table id="tabla-inventario-main">
                         <thead><tr><th>Descripción</th><th>Stock</th><th>Precio</th></tr></thead>
-                        <tbody id="lista-inventario"></tbody>
+                        <tbody id="lista-inventario">
+                            <tr><td colspan="3" style="text-align: center; color: gray;">Cargando inventario...</td></tr>
+                        </tbody>
                     </table>
                 </div>
             </div>
@@ -357,18 +363,20 @@
     };
 
     // ==========================================
-    // CAPTURA DE TECLAS (F1, F2) Y BLOQUEO
+    // CAPTURA ESTRICTA DE TECLAS (F1, F2) Y BLOQUEO
     // ==========================================
-    document.addEventListener('keydown', (e) => {
+    window.addEventListener('keydown', function(e) {
         if (e.key === 'F1') {
             e.preventDefault();
+            e.stopPropagation();
             document.getElementById('search-patients').focus();
         } else if (e.key === 'F2') {
             e.preventDefault();
+            e.stopPropagation();
             document.getElementById('inventory-search').focus();
         }
         resetearInactividad();
-    });
+    }, true); // El parámetro 'true' fuerza la captura antes de que el navegador intervenga.
 
     document.addEventListener('mousemove', resetearInactividad);
     document.addEventListener('click', resetearInactividad);
@@ -463,14 +471,15 @@
         });
     }
 
-    // CORRECCIÓN: Evitar que se quede en "Cargando personal..." si falla o está vacío.
+    // ==========================================
+    // ESCUCHAS DE FIREBASE BLINDADOS CONTRA FALLOS
+    // ==========================================
     function escucharEmpleados() {
         const selector = document.getElementById('select-empleado');
         
         onSnapshot(collection(db, "employees"), (snap) => {
             selector.innerHTML = '';
             
-            // Forzamos siempre al usuario actual (Yo) primero
             const optionYo = document.createElement('option');
             optionYo.value = AppState.uidRecepcionista;
             optionYo.text = `${AppState.nombreRecepcionista} (Yo)`;
@@ -487,20 +496,20 @@
                 }
             });
         }, (error) => {
-            console.error("Error cargando empleados:", error);
-            // Si hay un error, nos aseguramos que al menos el usuario "(Yo)" se quede en la lista
-            if(selector.options.length === 0) {
-                selector.innerHTML = `<option value="${AppState.uidRecepcionista}">${AppState.nombreRecepcionista} (Yo)</option>`;
-            }
+            console.error("Error Firebase:", error);
+            // Si bloquea reglas, forzamos tu usuario para que la interfaz no colapse
+            selector.innerHTML = `<option value="${AppState.uidRecepcionista}">${AppState.nombreRecepcionista} (Error Reglas)</option>`;
         });
     }
 
-    // ==========================================
-    // SELECCIÓN DE MODOS (PACIENTE vs INTERNO)
-    // ==========================================
     function escucharPacientesActivos() {
+        const tbody = document.getElementById('lista-pacientes');
         onSnapshot(query(collection(db, "accounts"), where("estado", "==", "abierta")), (snap) => {
-            const tbody = document.getElementById('lista-pacientes'); tbody.innerHTML = '';
+            tbody.innerHTML = '';
+            if(snap.empty) {
+                tbody.innerHTML = '<tr><td colspan="2" style="text-align: center; color: gray;">No hay pacientes activos</td></tr>';
+                return;
+            }
             snap.forEach((docSnap) => {
                 const data = docSnap.data(); 
                 const tr = document.createElement('tr');
@@ -510,9 +519,60 @@
                 tr.onclick = () => seleccionarPaciente(docSnap.id, data, tr);
                 tbody.appendChild(tr);
             });
+        }, (error) => {
+            console.error(error);
+            tbody.innerHTML = '<tr><td colspan="2" style="text-align: center; color: var(--danger-red);">❌ Error de permisos</td></tr>';
         });
     }
 
+    function escucharServiciosYPaquetes() {
+        const tbody = document.getElementById('lista-servicios');
+        onSnapshot(collection(db, "services_and_kits"), (snap) => {
+            tbody.innerHTML = '';
+            if(snap.empty) {
+                tbody.innerHTML = '<tr><td colspan="2" style="text-align: center; color: gray;">Sin servicios registrados</td></tr>';
+                return;
+            }
+            snap.forEach((docSnap) => {
+                const item = { id: docSnap.id, ...docSnap.data() };
+                const tr = document.createElement('tr');
+                const icono = item.tipo === 'kit' ? '📦 ' : '🩺 ';
+                tr.innerHTML = `<td>${icono}${item.nombre}</td><td style="text-align:right;">$${item.precio_venta.toLocaleString('es-MX')}</td>`;
+                tr.onclick = () => procesarServicioOKit(item); 
+                tbody.appendChild(tr);
+            });
+        }, (error) => {
+            console.error(error);
+            tbody.innerHTML = '<tr><td colspan="2" style="text-align: center; color: var(--danger-red);">❌ Error de permisos</td></tr>';
+        });
+    }
+
+    function escucharInventarioFisico() {
+        const tbody = document.getElementById('lista-inventario');
+        onSnapshot(collection(db, "inventory_master"), (snap) => {
+            tbody.innerHTML = '';
+            if(snap.empty) {
+                tbody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: gray;">Inventario vacío</td></tr>';
+                return;
+            }
+            snap.forEach((docSnap) => {
+                const i = { id: docSnap.id, ...docSnap.data(), tipo: 'fisico' };
+                if(i.publicado_en_pos) {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `<td>${i.nombre}</td><td style="text-align:center;" class="${i.stock < 10 ? 'stock-warning':''}">${i.stock}</td><td style="text-align:right;">$${i.precio_venta.toLocaleString('es-MX')}</td>`;
+                    tr.onclick = () => agregarAlCarrito(i); 
+                    tbody.appendChild(tr);
+                }
+            });
+        }, (error) => {
+            console.error(error);
+            tbody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: var(--danger-red);">❌ Error de permisos</td></tr>';
+        });
+    }
+
+    // ==========================================
+    // SELECCIÓN DE MODOS (PACIENTE vs INTERNO)
+    // ==========================================
     function activarModoInterno() {
         if(Object.keys(AppState.carrito).length > 0) {
             if(!confirm("Tienes insumos pendientes. ¿Vaciar carrito y cambiar a Uso Interno?")) return;
