@@ -161,9 +161,7 @@
         <div class="search-container" style="background:#eef2f5; border-bottom: 2px solid var(--primary-blue);">
             <label style="font-size: 0.8em; font-weight: bold; color: var(--primary-blue); display: block; margin-bottom: 5px;">Acreditar movimiento a:</label>
             <select id="select-empleado" style="width:100%; padding:8px; font-size:0.9em; border: 1px solid var(--border-color); border-radius: 3px;">
-                <option value="sistema">Sistema (Recepción)</option>
-                <option value="enf_elena">Enf. Elena G.</option>
-                <option value="dr_arreola">Dr. Arreola</option>
+                <option value="">Cargando personal...</option>
             </select>
         </div>
 
@@ -227,8 +225,9 @@
 </div>
 
 <script type="module">
+    // IMPORTANTE: Se agregó setDoc a la lista de importaciones
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-    import { getFirestore, collection, query, where, onSnapshot, doc, addDoc, updateDoc, increment, serverTimestamp, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+    import { getFirestore, collection, query, where, onSnapshot, doc, addDoc, updateDoc, increment, serverTimestamp, writeBatch, setDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
     import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
     const firebaseConfig = {
@@ -253,7 +252,7 @@
     window.guardarPaciente = guardarPaciente;
     window.toggleAmbulatorio = toggleAmbulatorio;
 
-    let modoModal = 'nuevo'; // Controla si guardamos o actualizamos
+    let modoModal = 'nuevo';
 
     window.AppState = {
         pacienteActualId: null,
@@ -283,6 +282,7 @@
         escucharPacientesActivos();
         escucharServiciosYPaquetes();
         escucharInventarioFisico();
+        escucharEmpleados(); // <--- Llamada a la nueva función
     }
 
     function configurarBuscadores() {
@@ -294,6 +294,53 @@
             const term = e.target.value.toLowerCase();
             document.querySelectorAll('#lista-servicios tr').forEach(row => { row.style.display = row.innerText.toLowerCase().includes(term) ? '' : 'none'; });
             document.querySelectorAll('#lista-inventario tr').forEach(row => { row.style.display = row.innerText.toLowerCase().includes(term) ? '' : 'none'; });
+        });
+    }
+
+    // ==========================================
+    // NUEVA FUNCIÓN: ESCUCHAR EMPLEADOS Y AUTO-CREAR
+    // ==========================================
+    function escucharEmpleados() {
+        onSnapshot(collection(db, "employees"), async (snap) => {
+            
+            // LÓGICA DE AUTO-CREACIÓN SI ESTÁ VACÍO
+            if (snap.empty) {
+                console.log("Colección employees vacía. Creando Dr. Admin por defecto...");
+                try {
+                    // Usamos setDoc para simular un UID maestro de Auth (ej: 'demo_admin_uid_12345')
+                    await setDoc(doc(db, "employees", "demo_admin_uid_12345"), {
+                        nombre: "Dr. Admin (Demo)",
+                        pin: "1234",
+                        rol: "admin",
+                        email: "admin@hospital.com"
+                    });
+                } catch (error) {
+                    console.error("Error creando el usuario por defecto:", error);
+                }
+                return; // Cortamos aquí, el listener se volverá a disparar solo porque acabamos de escribir en la DB.
+            }
+
+            // SI HAY EMPLEADOS, POBLAMOS EL SELECTOR
+            const selector = document.getElementById('select-empleado');
+            selector.innerHTML = '';
+            
+            const optionYo = document.createElement('option');
+            optionYo.value = AppState.uidRecepcionista || "sistema";
+            optionYo.text = "Recepcionista en turno (Yo)";
+            selector.appendChild(optionYo);
+
+            snap.forEach((docSnap) => {
+                const emp = docSnap.data();
+                const uid = docSnap.id;
+                
+                // Evitamos poner al recepcionista actual 2 veces en la lista
+                if(uid !== AppState.uidRecepcionista) { 
+                    const option = document.createElement('option');
+                    option.value = uid; 
+                    option.text = emp.nombre || 'Sin nombre';
+                    selector.appendChild(option);
+                }
+            });
         });
     }
 
