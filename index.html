@@ -2,212 +2,477 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Hospital POS - Recepción Principal</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hospital POS - Panel de Control</title>
     <style>
-        :root { --primary-blue: #2c3e50; --secondary-blue: #34495e; --accent-green: #27ae60; --light-bg: #f4f7f6; --white: #ffffff; --border-color: #dcdde1; --text-dark: #2f3640; --danger-red: #c0392b; --cart-width: 0px; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background-color: var(--light-bg); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
-        header { background-color: var(--primary-blue); color: white; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid var(--accent-green); }
-        main { display: grid; grid-template-columns: var(--cart-width) 280px 1fr 380px; gap: 1px; background-color: var(--border-color); flex: 1; transition: grid-template-columns 0.3s ease; }
-        section { background-color: white; display: flex; flex-direction: column; overflow: hidden; }
-        .panel-header { background-color: var(--secondary-blue); color: white; padding: 10px; font-size: 0.8em; font-weight: bold; text-transform: uppercase; }
+        :root {
+            --primary-blue: #2c3e50;
+            --secondary-blue: #34495e;
+            --accent-green: #27ae60;
+            --light-bg: #f4f7f6;
+            --white: #ffffff;
+            --border-color: #dcdde1;
+            --text-dark: #2f3640;
+            --danger-red: #c0392b;
+            --cart-width: 0px; 
+        }
+
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background-color: var(--light-bg); color: var(--text-dark); display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+        
+        header { background-color: var(--primary-blue); color: var(--white); padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid var(--accent-green); z-index: 10;}
+        .header-actions { display: flex; align-items: center; gap: 15px; }
+        .user-info { font-size: 0.9em; color: #aed6f1; font-weight: bold;}
+        button.btn-header { background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 0.85em; }
+        button.btn-header:hover { background: rgba(255,255,255,0.2); }
+        button.btn-logout { background: #c0392b; border-color: #e74c3c; }
+        button.btn-logout:hover { background: #a93226; }
+
+        main { 
+            display: grid; 
+            grid-template-columns: var(--cart-width) 280px 1fr 380px; 
+            gap: 1px; 
+            background-color: var(--border-color); 
+            flex: 1; 
+            overflow: hidden; 
+            transition: grid-template-columns 0.3s ease-in-out;
+        }
+
+        section { background-color: var(--white); display: flex; flex-direction: column; overflow: hidden; }
+        .panel-header { background-color: var(--secondary-blue); color: var(--white); padding: 8px 12px; font-size: 0.85em; font-weight: bold; text-transform: uppercase; display: flex; justify-content: space-between; align-items: center; }
+        
+        .search-container { padding: 10px; background: #fdfdfd; border-bottom: 1px solid var(--border-color); }
+        input[type="text"] { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid var(--border-color); outline: none; }
+        input[type="text"]:focus { border-color: var(--accent-green); }
+        
         .data-list { flex: 1; overflow-y: auto; }
+        .dual-list-container { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
+        .list-section { flex: 1; display: flex; flex-direction: column; overflow: hidden; border-bottom: 2px solid var(--border-color); }
+        .list-title { background: #eef2f5; padding: 5px 10px; font-size: 0.8em; font-weight: bold; color: var(--secondary-blue); border-bottom: 1px solid var(--border-color); }
+        
         table { width: 100%; border-collapse: collapse; font-size: 0.85em; }
-        td { padding: 10px; border-bottom: 1px solid #eee; cursor: pointer; }
+        th { background-color: #f8f9fa; position: sticky; top: 0; text-align: left; padding: 8px; border-bottom: 1px solid var(--border-color); z-index: 1;}
+        td { padding: 6px 8px; border-bottom: 1px solid #f1f1f1; cursor: pointer; }
         tr:hover { background-color: #ebf5fb; }
         .selected-row { background-color: #d4e6f1 !important; border-left: 4px solid var(--accent-green); }
-        .cart-item { background: #1a252f; color: white; padding: 10px; margin-bottom: 5px; border-left: 3px solid var(--accent-green); }
-        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 100; justify-content: center; align-items: center; }
-        .modal-content { background: white; padding: 25px; width: 450px; border-radius: 8px; display: flex; flex-direction: column; gap: 15px; }
-        .btn-action { padding: 10px; cursor: pointer; border: none; font-weight: bold; }
+        
+        .account-details { padding: 15px; flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+        .summary-box { display: flex; justify-content: space-between; background: #f8f9fa; padding: 15px; border: 1px solid var(--border-color); margin-bottom: 10px; border-radius: 4px;}
+        .total-amount { font-size: 1.6em; color: var(--primary-blue); font-weight: bold; text-align: right;}
+        .action-bar { padding: 10px; border-top: 1px solid var(--border-color); display: flex; gap: 10px; background: #fdfdfd;}
+        
+        button.btn-action { padding: 8px 15px; cursor: pointer; border: none; font-size: 0.85em; font-weight: bold; border-radius: 3px;}
+        .btn-primary { background-color: var(--primary-blue); color: white; }
+        .btn-success { background-color: var(--accent-green); color: white; }
+        .btn-danger { background-color: var(--danger-red); color: white; }
+        
+        .nurse-badge { font-size: 0.75em; background: #e8f5e9; color: #2e7d32; padding: 2px 6px; border-radius: 3px; font-weight: 600;}
+        .system-badge { font-size: 0.75em; background: #e3f2fd; color: #1565c0; padding: 2px 6px; border-radius: 3px; font-weight: 600;}
+        .stock-warning { color: var(--danger-red); font-weight: bold; }
+
+        /* CARRITO DESLIZANTE */
+        #cart-section { background-color: #1a252f; color: white; border-right: 3px solid var(--accent-green); }
+        #cart-section .panel-header { background-color: #151e27; border-bottom: 1px solid #2c3e50; }
+        .cart-items-container { padding: 10px; flex: 1; overflow-y: auto; overflow-x: hidden; }
+        .cart-item { background: rgba(255,255,255,0.05); padding: 10px; margin-bottom: 8px; border-radius: 4px; border-left: 3px solid var(--accent-green); }
+        .cart-item-title { font-size: 0.85em; font-weight: bold; margin-bottom: 5px; word-wrap: break-word;}
+        .cart-controls { display: flex; justify-content: space-between; align-items: center; margin-top: 8px;}
+        .qty-box { display: flex; align-items: center; background: rgba(0,0,0,0.3); border-radius: 4px; overflow: hidden;}
+        .qty-btn { background: #34495e; color: white; border: none; width: 25px; height: 25px; cursor: pointer; font-weight: bold; display: flex; justify-content: center; align-items: center;}
+        .qty-btn:hover { background: #2c3e50; }
+        .qty-val { width: 30px; text-align: center; font-size: 0.85em; font-weight: bold;}
+        .cart-price { color: var(--accent-green); font-weight: bold; font-size: 0.9em;}
+        .cart-badge { font-size: 0.7em; color: #95a5a6; display: block; margin-top: 2px;}
+        .cart-summary { padding: 15px; background: rgba(0,0,0,0.2); border-top: 1px solid #2c3e50; }
     </style>
 </head>
 <body>
 
 <header>
-    <div><strong>HOSPITAL POS</strong> | Recepción Principal</div>
-    <div>
-        <a href="inventory-admin.html" style="color:white; margin-right:20px;">📦 Inventario</a>
-        <button id="btn-fullscreen">🖵 Pantalla Completa</button>
-        <button id="btn-logout" style="background:#c0392b; color:white;">Salir</button>
+    <div><strong>HOSPITAL POS</strong> | Panel Administrativo</div>
+    <div class="header-actions">
+        <a href="inventory-admin.html" style="color: white; font-size: 0.85em; text-decoration: none; border: 1px solid white; padding: 5px; border-radius: 4px;">📦 Ir a Inventario Maestro</a>
+        <span class="user-info"> | <span id="user-display">Verificando sesión...</span></span>
+        <span class="user-info"> | <span id="clock">--:--</span></span>
+        <button id="btn-fullscreen" class="btn-header">🖵 Pantalla Completa</button>
+        <button id="btn-logout" class="btn-header btn-logout">Cerrar Sesión</button>
     </div>
 </header>
 
 <main>
     <section id="cart-section">
         <div class="panel-header">🛒 Pre-Checkout</div>
-        <div class="data-list" id="cart-list"></div>
-        <div style="padding:15px; border-top:1px solid #ddd;">
-            <div id="cart-total-text" style="font-size:1.5em; font-weight:bold; color:var(--accent-green); text-align:right;">$0.00</div>
-            <button class="btn-action" style="width:100%; background:var(--accent-green); color:white;" id="btn-procesar-carrito">Confirmar Cargos</button>
-            <button class="btn-action" style="width:100%; background:#7f8c8d; color:white; margin-top:5px;" onclick="vaciarCarrito()">Vaciar Lista</button>
+        <div class="cart-items-container" id="cart-list"></div>
+        <div class="cart-summary">
+            <div style="display: flex; justify-content: space-between; font-size: 1.1em; font-weight: bold; margin-bottom: 10px;">
+                <span>Total:</span>
+                <span id="cart-total-text" style="color: var(--accent-green);">$0.00</span>
+            </div>
+            <button class="btn-action btn-success" id="btn-procesar-carrito" style="width: 100%; padding: 10px; margin-bottom: 10px;">Confirmar Cargos</button>
+            <button class="btn-action btn-danger" style="width: 100%; padding: 8px;" id="btn-vaciar-carrito">Vaciar Lista</button>
         </div>
     </section>
 
     <section>
-        <div class="panel-header">Pacientes Activos</div>
-        <input type="text" id="search-patients" placeholder="Buscar..." style="padding:10px; width:100%;">
-        <div class="data-list"><table><tbody id="lista-pacientes"></tbody></table></div>
-    </section>
-
-    <section>
-        <div class="panel-header" id="header-cuenta">Cuenta del Paciente</div>
-        <div id="resumen-cuenta" style="padding:15px; border-bottom:1px solid #ddd;">Seleccione paciente.</div>
-        <div class="data-list"><table><tbody id="lista-transacciones"></tbody></table></div>
-        <div style="padding:15px; border-top:1px solid #ddd;">
-            <button class="btn-action" style="width:100%; background:var(--danger-red); color:white;" id="btn-liquidar">Liquidar Cuenta</button>
+        <div class="panel-header">Pacientes Activos <span>[F1]</span></div>
+        <div class="search-container">
+            <input type="text" id="search-patients" placeholder="Buscar cuarto o paciente...">
         </div>
-    </section>
-
-    <section>
-        <div class="panel-header">Catálogo</div>
-        <select id="select-empleado" style="padding:10px; width:100%;"><option value="sistema">Sistema</option></select>
-        <input type="text" id="inventory-search" placeholder="Buscar insumo..." style="padding:10px; width:100%;">
         <div class="data-list">
-            <div class="panel-header" style="background:#eee; color:#333;">Servicios y Paquetes</div>
-            <table><tbody id="lista-servicios"></tbody></table>
-            <div class="panel-header" style="background:#eee; color:#333;">Inventario Físico</div>
-            <table><tbody id="lista-inventario"></tbody></table>
+            <table>
+                <thead><tr><th>Cuarto</th><th>Paciente</th></tr></thead>
+                <tbody id="lista-pacientes">
+                    <tr><td colspan="2" style="text-align: center;">Cargando...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section>
+        <div class="panel-header" id="header-cuenta">Cuenta del Paciente <span>--</span></div>
+        <div class="account-details">
+            <div class="summary-box" id="resumen-cuenta">
+                <div>Seleccione un paciente de la lista.</div>
+            </div>
+            <div class="data-list">
+                <table>
+                    <thead>
+                        <tr><th>Concepto</th><th>Cant.</th><th>Total</th><th>Acreditado a</th></tr>
+                    </thead>
+                    <tbody id="lista-transacciones"></tbody>
+                </table>
+            </div>
+            <div class="action-bar">
+                <button class="btn-action btn-primary" id="btn-imprimir">Imprimir Cuenta [P]</button>
+                <button class="btn-action btn-success" id="btn-liquidar">Liquidar [F10]</button>
+                <button class="btn-action btn-danger" id="btn-borrar">Borrar [DEL]</button>
+            </div>
+        </div>
+    </section>
+
+    <section>
+        <div class="panel-header">Catálogo de Cargos <span>[F2]</span></div>
+        
+        <div class="search-container" style="background:#eef2f5; border-bottom: 2px solid var(--primary-blue);">
+            <label style="font-size: 0.8em; font-weight: bold; color: var(--primary-blue); display: block; margin-bottom: 5px;">Acreditar movimiento a:</label>
+            <select id="select-empleado" style="width:100%; padding:8px; font-size:0.9em; border: 1px solid var(--border-color); border-radius: 3px;">
+                <option value="sistema">Sistema (Recepción)</option>
+                <option value="enf_elena">Enf. Elena G.</option>
+                <option value="dr_arreola">Dr. Arreola</option>
+            </select>
+        </div>
+
+        <div class="search-container">
+            <input type="text" id="inventory-search" placeholder="Buscar código o descripción...">
+        </div>
+
+        <div class="dual-list-container">
+            <div class="list-section">
+                <div class="list-title">Servicios y Paquetes (Clic para confirmar)</div>
+                <div class="data-list">
+                    <table id="tabla-servicios-main">
+                        <thead><tr><th>Descripción</th><th>Precio</th></tr></thead>
+                        <tbody id="lista-servicios"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="list-section">
+                <div class="list-title">Inventario Físico (Clic para pre-checkout)</div>
+                <div class="data-list">
+                    <table id="tabla-inventario-main">
+                        <thead><tr><th>Descripción</th><th>Stock</th><th>Precio</th></tr></thead>
+                        <tbody id="lista-inventario"></tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </section>
 </main>
 
-<div id="edit-patient-modal" class="modal-overlay">
-    <div class="modal-content">
-        <h3>✏️ Editar Paciente</h3>
-        <input type="text" id="edit-nombre" placeholder="Nombre">
-        <input type="text" id="edit-cuarto" placeholder="Cuarto">
-        <label><input type="checkbox" id="edit-anonimo"> Modo Anónimo</label>
-        <select id="edit-nivel"><option value="baja">🔵 Azul</option><option value="media">🟠 Naranja</option><option value="alta">🔴 Rojo</option></select>
-        <textarea id="edit-alergias" rows="3" placeholder="Observaciones"></textarea>
-        <button class="btn-action" style="background:var(--accent-green); color:white; width:100%;" id="btn-guardar-edicion" onclick="guardarEdicionPaciente()">💾 Guardar</button>
-        <button class="btn-action" style="background:#e74c3c; color:white; width:100%; margin-top:5px;" onclick="cerrarModalEdicion()">Cancelar</button>
-    </div>
-</div>
-
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-    import { initializeFirestore, persistentLocalCache, collection, query, where, onSnapshot, doc, updateDoc, increment, serverTimestamp, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+    import { getFirestore, collection, query, where, onSnapshot, doc, addDoc, updateDoc, increment, serverTimestamp, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
     import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
-    const firebaseConfig = { /* PEGA AQUÍ TUS CREDENCIALES */ };
-    const db = initializeFirestore(initializeApp(firebaseConfig), { localCache: persistentLocalCache() });
+    const firebaseConfig = {
+        apiKey: "AIzaSyA0yq1qdkxcOmwCaUxGiFpYj0mUrVQyD-Q",
+        authDomain: "hospital1-admin.firebaseapp.com",
+        projectId: "hospital1-admin",
+        storageBucket: "hospital1-admin.firebasestorage.app",
+        messagingSenderId: "804830277427",
+        appId: "1:804830277427:web:819463cca4870d32d25846"
+    };
+    
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
     const auth = getAuth(app);
-    window.AppState = { pacienteActualId: null, pacienteActualData: null, carrito: {} };
 
-    onAuthStateChanged(auth, (user) => { if(user) iniciarSistema(); else window.location.href = "login.html"; });
+    window.modificarCantidad = modificarCantidad;
+    window.vaciarCarrito = vaciarCarrito;
+
+    window.AppState = {
+        pacienteActualId: null,
+        pacienteActualData: null,
+        uidRecepcionista: null,
+        unsubscribeTransacciones: null,
+        carrito: {} 
+    };
+
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            document.getElementById('user-display').innerText = user.email;
+            AppState.uidRecepcionista = user.uid;
+            iniciarReloj();
+            configurarPantallaCompleta();
+            configurarBuscadores();
+            iniciarSistema();
+        } else {
+            window.location.href = "login.html";
+        }
+    });
+
+    document.getElementById('btn-logout').addEventListener('click', () => { signOut(auth); });
+    document.getElementById('btn-vaciar-carrito').addEventListener('click', vaciarCarrito);
 
     function iniciarSistema() {
-        // 1. Pacientes
+        escucharPacientesActivos();
+        escucharServiciosYPaquetes();
+        escucharInventarioFisico();
+    }
+
+    function configurarBuscadores() {
+        document.getElementById('search-patients').addEventListener('input', (e) => {
+            const term = e.target.value.toLowerCase();
+            document.querySelectorAll('#lista-pacientes tr').forEach(row => { row.style.display = row.innerText.toLowerCase().includes(term) ? '' : 'none'; });
+        });
+        document.getElementById('inventory-search').addEventListener('input', (e) => {
+            const term = e.target.value.toLowerCase();
+            document.querySelectorAll('#lista-servicios tr').forEach(row => { row.style.display = row.innerText.toLowerCase().includes(term) ? '' : 'none'; });
+            document.querySelectorAll('#lista-inventario tr').forEach(row => { row.style.display = row.innerText.toLowerCase().includes(term) ? '' : 'none'; });
+        });
+    }
+
+    function escucharPacientesActivos() {
         onSnapshot(query(collection(db, "accounts"), where("estado", "==", "abierta")), (snap) => {
             const tbody = document.getElementById('lista-pacientes'); tbody.innerHTML = '';
-            snap.forEach(d => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `<td>${d.data().cuarto_id}</td><td>${d.data().paciente_nombre}</td>`;
-                tr.onclick = () => { AppState.pacienteActualId = d.id; AppState.pacienteActualData = d.data(); seleccionarPaciente(d.id, d.data(), tr); };
+            snap.forEach((docSnap) => {
+                const data = docSnap.data(); const tr = document.createElement('tr');
+                if (AppState.pacienteActualId === docSnap.id) tr.classList.add('selected-row');
+                tr.innerHTML = `<td>${data.cuarto_id || 'Amb.'}</td><td>${data.paciente_nombre}</td>`;
+                tr.onclick = () => seleccionarPaciente(docSnap.id, data, tr);
                 tbody.appendChild(tr);
             });
         });
+    }
 
-        // 2. Servicios
+    function seleccionarPaciente(id, data, filaHtml) {
+        if(Object.keys(AppState.carrito).length > 0) {
+            if(!confirm("Tienes insumos pendientes en el carrito. ¿Vaciar y cambiar de paciente?")) return;
+            vaciarCarrito();
+        }
+
+        AppState.pacienteActualId = id; AppState.pacienteActualData = data;
+        document.querySelectorAll('#lista-pacientes tr').forEach(r => r.classList.remove('selected-row'));
+        filaHtml.classList.add('selected-row');
+        document.getElementById('header-cuenta').innerHTML = `Cuenta del Paciente <span>CUARTO ${data.cuarto_id || 'AMB'}</span>`;
+        document.getElementById('resumen-cuenta').innerHTML = `<div>Paciente: <strong>${data.paciente_nombre}</strong></div><div class="total-amount">$${(data.total || 0).toLocaleString('es-MX')}</div>`;
+
+        if(AppState.unsubscribeTransacciones) AppState.unsubscribeTransacciones();
+        AppState.unsubscribeTransacciones = onSnapshot(query(collection(db, "transactions"), where("pacienteId", "==", id)), (snap) => {
+            const tbody = document.getElementById('lista-transacciones'); tbody.innerHTML = '';
+            const txs = []; snap.forEach(d => txs.push(d.data()));
+            txs.sort((a,b) => (b.timestamp?.toMillis()||0) - (a.timestamp?.toMillis()||0));
+            txs.forEach((tx) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td>${tx.nombre}</td><td>${tx.cantidad || 1}</td><td>$${tx.precio_venta}</td><td><span class="${tx.acreditado_a_nombre==='Sistema (Recepción)'?'system-badge':'nurse-badge'}">${tx.acreditado_a_nombre}</span></td>`;
+                tbody.appendChild(tr);
+            });
+        });
+    }
+
+    function escucharServiciosYPaquetes() {
         onSnapshot(collection(db, "services_and_kits"), (snap) => {
             const tbody = document.getElementById('lista-servicios'); tbody.innerHTML = '';
-            snap.forEach(d => { const it = {id: d.id, ...d.data()}; const tr = document.createElement('tr'); tr.innerHTML = `<td>${it.nombre}</td><td>$${it.precio_venta}</td>`; tr.onclick = () => procesarServicioOKit(it); tbody.appendChild(tr); });
+            snap.forEach((docSnap) => {
+                const item = { id: docSnap.id, ...docSnap.data() };
+                const tr = document.createElement('tr');
+                const icono = item.tipo === 'kit' ? '📦 ' : '🩺 ';
+                tr.innerHTML = `<td>${icono}${item.nombre}</td><td>$${item.precio_venta}</td>`;
+                // LÓGICA INTELIGENTE: Si es un KIT, le pasamos toda su data (incluyendo 'insumos_vinculados')
+                tr.onclick = () => procesarServicioOKit(item); 
+                tbody.appendChild(tr);
+            });
         });
+    }
 
-        // 3. Inventario
-        onSnapshot(query(collection(db, "inventory_master"), where("publicado_en_pos", "==", true)), (snap) => {
+    function escucharInventarioFisico() {
+        onSnapshot(collection(db, "inventory_master"), (snap) => {
             const tbody = document.getElementById('lista-inventario'); tbody.innerHTML = '';
-            snap.forEach(d => { const it = {id: d.id, ...d.data()}; const tr = document.createElement('tr'); tr.innerHTML = `<td>${it.nombre}</td><td>$${it.precio_venta}</td>`; tr.onclick = () => agregarAlCarrito(it); tbody.appendChild(tr); });
+            snap.forEach((docSnap) => {
+                const i = { id: docSnap.id, ...docSnap.data(), tipo: 'fisico' };
+                // Solo mostrar en la tabla de recepción si está marcado como 'publicado_en_pos'
+                if(i.publicado_en_pos) {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `<td>${i.nombre}</td><td class="${i.stock < 10 ? 'stock-warning':''}">${i.stock}</td><td>$${i.precio_venta}</td>`;
+                    tr.onclick = () => agregarAlCarrito(i); 
+                    tbody.appendChild(tr);
+                }
+            });
         });
     }
 
-    function seleccionarPaciente(id, data, tr) {
-        document.querySelectorAll('tr').forEach(r => r.classList.remove('selected-row'));
-        tr.classList.add('selected-row');
-        document.getElementById('header-cuenta').innerText = `Cuenta: ${data.cuarto_id}`;
-        actualizarPanelDerechoUI(data);
-        onSnapshot(query(collection(db, "transactions"), where("pacienteId", "==", id)), (snap) => {
-            const tbody = document.getElementById('lista-transacciones'); tbody.innerHTML = '';
-            snap.forEach(d => { tbody.innerHTML += `<tr><td>${d.data().nombre}</td><td>$${d.data().precio_venta}</td></tr>`; });
-        });
+    /* ==========================================
+       LÓGICA HÍBRIDA: SERVICIOS Y PAQUETES (KITS)
+       ========================================== */
+    async function procesarServicioOKit(item) {
+        if (!AppState.pacienteActualId) return alert("Selecciona un paciente primero.");
+        const selector = document.getElementById('select-empleado');
+        const ac_id = selector.value;
+        const ac_nombre = selector.options[selector.selectedIndex].text;
+
+        const tipoTexto = item.tipo === 'kit' ? 'Paquete' : 'Servicio';
+        if(!confirm(`¿Cargar ${tipoTexto} "${item.nombre}" a ${AppState.pacienteActualData.paciente_nombre}?\nAcreditado a: ${ac_nombre}`)) return;
+
+        try {
+            const batch = writeBatch(db);
+            const refTx = doc(collection(db, "transactions"));
+            
+            // 1. Cobrar el Kit o Servicio a la cuenta (Se cobra 1 solo monto general)
+            batch.set(refTx, {
+                pacienteId: AppState.pacienteActualId,
+                itemId: item.id,
+                nombre: item.nombre,
+                cantidad: 1,
+                precio_venta: item.precio_venta,
+                usuario_registro: AppState.uidRecepcionista,
+                acreditado_a_id: ac_id,
+                acreditado_a_nombre: ac_nombre,
+                timestamp: serverTimestamp(),
+                tipo_operacion: item.tipo === 'kit' ? 'cargo_kit' : 'cargo_servicio'
+            });
+
+            // Sumar el dinero al total del paciente
+            const accRef = doc(db, "accounts", AppState.pacienteActualId);
+            batch.update(accRef, { total: increment(item.precio_venta) });
+
+            // 2. Si es KIT, descontar el stock de las tripas (insumos vinculados físicos)
+            if (item.tipo === 'kit' && item.insumos_vinculados && item.insumos_vinculados.length > 0) {
+                item.insumos_vinculados.forEach(insumoInterno => {
+                    if (insumoInterno.tipo_item === 'fisico') {
+                        // Restar el inventario físico master sin cobrarlo (ya se cobró en el precio total del kit)
+                        const invRef = doc(db, "inventory_master", insumoInterno.id_insumo);
+                        batch.update(invRef, { stock: increment(-insumoInterno.cantidad) });
+                    }
+                    // Si el insumo interno es un 'servicio', no hacemos nada más, ya se incluyó en el Kit.
+                });
+            }
+
+            await batch.commit();
+            
+        } catch (error) { 
+            console.error(error);
+            alert("Error procesando el " + (item.tipo === 'kit' ? "paquete." : "servicio.")); 
+        }
     }
 
-    function actualizarPanelDerechoUI(data) {
-        document.getElementById('resumen-cuenta').innerHTML = `
-            <div>Paciente: <strong>${data.paciente_nombre}</strong></div>
-            <button onclick="abrirModalEdicion()">✏️ Editar</button>
-            <div style="color:red; margin-top:5px;">Obs: ${data.alergias || 'Ninguna'}</div>
-        `;
-    }
+    /* ==========================================
+       LÓGICA DEL CARRITO (INSUMOS FÍSICOS)
+       ========================================== */
+    function agregarAlCarrito(item) {
+        if (!AppState.pacienteActualId) return alert("Selecciona un paciente primero.");
+        if (item.stock <= 0) return alert("No hay stock disponible.");
+        const selector = document.getElementById('select-empleado');
+        const cartKey = `${item.id}_${selector.value}`;
 
-    window.agregarAlCarrito = (item) => {
-        if(!AppState.pacienteActualId) return alert("Selecciona paciente primero.");
-        AppState.carrito[item.id] = { item, cantidad: (AppState.carrito[item.id]?.cantidad || 0) + 1 };
+        if (AppState.carrito[cartKey]) {
+            if(AppState.carrito[cartKey].cantidad >= item.stock) return alert("Stock máximo alcanzado.");
+            AppState.carrito[cartKey].cantidad += 1;
+        } else {
+            AppState.carrito[cartKey] = { item: item, cantidad: 1, acreditado_a_id: selector.value, acreditado_a_nombre: selector.options[selector.selectedIndex].text };
+        }
         renderizarCarrito();
-    };
+    }
 
-    window.vaciarCarrito = () => { AppState.carrito = {}; renderizarCarrito(); };
+    function modificarCantidad(cartKey, delta) {
+        if (!AppState.carrito[cartKey]) return;
+        const obj = AppState.carrito[cartKey];
+        const nuevaCantidad = obj.cantidad + delta;
+
+        if (nuevaCantidad <= 0) delete AppState.carrito[cartKey];
+        else if (nuevaCantidad <= obj.item.stock) obj.cantidad = nuevaCantidad;
+        else alert("No hay suficiente stock en inventario.");
+        renderizarCarrito();
+    }
+
+    function vaciarCarrito() { AppState.carrito = {}; renderizarCarrito(); }
 
     function renderizarCarrito() {
-        const list = document.getElementById('cart-list'); list.innerHTML = '';
-        let total = 0;
-        Object.values(AppState.carrito).forEach(c => {
-            total += (c.item.precio_venta * c.cantidad);
-            list.innerHTML += `<div class="cart-item">${c.item.nombre} x${c.cantidad}</div>`;
+        const lista = document.getElementById('cart-list');
+        const txtTotal = document.getElementById('cart-total-text');
+        const items = Object.keys(AppState.carrito);
+        lista.innerHTML = ''; let totalCash = 0;
+
+        if(items.length === 0) { document.documentElement.style.setProperty('--cart-width', '0px'); return; }
+        document.documentElement.style.setProperty('--cart-width', '300px');
+
+        items.forEach(key => {
+            const cObj = AppState.carrito[key];
+            const subtotal = cObj.cantidad * cObj.item.precio_venta;
+            totalCash += subtotal;
+            lista.innerHTML += `
+            <div class="cart-item">
+                <div class="cart-item-title">${cObj.item.nombre}</div>
+                <div class="cart-badge">Acreditado a: ${cObj.acreditado_a_nombre}</div>
+                <div class="cart-controls">
+                    <div class="qty-box">
+                        <button class="qty-btn" onclick="modificarCantidad('${key}', -1)">-</button>
+                        <div class="qty-val">${cObj.cantidad}</div>
+                        <button class="qty-btn" onclick="modificarCantidad('${key}', 1)">+</button>
+                    </div>
+                    <div class="cart-price">$${subtotal}</div>
+                </div>
+            </div>`;
         });
-        document.getElementById('cart-total-text').innerText = `$${total.toLocaleString()}`;
-        document.documentElement.style.setProperty('--cart-width', Object.keys(AppState.carrito).length > 0 ? '250px' : '0px');
+        txtTotal.innerText = `$${totalCash.toLocaleString('es-MX')}`;
     }
 
-    document.getElementById('btn-procesar-carrito').onclick = async () => {
-        if(!AppState.pacienteActualId) return;
-        const batch = writeBatch(db);
-        Object.values(AppState.carrito).forEach(c => {
-            batch.set(doc(collection(db, "transactions")), { pacienteId: AppState.pacienteActualId, nombre: c.item.nombre, precio_venta: c.item.precio_venta * c.cantidad, timestamp: serverTimestamp() });
-            batch.update(doc(db, "inventory_master", c.item.id), { stock: increment(-c.cantidad) });
-        });
-        await batch.commit();
-        vaciarCarrito();
-    };
-
-    async function procesarServicioOKit(item) {
-        if(!AppState.pacienteActualId) return;
-        const batch = writeBatch(db);
-        batch.set(doc(collection(db, "transactions")), { pacienteId: AppState.pacienteActualId, nombre: item.nombre, precio_venta: item.precio_venta, timestamp: serverTimestamp() });
-        batch.update(doc(db, "accounts", AppState.pacienteActualId), { total: increment(item.precio_venta) });
-        await batch.commit();
-    }
-
-    window.guardarEdicionPaciente = async () => {
-        const btn = document.getElementById('btn-guardar-edicion');
+    document.getElementById('btn-procesar-carrito').addEventListener('click', async () => {
+        const btn = document.getElementById('btn-procesar-carrito');
         btn.disabled = true; btn.innerText = "Guardando...";
-        try {
-            const updates = { 
-                paciente_nombre: document.getElementById('edit-nombre').value,
-                cuarto_id: document.getElementById('edit-cuarto').value,
-                es_anonimo: document.getElementById('edit-anonimo').checked,
-                nivel_observacion: document.getElementById('edit-nivel').value,
-                alergias: document.getElementById('edit-alergias').value
-            };
-            await updateDoc(doc(db, "accounts", AppState.pacienteActualId), updates);
-            AppState.pacienteActualData = { ...AppState.pacienteActualData, ...updates };
-            actualizarPanelDerechoUI(AppState.pacienteActualData);
-            document.getElementById('edit-patient-modal').style.display = 'none';
-        } catch(e) { alert("Error"); } finally { btn.disabled = false; btn.innerText = "💾 Guardar"; }
-    };
-    
-    window.abrirModalEdicion = () => { 
-        document.getElementById('edit-nombre').value = AppState.pacienteActualData.paciente_nombre;
-        document.getElementById('edit-cuarto').value = AppState.pacienteActualData.cuarto_id;
-        document.getElementById('edit-anonimo').checked = !!AppState.pacienteActualData.es_anonimo;
-        document.getElementById('edit-nivel').value = AppState.pacienteActualData.nivel_observacion || 'baja';
-        document.getElementById('edit-alergias').value = AppState.pacienteActualData.alergias || '';
-        document.getElementById('edit-patient-modal').style.display = 'flex'; 
-    };
-    window.cerrarModalEdicion = () => document.getElementById('edit-patient-modal').style.display = 'none';
 
-    document.getElementById('btn-fullscreen').onclick = () => { if(!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen(); };
-    document.getElementById('btn-logout').onclick = () => signOut(auth);
+        const batch = writeBatch(db);
+        const transRef = collection(db, "transactions");
+        const accRef = doc(db, "accounts", AppState.pacienteActualId);
+        let granTotal = 0;
+
+        for (const key in AppState.carrito) {
+            const obj = AppState.carrito[key];
+            const subtotal = obj.cantidad * obj.item.precio_venta;
+            granTotal += subtotal;
+
+            batch.set(doc(transRef), {
+                pacienteId: AppState.pacienteActualId, itemId: obj.item.id, nombre: obj.item.nombre,
+                cantidad: obj.cantidad, precio_venta: subtotal, usuario_registro: AppState.uidRecepcionista,
+                acreditado_a_id: obj.acreditado_a_id, acreditado_a_nombre: obj.acreditado_a_nombre,
+                timestamp: serverTimestamp(), tipo_operacion: 'cargo_directo'
+            });
+            batch.update(doc(db, "inventory_master", obj.item.id), { stock: increment(-obj.cantidad) });
+        }
+        batch.update(accRef, { total: increment(granTotal) });
+
+        try { await batch.commit(); vaciarCarrito(); } 
+        catch (error) { alert("Error al procesar lote."); } 
+        finally { btn.disabled = false; btn.innerText = "Confirmar Cargos"; }
+    });
+
+    function iniciarReloj() { setInterval(() => { document.getElementById('clock').innerText = new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }); }, 1000); }
+    function configurarPantallaCompleta() {
+        const btn = document.getElementById('btn-fullscreen');
+        btn.addEventListener('click', () => {
+            if (!document.fullscreenElement) { document.documentElement.requestFullscreen(); btn.innerHTML = "🗗 Salir Pantalla Completa"; } 
+            else { document.exitFullscreen(); btn.innerHTML = "🖵 Pantalla Completa"; }
+        });
+    }
 </script>
 </body>
 </html>
