@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hospital POS - Panel de Control</title>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+
     <style>
         :root {
             --primary-blue: #2c3e50;
@@ -41,7 +45,7 @@
         .panel-header { background-color: var(--secondary-blue); color: var(--white); padding: 8px 12px; font-size: 0.85em; font-weight: bold; text-transform: uppercase; display: flex; justify-content: space-between; align-items: center; }
         
         .search-container { padding: 10px; background: #fdfdfd; border-bottom: 1px solid var(--border-color); }
-        input[type="text"], select { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid var(--border-color); outline: none; border-radius: 3px; }
+        input[type="text"], input[type="datetime-local"], select { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid var(--border-color); outline: none; border-radius: 3px; }
         input[type="text"]:focus, select:focus { border-color: var(--accent-green); }
         
         .data-list { flex: 1; overflow-y: auto; }
@@ -86,8 +90,8 @@
         
         /* MODALES */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; justify-content: center; align-items: center; }
-        .modal-content { background: white; padding: 25px; width: 400px; border-radius: 8px; display: flex; flex-direction: column; gap: 15px; }
-        .modal-content input[type="text"], .modal-content select, .modal-content textarea { width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 4px; box-sizing: border-box; }
+        .modal-content { background: white; padding: 25px; width: 400px; border-radius: 8px; display: flex; flex-direction: column; gap: 15px; max-height: 90vh; overflow-y: auto; }
+        .modal-content input[type="text"], .modal-content input[type="datetime-local"], .modal-content select, .modal-content textarea { width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 4px; box-sizing: border-box; }
         
         /* LOCK SCREEN */
         #lock-screen { z-index: 9999; background: var(--primary-blue); flex-direction: column; }
@@ -95,6 +99,9 @@
         .lock-subtitle { color: #aed6f1; margin-bottom: 30px; font-size: 1.2em; }
         #unlock-pin { font-size: 2em; width: 180px; text-align: center; letter-spacing: 10px; border-radius: 8px; border: none; padding: 15px; outline: none; }
         #unlock-pin:focus { border: 3px solid var(--accent-green); }
+
+        .checkbox-label-print { display: flex; align-items: center; gap: 10px; font-weight: bold; color: var(--secondary-blue); cursor: pointer; background: #f8f9fa; padding: 10px; border-radius: 5px; border: 1px solid var(--border-color); }
+        .checkbox-label-print input { width: 20px; height: 20px; }
     </style>
 </head>
 <body>
@@ -166,7 +173,7 @@
             <div class="action-bar">
                 <button class="btn-action btn-primary" id="btn-imprimir">Imprimir Cuenta [P]</button>
                 <button class="btn-action btn-success" id="btn-liquidar">Liquidar [F10]</button>
-                <button class="btn-action btn-danger" id="btn-borrar">Borrar [DEL]</button>
+                <button class="btn-action btn-danger" onclick="abrirModalBorrar()">Borrar [DEL]</button>
             </div>
         </div>
     </section>
@@ -221,7 +228,12 @@
             </label>
         </div>
 
-        <label style="display:flex; align-items:center; gap:10px; font-weight:bold; color:var(--secondary-blue);">
+        <div style="margin-top: 5px;">
+            <label style="font-size: 0.8em; font-weight: bold; color: var(--secondary-blue);">Fecha y Hora de Ingreso</label>
+            <input type="datetime-local" id="modal-fecha-ingreso">
+        </div>
+
+        <label style="display:flex; align-items:center; gap:10px; font-weight:bold; color:var(--secondary-blue); margin-top: 5px;">
             <input type="checkbox" id="modal-anonimo" style="width:auto;"> Activar Modo Anónimo (Tablet)
         </label>
         
@@ -261,6 +273,33 @@
     </div>
 </div>
 
+<div id="print-modal" class="modal-overlay">
+    <div class="modal-content">
+        <h3 style="margin-top:0; color:var(--primary-blue);">🖨️ Exportar a PDF</h3>
+        <p style="font-size: 0.9em; color: var(--secondary-blue);">Selecciona las firmas que deseas incluir al final del documento:</p>
+        
+        <label class="checkbox-label-print">
+            <input type="checkbox" id="chk-sig-hospital">
+            Firma del Hospital (Representante)
+        </label>
+        
+        <label class="checkbox-label-print">
+            <input type="checkbox" id="chk-sig-paciente">
+            Firma del Paciente (<span id="print-paciente-name"></span>)
+        </label>
+        
+        <label class="checkbox-label-print">
+            <input type="checkbox" id="chk-sig-familiar">
+            Firma de Familiar o Responsable
+        </label>
+
+        <div style="display:flex; gap:10px; margin-top:20px;">
+            <button class="btn-action" style="flex:1; background: gray; color: white;" onclick="cerrarModalImpresion()">Cancelar</button>
+            <button class="btn-action btn-primary" style="flex:1;" id="btn-generar-pdf" onclick="ejecutarExportacionPDF()">📄 Generar PDF</button>
+        </div>
+    </div>
+</div>
+
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
     import { getFirestore, collection, query, where, onSnapshot, getDocs, doc, getDoc, addDoc, updateDoc, increment, serverTimestamp, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
@@ -291,6 +330,9 @@
     window.cerrarModalBorrar = cerrarModalBorrar;
     window.ejecutarBorrado = ejecutarBorrado;
     window.desbloquearSistema = desbloquearSistema;
+    window.abrirModalImpresion = abrirModalImpresion;
+    window.cerrarModalImpresion = cerrarModalImpresion;
+    window.ejecutarExportacionPDF = ejecutarExportacionPDF;
 
     let modoModal = 'nuevo';
 
@@ -328,7 +370,7 @@
                         iniciarSistema();
                         iniciarControlInactividad(); 
                     } else {
-                        alert(`Acceso Denegado\n\nHola ${empleado.nombre}, no tienes permisos de administrador para entrar al POS Web.`);
+                        alert(`Acceso Denegado\n\nHola ${empleado.nombre}, no tienes permisos de administrador.`);
                         await signOut(auth);
                         window.location.href = "login.html";
                     }
@@ -338,8 +380,7 @@
                     window.location.href = "login.html";
                 }
             } catch (error) {
-                console.error("Error al verificar permisos:", error);
-                alert("Hubo un error de conexión al verificar permisos.");
+                console.error(error);
             }
         } else {
             window.location.href = "login.html";
@@ -391,9 +432,6 @@
         resetearInactividad();
     }
 
-    // ==========================================
-    // FUNCIONES PRINCIPALES
-    // ==========================================
     function iniciarSistema() {
         escucharPacientesActivos();
         escucharServiciosYPaquetes();
@@ -496,108 +534,191 @@
     }
 
     // ==========================================
-    // IMPRIMIR, LIQUIDAR Y BORRAR CUENTA
+    // EXPORTACIÓN A PDF Y FIRMAS (ESTILO FLEXOWASH)
     // ==========================================
+    document.getElementById('btn-imprimir').addEventListener('click', abrirModalImpresion);
 
-    document.getElementById('btn-imprimir').addEventListener('click', imprimirCuenta);
-    document.getElementById('btn-liquidar').addEventListener('click', liquidarCuenta);
-    document.getElementById('btn-borrar').addEventListener('click', abrirModalBorrar);
-
-    async function imprimirCuenta() {
+    function abrirModalImpresion() {
         if(!AppState.pacienteActualId) return alert("Selecciona un paciente primero.");
         const data = AppState.pacienteActualData;
+        const nombreDesc = data.es_anonimo ? 'Anónimo' : data.paciente_nombre;
         
-        const q = query(collection(db, "transactions"), where("pacienteId", "==", AppState.pacienteActualId));
-        const snap = await getDocs(q);
-        const txs = [];
-        snap.forEach(d => txs.push(d.data()));
-        txs.sort((a,b) => (a.timestamp?.toMillis()||0) - (b.timestamp?.toMillis()||0));
-
-        let rows = '';
-        txs.forEach(tx => {
-            rows += `<tr>
-                <td style="padding: 8px; border-bottom: 1px solid #ddd;">${tx.timestamp ? new Date(tx.timestamp.toDate()).toLocaleString('es-MX') : 'Pendiente'}</td>
-                <td style="padding: 8px; border-bottom: 1px solid #ddd;">${tx.nombre}</td>
-                <td style="padding: 8px; border-bottom: 1px solid #ddd;">${tx.cantidad}</td>
-                <td style="padding: 8px; border-bottom: 1px solid #ddd; text-align: right;">$${tx.precio_venta.toLocaleString('es-MX')}</td>
-                <td style="padding: 8px; border-bottom: 1px solid #ddd;">${tx.acreditado_a_nombre}</td>
-            </tr>`;
-        });
-
-        const html = `
-            <html>
-            <head>
-                <title>Reporte de Servicio - ${data.paciente_nombre}</title>
-                <style>
-                    body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #333; margin: 40px; }
-                    .header { display: flex; justify-content: space-between; border-bottom: 3px solid #2c3e50; padding-bottom: 20px; margin-bottom: 20px; }
-                    .hospital-info { text-align: right; }
-                    h1 { color: #2c3e50; margin: 0; font-size: 24px; text-transform: uppercase; }
-                    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px; background: #f8f9fa; padding: 20px; border-radius: 8px; border: 1px solid #ddd; }
-                    table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
-                    th { background: #2c3e50; color: white; padding: 10px; text-align: left; }
-                    .total-box { text-align: right; font-size: 24px; font-weight: bold; color: #2c3e50; padding: 20px; border-top: 2px solid #2c3e50; }
-                    .footer { text-align: center; color: #777; font-size: 12px; margin-top: 50px; border-top: 1px solid #ddd; padding-top: 20px; }
-                </style>
-            </head>
-            <body>
-                <div class="header">
-                    <div>
-                        <h1>HOSPITAL POS</h1>
-                        <p style="margin: 5px 0; color: #777; font-weight: bold;">Reporte de Cuenta Médica</p>
-                    </div>
-                    <div class="hospital-info">
-                        <strong>Fecha de Emisión:</strong> ${new Date().toLocaleString('es-MX')}<br>
-                        <strong>Impreso por:</strong> ${AppState.nombreRecepcionista}
-                    </div>
-                </div>
-
-                <div class="info-grid">
-                    <div>
-                        <strong>Paciente:</strong> ${data.es_anonimo ? 'Anónimo' : data.paciente_nombre}<br>
-                        <strong>Cuarto:</strong> ${data.es_ambulatorio ? 'Ambulatorio' : data.cuarto_id}<br>
-                        <strong>Ingreso:</strong> ${data.fecha_ingreso ? new Date(data.fecha_ingreso.toDate()).toLocaleString('es-MX') : 'N/A'}
-                    </div>
-                    <div>
-                        <strong>Estado de Cuenta:</strong> ${data.estado.toUpperCase()}<br>
-                        <strong>Observaciones:</strong> ${data.alergias || 'Ninguna'}
-                    </div>
-                </div>
-
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Fecha de Cargo</th>
-                            <th>Concepto</th>
-                            <th>Cant.</th>
-                            <th style="text-align: right;">Subtotal</th>
-                            <th>Acreditado a</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${rows}
-                    </tbody>
-                </table>
-
-                <div class="total-box">
-                    GRAN TOTAL: $${(data.total || 0).toLocaleString('es-MX')} MXN
-                </div>
-
-                <div class="footer">
-                    Este documento es un comprobante de control interno. No constituye una factura fiscal.<br>
-                    Generado por Sistema Hospital POS
-                </div>
-            </body>
-            </html>
-        `;
-
-        const printWindow = window.open('', '_blank');
-        printWindow.document.write(html);
-        printWindow.document.close();
-        printWindow.focus();
+        document.getElementById('print-paciente-name').innerText = nombreDesc;
+        document.getElementById('chk-sig-hospital').checked = false;
+        document.getElementById('chk-sig-paciente').checked = false;
+        document.getElementById('chk-sig-familiar').checked = false;
         
-        setTimeout(() => { printWindow.print(); }, 500);
+        document.getElementById('print-modal').style.display = 'flex';
     }
+
+    function cerrarModalImpresion() {
+        document.getElementById('print-modal').style.display = 'none';
+    }
+
+    async function ejecutarExportacionPDF() {
+        const btn = document.getElementById('btn-generar-pdf');
+        btn.innerText = "⏳ Generando...";
+        btn.disabled = true;
+
+        try {
+            const data = AppState.pacienteActualData;
+            
+            // Consultar Transacciones
+            const q = query(collection(db, "transactions"), where("pacienteId", "==", AppState.pacienteActualId));
+            const snap = await getDocs(q);
+            const txs = [];
+            snap.forEach(d => txs.push(d.data()));
+            txs.sort((a,b) => (a.timestamp?.toMillis()||0) - (b.timestamp?.toMillis()||0));
+
+            // Preparar datos para AutoTable
+            const tableBody = txs.map(tx => [
+                tx.timestamp ? new Date(tx.timestamp.toDate()).toLocaleString('es-MX') : 'Pendiente',
+                tx.nombre,
+                tx.cantidad.toString(),
+                tx.acreditado_a_nombre,
+                `$${tx.precio_venta.toLocaleString('es-MX')}`
+            ]);
+
+            // Formatear Observaciones (Sustituir enters por diagonales)
+            let observacionesStr = data.alergias || 'Ninguna';
+            observacionesStr = observacionesStr.replace(/\n/g, ' / ');
+
+            // Formato de Fechas
+            const fechaEmision = new Date().toLocaleString('es-MX');
+            const fechaIngreso = data.fecha_ingreso ? new Date(data.fecha_ingreso.toDate()).toLocaleString('es-MX') : 'N/A';
+
+            // Iniciar jsPDF
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('p', 'pt', 'letter');
+            const pageWidth = doc.internal.pageSize.width;
+
+            // Encabezado principal
+            doc.setFontSize(18);
+            doc.setFont("helvetica", "bold");
+            doc.text("HOSPITAL POS", 40, 40);
+            
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "normal");
+            doc.setTextColor(100);
+            doc.text("Reporte Técnico de Cuenta Médica", 40, 55);
+
+            // Información lateral derecha
+            doc.setFontSize(9);
+            doc.text(`Fecha de Emisión: ${fechaEmision}`, pageWidth - 40, 40, { align: 'right' });
+            doc.text(`Impreso por: ${AppState.nombreRecepcionista}`, pageWidth - 40, 52, { align: 'right' });
+
+            // Línea divisoria
+            doc.setDrawColor(44, 62, 80);
+            doc.setLineWidth(1.5);
+            doc.line(40, 65, pageWidth - 40, 65);
+
+            // Bloque de Información del Paciente (Grid visual)
+            doc.setTextColor(44, 62, 80);
+            doc.setFontSize(10);
+            
+            doc.setFont("helvetica", "bold");
+            doc.text("Paciente:", 40, 85);
+            doc.setFont("helvetica", "normal");
+            doc.text(data.es_anonimo ? 'Anónimo' : data.paciente_nombre, 100, 85);
+
+            doc.setFont("helvetica", "bold");
+            doc.text("Cuarto:", 40, 100);
+            doc.setFont("helvetica", "normal");
+            doc.text(data.es_ambulatorio ? 'Ambulatorio' : data.cuarto_id, 100, 100);
+
+            doc.setFont("helvetica", "bold");
+            doc.text("Ingreso:", 40, 115);
+            doc.setFont("helvetica", "normal");
+            doc.text(fechaIngreso, 100, 115);
+
+            doc.setFont("helvetica", "bold");
+            doc.text("Estado:", 300, 85);
+            doc.setFont("helvetica", "normal");
+            doc.text(data.estado.toUpperCase(), 350, 85);
+
+            doc.setFont("helvetica", "bold");
+            doc.text("Observaciones:", 300, 100);
+            doc.setFont("helvetica", "normal");
+            
+            // Multiline en caso de que sea largo aunque tenga diagonales
+            const splitObs = doc.splitTextToSize(observacionesStr, 230);
+            doc.text(splitObs, 385, 100);
+
+            // Generar Tabla
+            doc.autoTable({
+                startY: 135,
+                head: [['Fecha / Hora', 'Concepto', 'Cant.', 'Acreditado a', 'Subtotal']],
+                body: tableBody,
+                theme: 'striped',
+                headStyles: { fillColor: [44, 62, 80], textColor: 255 },
+                columnStyles: {
+                    0: { cellWidth: 100 },
+                    2: { cellWidth: 40, halign: 'center' },
+                    4: { halign: 'right' }
+                },
+                styles: { fontSize: 9 }
+            });
+
+            // Gran Total
+            let finalY = doc.lastAutoTable.finalY + 20;
+            doc.setFontSize(14);
+            doc.setFont("helvetica", "bold");
+            doc.text(`GRAN TOTAL: $${(data.total || 0).toLocaleString('es-MX')} MXN`, pageWidth - 40, finalY, { align: 'right' });
+
+            // Lógica Dinámica de Firmas
+            let firmas = [];
+            if(document.getElementById('chk-sig-hospital').checked) firmas.push("Hospital (Representante)");
+            if(document.getElementById('chk-sig-paciente').checked) firmas.push(`Paciente: ${data.es_anonimo ? 'Anónimo' : data.paciente_nombre}`);
+            if(document.getElementById('chk-sig-familiar').checked) firmas.push("Familiar / Responsable");
+
+            if (firmas.length > 0) {
+                finalY += 80; // Espacio para firmar
+                
+                // Si se va a salir de la hoja, creamos página nueva
+                if (finalY > doc.internal.pageSize.height - 40) {
+                    doc.addPage();
+                    finalY = 80;
+                }
+
+                doc.setDrawColor(0);
+                doc.setLineWidth(0.5);
+                doc.setFontSize(10);
+                doc.setFont("helvetica", "normal");
+
+                // Distribución algorítmica
+                firmas.forEach((firma, index) => {
+                    let xPos;
+                    if (firmas.length === 1) {
+                        xPos = pageWidth / 2;
+                    } else if (firmas.length === 2) {
+                        xPos = (index === 0) ? pageWidth * 0.30 : pageWidth * 0.70;
+                    } else if (firmas.length === 3) {
+                        xPos = (index === 0) ? pageWidth * 0.20 : (index === 1) ? pageWidth * 0.50 : pageWidth * 0.80;
+                    }
+
+                    // Línea (Ancho de 140px centrado en xPos)
+                    doc.line(xPos - 70, finalY, xPos + 70, finalY);
+                    
+                    // Texto
+                    doc.text(firma, xPos, finalY + 15, { align: 'center' });
+                });
+            }
+
+            // Descargar el documento
+            doc.save(`Cuenta_Hospital_${data.es_anonimo ? 'Anonimo' : data.paciente_nombre.replace(/\s+/g, '_')}.pdf`);
+            
+            cerrarModalImpresion();
+
+        } catch(error) {
+            console.error("Error al exportar PDF:", error);
+            alert("Ocurrió un error al generar el PDF.");
+        } finally {
+            btn.innerText = "📄 Generar PDF";
+            btn.disabled = false;
+        }
+    }
+
+    document.getElementById('btn-liquidar').addEventListener('click', liquidarCuenta);
 
     async function liquidarCuenta() {
         if(!AppState.pacienteActualId) return alert("Selecciona un paciente primero.");
@@ -624,7 +745,6 @@
         }
     }
 
-    // ----- NUEVO SISTEMA DE BORRADO DE CUENTAS -----
     function abrirModalBorrar() {
         if(!AppState.pacienteActualId) return alert("Selecciona un paciente primero.");
         document.getElementById('delete-confirm-text').value = '';
@@ -652,27 +772,18 @@
             const batch = writeBatch(db);
             const accountId = AppState.pacienteActualId;
             
-            // 1. Borrar la cuenta maestra
             batch.delete(doc(db, "accounts", accountId));
             
-            // 2. Buscar todas las transacciones de la cuenta
             const q = query(collection(db, "transactions"), where("pacienteId", "==", accountId));
             const snap = await getDocs(q);
             
-            // 3. Procesar inventario según la decisión del admin
             snap.forEach(docSnap => {
                 const tx = docSnap.data();
-                
-                // Procesar solo si fue un insumo físico descontado (ignoramos servicios/honorarios puros)
-                if (tx.tipo_operacion === 'cargo_directo' || tx.tipo_operacion === 'cargo_directo_tablet') {
-                    
+                if (tx.tipo_operacion === 'cargo_directo' || tx.tipo_operacion === 'cargo_directo_tablet' || tx.tipo_operacion === 'cargo_directo_movil') {
                     if (accionInsumos === 'devolver') {
-                        // Se reintegra al stock
                         const invRef = doc(db, "inventory_master", tx.itemId);
                         batch.update(invRef, { stock: increment(tx.cantidad) });
-                    } 
-                    else if (accionInsumos === 'perdida') {
-                        // Se documenta en una colección nueva para auditoría
+                    } else if (accionInsumos === 'perdida') {
                         const lossRef = doc(collection(db, "inventory_losses"));
                         batch.set(lossRef, {
                             itemId: tx.itemId,
@@ -685,10 +796,7 @@
                             cuenta_eliminada_id: accountId
                         });
                     }
-                    // Si es "desaparecer", no hacemos NADA con el inventario ni con la merma.
                 }
-                
-                // Borramos la transacción de la BD
                 batch.delete(docSnap.ref);
             });
             
@@ -700,7 +808,7 @@
             document.getElementById('resumen-cuenta').innerHTML = `<div>Seleccione un paciente de la lista.</div>`;
             document.getElementById('lista-transacciones').innerHTML = '';
             cerrarModalBorrar();
-            alert("🗑️ Cuenta procesada y eliminada correctamente.");
+            alert("🗑️ Cuenta eliminada correctamente.");
             
         } catch(e) { 
             alert("Error al intentar borrar la cuenta."); 
@@ -768,6 +876,7 @@
         document.getElementById('modal-anonimo').checked = false;
         document.getElementById('modal-nivel').value = 'baja';
         document.getElementById('modal-alergias').value = '';
+        document.getElementById('modal-fecha-ingreso').value = ''; // Dejar vacío para usar timestamp actual
         toggleAmbulatorio();
         document.getElementById('patient-modal').style.display = 'flex';
     }
@@ -783,6 +892,16 @@
         document.getElementById('modal-anonimo').checked = !!d.es_anonimo;
         document.getElementById('modal-nivel').value = d.nivel_observacion || 'baja';
         document.getElementById('modal-alergias').value = d.alergias || '';
+        
+        // Convertir Timestamp a String de Datetime-Local
+        if(d.fecha_ingreso && typeof d.fecha_ingreso.toDate === 'function') {
+            const date = d.fecha_ingreso.toDate();
+            date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
+            document.getElementById('modal-fecha-ingreso').value = date.toISOString().slice(0,16);
+        } else {
+            document.getElementById('modal-fecha-ingreso').value = '';
+        }
+
         toggleAmbulatorio();
         document.getElementById('patient-modal').style.display = 'flex';
     }
@@ -798,6 +917,7 @@
 
         const esAmbulatorio = document.getElementById('modal-ambulatorio').checked;
         const cuartoVal = esAmbulatorio ? 'AMB' : document.getElementById('modal-cuarto').value;
+        const fechaInput = document.getElementById('modal-fecha-ingreso').value;
 
         const datos = {
             paciente_nombre: document.getElementById('modal-nombre').value,
@@ -808,15 +928,26 @@
             alergias: document.getElementById('modal-alergias').value
         };
 
+        // Si el usuario puso una fecha manual, la convertimos a objeto Date, sino se usa el servidor.
+        if (fechaInput) {
+            datos.fecha_ingreso = new Date(fechaInput);
+        } else if (modoModal === 'nuevo') {
+            datos.fecha_ingreso = serverTimestamp();
+        }
+
         try {
             if(modoModal === 'nuevo') {
                 datos.estado = 'abierta';
                 datos.total = 0;
-                datos.fecha_ingreso = serverTimestamp();
                 await addDoc(collection(db, "accounts"), datos);
             } else {
                 if(!AppState.pacienteActualId) return;
                 await updateDoc(doc(db, "accounts", AppState.pacienteActualId), datos);
+                
+                // Refrescar el estado local
+                if (datos.fecha_ingreso instanceof Date) {
+                    datos.fecha_ingreso = { toDate: () => datos.fecha_ingreso }; // Mock para que el render la lea igual
+                }
                 AppState.pacienteActualData = { ...AppState.pacienteActualData, ...datos };
                 actualizarUIResumenCuenta(); 
             }
