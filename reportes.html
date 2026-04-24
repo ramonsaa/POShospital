@@ -3,156 +3,157 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hospital POS - Reportes Financieros</title>
-    <style>
-        :root {
-            --primary-blue: #2c3e50;
-            --secondary-blue: #34495e;
-            --accent-green: #27ae60;
-            --danger-red: #c0392b;
-            --warning-orange: #d35400;
-            --safe-blue: #2980b9;
-            --light-bg: #f4f7f6;
-            --white: #ffffff;
-            --border-color: #dcdde1;
-            --text-dark: #2f3640;
-        }
+    <title>Hospital POS - Inteligencia de Negocios</title>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 
+    <style>
+        :root { --primary-blue: #2c3e50; --secondary-blue: #34495e; --accent-green: #27ae60; --danger-red: #c0392b; --warning-orange: #d35400; --light-bg: #f4f7f6; --white: #ffffff; --border-color: #dcdde1; --text-dark: #2f3640; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background-color: var(--light-bg); color: var(--text-dark); display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
         
-        /* HEADER */
-        header { background-color: var(--primary-blue); color: var(--white); padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid var(--accent-green); z-index: 10;}
-        .header-actions { display: flex; align-items: center; gap: 15px; }
+        header { background-color: var(--primary-blue); color: var(--white); padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid var(--accent-green); z-index: 10;}
         .user-info { font-size: 0.9em; color: #aed6f1; font-weight: bold;}
-        .btn-header { background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 0.85em; text-decoration: none; transition: 0.2s;}
-        .btn-header:hover { background: rgba(255,255,255,0.2); }
-        .btn-logout { background: var(--danger-red); border-color: #e74c3c; }
-        .btn-logout:hover { background: #a93226; }
-
-        /* MAIN LAYOUT */
-        main { display: flex; flex-direction: column; flex: 1; padding: 20px; overflow-y: auto; gap: 20px; }
-
-        /* FILTERS SECTION */
-        .filters-card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 1px solid var(--border-color); display: flex; gap: 20px; align-items: flex-end; flex-wrap: wrap;}
-        .filter-group { display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 200px;}
-        .filter-group label { font-weight: bold; font-size: 0.85em; color: var(--secondary-blue); }
-        .filter-group input, .filter-group select { padding: 10px; border: 1px solid var(--border-color); border-radius: 4px; font-size: 1em; outline: none; }
-        .filter-group input:focus, .filter-group select:focus { border-color: var(--accent-green); }
-        .btn-generar { background: var(--accent-green); color: white; border: none; padding: 12px 30px; font-size: 1em; font-weight: bold; border-radius: 4px; cursor: pointer; height: 42px; transition: 0.2s;}
-        .btn-generar:hover { background: #219a52; }
-
-        /* KPI WIDGETS */
-        .kpi-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; }
-        .kpi-card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 1px solid var(--border-color); border-left: 5px solid var(--primary-blue); display: flex; flex-direction: column; justify-content: center;}
-        .kpi-title { font-size: 0.85em; color: gray; font-weight: bold; text-transform: uppercase; margin-bottom: 5px;}
-        .kpi-value { font-size: 2em; font-weight: bold; color: var(--primary-blue); margin: 0;}
-        .kpi-card.profit { border-left-color: var(--accent-green); }
-        .kpi-card.profit .kpi-value { color: var(--accent-green); }
-        .kpi-card.cost { border-left-color: var(--danger-red); }
-
-        /* DATA TABLE */
-        .table-card { background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 1px solid var(--border-color); flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 400px;}
-        .table-header { background: #f8f9fa; padding: 15px 20px; font-weight: bold; color: var(--secondary-blue); border-bottom: 1px solid var(--border-color); }
-        .table-wrapper { flex: 1; overflow-y: auto; }
-        table { width: 100%; border-collapse: collapse; font-size: 0.9em; }
-        th { background-color: var(--primary-blue); color: white; position: sticky; top: 0; text-align: left; padding: 12px; z-index: 1;}
-        td { padding: 12px; border-bottom: 1px solid #f1f1f1; }
-        tr:hover { background-color: #fdfdfd; }
-        .text-right { text-align: right; }
-        .text-center { text-align: center; }
-        .profit-positive { color: var(--accent-green); font-weight: bold; }
-        .profit-zero { color: gray; }
-
-        /* LOCK SCREEN & MODALS */
-        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; justify-content: center; align-items: center; flex-direction: column; }
-        #lock-screen { background: var(--primary-blue); }
-        .lock-title { color: white; font-size: 2.5em; margin-bottom: 10px; }
-        .lock-subtitle { color: #aed6f1; margin-bottom: 30px; font-size: 1.2em; }
-        #unlock-pin { font-size: 2em; width: 180px; text-align: center; letter-spacing: 10px; border-radius: 8px; border: none; padding: 15px; outline: none; }
-        #unlock-pin:focus { border: 3px solid var(--accent-green); }
-        .btn-unlock { background: var(--accent-green); color: white; border: none; padding: 0 25px; font-size: 1.2em; font-weight: bold; border-radius: 8px; cursor: pointer;}
         
-        #loading-screen { background: var(--bg-light-blue); z-index: 10000; color: var(--primary-blue); }
+        /* PESTAÑAS (TABS) */
+        .tab-bar { background: var(--white); display: flex; border-bottom: 2px solid var(--border-color); padding: 0 20px; }
+        .tab-btn { background: none; border: none; padding: 15px 25px; font-size: 1em; font-weight: bold; color: gray; cursor: pointer; border-bottom: 3px solid transparent; transition: 0.2s; }
+        .tab-btn:hover { color: var(--primary-blue); }
+        .tab-btn.active { color: var(--primary-blue); border-bottom-color: var(--accent-green); }
+
+        .tab-content { display: none; flex-direction: column; flex: 1; overflow: hidden; padding: 20px; gap: 20px; }
+        .tab-content.active { display: flex; }
+
+        /* Barra de Filtros */
+        .filter-bar { background: var(--white); padding: 15px; border-radius: 6px; border: 1px solid var(--border-color); display: flex; gap: 15px; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); flex-wrap: wrap;}
+        .filter-group { display: flex; flex-direction: column; gap: 5px; }
+        .filter-group label { font-size: 0.85em; font-weight: bold; color: var(--secondary-blue); }
+        .filter-group input, .filter-group select { padding: 8px; border: 1px solid var(--border-color); border-radius: 4px; outline: none; font-family: inherit; min-width: 200px;}
+        button.btn-action { background: var(--primary-blue); color: white; border: none; padding: 10px 20px; border-radius: 4px; font-weight: bold; cursor: pointer; margin-top: auto; transition: 0.2s;}
+        button.btn-action:hover { background: var(--secondary-blue); }
+        button.btn-export { background: var(--warning-orange); }
+
+        /* Tarjetas de KPI */
+        .kpi-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
+        .kpi-card { background: var(--white); padding: 20px; border-radius: 6px; border: 1px solid var(--border-color); box-shadow: 0 2px 5px rgba(0,0,0,0.05); display: flex; flex-direction: column; justify-content: center; }
+        .kpi-title { font-size: 0.9em; color: gray; font-weight: bold; text-transform: uppercase; margin-bottom: 5px;}
+        .kpi-value { font-size: 2em; font-weight: bold; color: var(--primary-blue); }
+        .kpi-card.neto .kpi-value { color: var(--accent-green); }
+        .kpi-card.merma .kpi-value { color: var(--danger-red); }
+
+        /* Tabla de Detalles */
+        .table-section { background: var(--white); flex: 1; border-radius: 6px; border: 1px solid var(--border-color); display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.05);}
+        .table-header { background: var(--secondary-blue); color: white; padding: 10px 15px; font-weight: bold; font-size: 0.9em; text-transform: uppercase; display: flex; justify-content: space-between; align-items: center;}
+        .table-container { flex: 1; overflow-y: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.85em; }
+        th { background-color: #f8f9fa; position: sticky; top: 0; text-align: left; padding: 10px 15px; border-bottom: 1px solid var(--border-color); z-index: 1;}
+        td { padding: 10px 15px; border-bottom: 1px solid #f1f1f1; }
+        tr:hover { background-color: #ebf5fb; }
+        
+        .badge-ingreso { background: #e8f5e9; color: #2e7d32; padding: 3px 6px; border-radius: 4px; font-weight: bold; font-size: 0.8em;}
+        .badge-merma { background: #fdedec; color: #c0392b; padding: 3px 6px; border-radius: 4px; font-weight: bold; font-size: 0.8em;}
+        .badge-critical { background: var(--danger-red); color: white; padding: 3px 6px; border-radius: 4px; font-weight: bold; font-size: 0.85em;}
     </style>
 </head>
 <body>
 
-<div id="lock-screen" class="modal-overlay">
-    <h1 class="lock-title">🔒 Sistema Bloqueado</h1>
-    <p class="lock-subtitle">Sesión inactiva. Ingrese su PIN para reanudar.</p>
-    <div style="display: flex; gap: 15px;">
-        <input type="password" id="unlock-pin" placeholder="PIN" maxlength="4" autocomplete="off">
-        <button class="btn-unlock" onclick="desbloquearSistema()">Desbloquear</button>
-    </div>
-</div>
-
 <header>
-    <div>
-        <h1 style="margin: 0; font-size: 1.5em;">HOSPITAL POS | Finanzas y Reportes</h1>
-    </div>
-    <div class="header-actions">
-        <a href="index.html" class="btn-header">Volver al POS</a>
-        <a href="admin-personal.html" class="btn-header">Gestión de Personal</a>
-        <span class="user-info"> | <span id="user-display">Verificando sesión...</span></span>
-        <button id="btn-logout" class="btn-header btn-logout">Cerrar Sesión</button>
+    <div><strong>HOSPITAL POS</strong> | Panel de Inteligencia y Logística</div>
+    <div style="display: flex; gap: 15px; align-items: center;">
+        <span id="user-display" class="user-info">Verificando sesión...</span>
+        <a href="index.html" style="color: white; text-decoration: none; border: 1px solid white; padding: 5px 10px; border-radius: 4px; font-size: 0.85em;">← Volver a Recepción</a>
     </div>
 </header>
 
-<main>
-    <div class="filters-card">
+<div class="tab-bar">
+    <button class="tab-btn active" onclick="cambiarPestana('tab-finanzas', this)">💰 Reporte Financiero</button>
+    <button class="tab-btn" onclick="cambiarPestana('tab-abasto', this)">📦 Lista de Reabastecimiento</button>
+</div>
+
+<main id="tab-finanzas" class="tab-content active">
+    <div class="filter-bar">
         <div class="filter-group">
             <label>Fecha de Inicio</label>
-            <input type="date" id="date-start">
+            <input type="date" id="fecha-inicio">
         </div>
         <div class="filter-group">
-            <label>Fecha Final</label>
-            <input type="date" id="date-end">
+            <label>Fecha de Fin</label>
+            <input type="date" id="fecha-fin">
         </div>
-        <div class="filter-group">
-            <label>Filtrar por Empleado</label>
-            <select id="select-employee">
-                <option value="ALL">🏥 Total del Hospital (Todos)</option>
-                </select>
-        </div>
-        <button class="btn-generar" id="btn-generar" onclick="generarReporte()">📊 Generar Reporte</button>
+        <button class="btn-action" id="btn-generar" onclick="generarReporte()">📊 Consultar Finanzas</button>
     </div>
 
     <div class="kpi-container">
         <div class="kpi-card">
-            <div class="kpi-title">Total de Ingresos (Ventas)</div>
-            <div class="kpi-value" id="kpi-ventas">$0.00</div>
+            <div class="kpi-title">Ingresos Brutos (Ventas)</div>
+            <div class="kpi-value" id="kpi-ingresos">$0.00</div>
         </div>
-        <div class="kpi-card cost">
-            <div class="kpi-title">Costo de Insumos</div>
-            <div class="kpi-value" style="color: var(--danger-red);" id="kpi-costos">$0.00</div>
+        <div class="kpi-card merma">
+            <div class="kpi-title">Mermas y Uso Interno</div>
+            <div class="kpi-value" id="kpi-mermas">-$0.00</div>
         </div>
-        <div class="kpi-card profit">
-            <div class="kpi-title">Utilidad Neta (Ganancia)</div>
-            <div class="kpi-value" id="kpi-utilidad">$0.00</div>
+        <div class="kpi-card neto">
+            <div class="kpi-title">Utilidad Operativa</div>
+            <div class="kpi-value" id="kpi-neto">$0.00</div>
         </div>
         <div class="kpi-card">
-            <div class="kpi-title">Movimientos Registrados</div>
-            <div class="kpi-value" style="color: var(--secondary-blue);" id="kpi-movimientos">0</div>
+            <div class="kpi-title">Total de Movimientos</div>
+            <div class="kpi-value" id="kpi-movimientos" style="color: gray;">0</div>
         </div>
     </div>
 
-    <div class="table-card">
-        <div class="table-header">Desglose de Transacciones Financieras</div>
-        <div class="table-wrapper">
+    <div class="table-section">
+        <div class="table-header">Desglose Detallado de Movimientos</div>
+        <div class="table-container">
             <table>
                 <thead>
                     <tr>
                         <th>Fecha y Hora</th>
                         <th>Concepto</th>
-                        <th>Realizado por</th>
-                        <th class="text-center">Cant.</th>
-                        <th class="text-right">Costo Unit.</th>
-                        <th class="text-right">Ingreso Venta</th>
-                        <th class="text-right">Utilidad Neta</th>
+                        <th>Operador</th>
+                        <th>Tipo</th>
+                        <th style="text-align: right;">Monto</th>
                     </tr>
                 </thead>
-                <tbody id="table-body">
-                    <tr><td colspan="7" class="text-center" style="color: gray; padding: 40px;">Selecciona las fechas y haz clic en "Generar Reporte"</td></tr>
+                <tbody id="tabla-reporte">
+                    <tr><td colspan="5" style="text-align: center; color: gray; padding: 20px;">Seleccione un rango de fechas y presione "Consultar Finanzas".</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</main>
+
+<main id="tab-abasto" class="tab-content">
+    <div class="filter-bar">
+        <div class="filter-group" style="flex:1;">
+            <label>Filtrar por Proveedor</label>
+            <select id="select-proveedor-abasto">
+                <option value="TODOS">Todos los proveedores</option>
+                </select>
+        </div>
+        <button class="btn-action" onclick="generarListaCompras()">🔍 Buscar Faltantes</button>
+        <button class="btn-action btn-export" onclick="exportarListaComprasPDF()">📄 Exportar a PDF</button>
+    </div>
+
+    <div class="table-section">
+        <div class="table-header">
+            <span>Lista de Artículos Críticos / Bajo Stock Mínimo</span>
+            <span id="resumen-compras" style="font-weight: normal; color: #aed6f1;">--</span>
+        </div>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Categoría</th>
+                        <th>Nombre del Artículo</th>
+                        <th>Proveedor</th>
+                        <th style="text-align: center;">Stock Actual</th>
+                        <th style="text-align: center;">Objetivo (Mínimo)</th>
+                        <th style="text-align: center;">Piezas a Comprar</th>
+                    </tr>
+                </thead>
+                <tbody id="tabla-abasto">
+                    <tr><td colspan="6" style="text-align: center; color: gray; padding: 20px;">Presione "Buscar Faltantes" para escanear el inventario.</td></tr>
                 </tbody>
             </table>
         </div>
@@ -161,8 +162,8 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-    import { getFirestore, collection, query, where, getDocs, doc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
-    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+    import { getFirestore, collection, query, where, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyA0yq1qdkxcOmwCaUxGiFpYj0mUrVQyD-Q",
@@ -177,224 +178,304 @@
     const db = getFirestore(app);
     const auth = getAuth(app);
 
-    // EXPORTACIONES A WINDOW
+    // Exportaciones globales
+    window.cambiarPestana = cambiarPestana;
     window.generarReporte = generarReporte;
-    window.desbloquearSistema = desbloquearSistema;
+    window.generarListaCompras = generarListaCompras;
+    window.exportarListaComprasPDF = exportarListaComprasPDF;
 
-    let pinRecepcionista = null;
+    let inventarioMaestroCache = []; // Caché para no descargar la DB cada vez
+    let listaComprasGenerada = [];   // Guarda la tabla actual para exportar a PDF
 
     // ==========================================
-    // SISTEMA DE SEGURIDAD (SOLO ADMINS)
+    // GATEKEEPER: SEGURIDAD ESTRICTA (Solo Admin)
     // ==========================================
     onAuthStateChanged(auth, async (user) => {
         if (user) {
-            try {
-                const docRef = doc(db, "employees", user.uid);
-                const docSnap = await getDoc(docRef);
-
-                if (docSnap.exists() && docSnap.data().es_admin === true) {
-                    document.getElementById('user-display').innerText = `👤 ${docSnap.data().nombre}`;
-                    pinRecepcionista = docSnap.data().pin;
-                    
+            const docRef = doc(db, "employees", user.uid);
+            const docSnap = await getDoc(docRef);
+            
+            if (docSnap.exists()) {
+                const emp = docSnap.data();
+                if (emp.es_admin === true) {
+                    document.getElementById('user-display').innerText = `👤 ${emp.nombre}`;
                     configurarFechasPorDefecto();
-                    cargarListaEmpleados();
-                    iniciarControlInactividad(); 
+                    precargarInventario(); // Carga secreta al iniciar
                 } else {
-                    alert("Acceso Denegado: No tienes permisos de Administrador para ver reportes.");
-                    await signOut(auth);
-                    window.location.href = "login.html";
+                    alert("⛔ Acceso Denegado: Este módulo contiene información financiera sensible.");
+                    window.location.href = "index.html"; 
                 }
-            } catch (error) {
-                console.error("Error de permisos:", error);
+            } else {
+                window.location.href = "login.html";
             }
         } else {
             window.location.href = "login.html";
         }
     });
 
-    document.getElementById('btn-logout').addEventListener('click', () => { signOut(auth); });
-
-    // ==========================================
-    // CONTROL DE INACTIVIDAD
-    // ==========================================
-    let timeoutInactividad;
-    function resetearInactividad() {
-        clearTimeout(timeoutInactividad);
-        if(document.getElementById('lock-screen').style.display !== 'flex') {
-            timeoutInactividad = setTimeout(() => {
-                document.getElementById('lock-screen').style.display = 'flex';
-                document.getElementById('unlock-pin').value = '';
-                document.getElementById('unlock-pin').focus();
-            }, 5 * 60 * 1000); 
-        }
+    function cambiarPestana(idTab, btn) {
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+        
+        document.getElementById(idTab).classList.add('active');
+        btn.classList.add('active');
     }
 
-    function desbloquearSistema() {
-        if(document.getElementById('unlock-pin').value === pinRecepcionista) {
-            document.getElementById('lock-screen').style.display = 'none';
-            resetearInactividad();
-        } else {
-            alert("❌ PIN Incorrecto.");
-            document.getElementById('unlock-pin').value = '';
-        }
-    }
-
-    document.getElementById('unlock-pin').addEventListener('keypress', (e) => { if (e.key === 'Enter') desbloquearSistema(); });
-    ['mousemove', 'keypress', 'click'].forEach(evt => document.addEventListener(evt, resetearInactividad));
-
-    // ==========================================
-    // INICIALIZACIÓN DE LA UI
-    // ==========================================
     function configurarFechasPorDefecto() {
         const hoy = new Date();
-        const strHoy = hoy.toISOString().split('T')[0];
-        document.getElementById('date-start').value = strHoy;
-        document.getElementById('date-end').value = strHoy;
+        const hace7Dias = new Date();
+        hace7Dias.setDate(hoy.getDate() - 7);
+
+        document.getElementById('fecha-fin').value = hoy.toISOString().split('T')[0];
+        document.getElementById('fecha-inicio').value = hace7Dias.toISOString().split('T')[0];
     }
 
-    function cargarListaEmpleados() {
-        onSnapshot(collection(db, "employees"), (snap) => {
-            const select = document.getElementById('select-employee');
-            select.innerHTML = '<option value="ALL">🏥 Total del Hospital (Todos)</option>';
-            snap.forEach(docSnap => {
-                const emp = docSnap.data();
-                const option = document.createElement('option');
-                option.value = docSnap.id; 
-                option.text = `${emp.nombre} (${emp.rol || 'Empleado'})`;
-                select.appendChild(option);
+    // ==========================================
+    // LÓGICA 1: REPORTE FINANCIERO
+    // ==========================================
+    async function generarReporte() {
+        const strInicio = document.getElementById('fecha-inicio').value;
+        const strFin = document.getElementById('fecha-fin').value;
+
+        if (!strInicio || !strFin) return alert("Selecciona ambas fechas.");
+
+        const btn = document.getElementById('btn-generar');
+        btn.disabled = true;
+        btn.innerText = "⏳ Consultando...";
+
+        const fechaInicio = new Date(strInicio + 'T00:00:00');
+        const fechaFin = new Date(strFin + 'T23:59:59');
+
+        const tbody = document.getElementById('tabla-reporte');
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: gray; padding: 20px;">Descargando datos...</td></tr>';
+
+        try {
+            let ingresosTotales = 0, mermasTotales = 0, eventosUnificados = [];
+
+            const qTx = query(collection(db, "transactions"), where("timestamp", ">=", fechaInicio), where("timestamp", "<=", fechaFin));
+            const snapTx = await getDocs(qTx);
+            
+            snapTx.forEach(doc => {
+                const data = doc.data();
+                if (data.tipo_operacion && data.tipo_operacion.includes('cargo')) {
+                    ingresosTotales += data.precio_venta || 0;
+                    eventosUnificados.push({
+                        fechaObj: data.timestamp ? data.timestamp.toDate() : new Date(),
+                        concepto: `${data.cantidad}x ${data.nombre}`,
+                        operador: data.acreditado_a_nombre || "Sistema",
+                        tipo: 'ingreso',
+                        monto: data.precio_venta || 0
+                    });
+                }
             });
+
+            const qLoss = query(collection(db, "inventory_losses"), where("fecha", ">=", fechaInicio), where("fecha", "<=", fechaFin));
+            const snapLoss = await getDocs(qLoss);
+
+            snapLoss.forEach(doc => {
+                const data = doc.data();
+                const costoMerma = (data.cantidad * (data.precio_perdida || 0));
+                mermasTotales += costoMerma;
+                eventosUnificados.push({
+                    fechaObj: data.fecha ? data.fecha.toDate() : new Date(),
+                    concepto: `${data.cantidad}x ${data.nombre}`,
+                    operador: data.motivo || "Uso Interno",
+                    tipo: 'merma',
+                    monto: costoMerma
+                });
+            });
+
+            eventosUnificados.sort((a, b) => b.fechaObj - a.fechaObj);
+
+            document.getElementById('kpi-ingresos').innerText = `$${ingresosTotales.toLocaleString('es-MX', {minimumFractionDigits: 2})}`;
+            document.getElementById('kpi-mermas').innerText = `-$${mermasTotales.toLocaleString('es-MX', {minimumFractionDigits: 2})}`;
+            
+            const utilidad = ingresosTotales - mermasTotales;
+            const uiNeto = document.getElementById('kpi-neto');
+            uiNeto.innerText = `$${utilidad.toLocaleString('es-MX', {minimumFractionDigits: 2})}`;
+            uiNeto.style.color = utilidad < 0 ? 'var(--danger-red)' : 'var(--accent-green)';
+            document.getElementById('kpi-movimientos').innerText = eventosUnificados.length;
+
+            tbody.innerHTML = '';
+            if (eventosUnificados.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: gray; padding: 20px;">No se encontraron movimientos.</td></tr>';
+            } else {
+                eventosUnificados.forEach(ev => {
+                    const tr = document.createElement('tr');
+                    const badge = ev.tipo === 'ingreso' ? '<span class="badge-ingreso">Venta a Paciente</span>' : '<span class="badge-merma">Uso Interno/Merma</span>';
+                    const colorMonto = ev.tipo === 'ingreso' ? 'var(--primary-blue)' : 'var(--danger-red)';
+                    const signo = ev.tipo === 'ingreso' ? '' : '-';
+
+                    tr.innerHTML = `
+                        <td style="color: gray;">${ev.fechaObj.toLocaleString('es-MX')}</td>
+                        <td><strong>${ev.concepto}</strong></td>
+                        <td style="font-size: 0.9em;">${ev.operador}</td>
+                        <td>${badge}</td>
+                        <td style="text-align: right; font-weight: bold; color: ${colorMonto};">${signo}$${ev.monto.toLocaleString('es-MX', {minimumFractionDigits: 2})}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+        } catch (error) {
+            console.error(error);
+            if(error.message.includes('requires an index')) alert("⚠️ Firebase requiere un Índice. Revisa la consola F12 y haz clic en el link.");
+            else alert("❌ Error al consultar la base de datos.");
+        } finally {
+            btn.disabled = false; btn.innerText = "📊 Consultar Finanzas";
+        }
+    }
+
+
+    // ==========================================
+    // LÓGICA 2: REPORTES DE REABASTECIMIENTO (MRP)
+    // ==========================================
+    async function precargarInventario() {
+        // Descargamos el inventario completo solo una vez al cargar la página
+        const qInv = query(collection(db, "inventory_master"), where("tipo", "==", "fisico"));
+        const snap = await getDocs(qInv);
+        inventarioMaestroCache = [];
+        
+        let setProveedores = new Set();
+
+        snap.forEach(doc => {
+            const data = doc.data();
+            inventarioMaestroCache.push(data);
+            if(data.proveedor && data.proveedor.trim() !== "") {
+                setProveedores.add(data.proveedor);
+            }
+        });
+
+        // Llenar el Dropdown de Proveedores
+        const selector = document.getElementById('select-proveedor-abasto');
+        setProveedores.forEach(prov => {
+            const option = document.createElement('option');
+            option.value = prov;
+            option.text = prov;
+            selector.appendChild(option);
         });
     }
 
-    // ==========================================
-    // FUNCIONES DE PARSEO FINANCIERO BLINDADAS
-    // ==========================================
-    // Esta función se encarga de que no importa si guardaste el precio con "$" o texto, siempre devuelva un número real.
-    function limpiarDinero(valor) {
-        if (valor === undefined || valor === null) return 0;
-        if (typeof valor === 'number') return valor;
-        // Quita todo lo que no sea número, punto o signo negativo
-        const extraido = String(valor).replace(/[^0-9.-]+/g,"");
-        const num = parseFloat(extraido);
-        return isNaN(num) ? 0 : num;
-    }
+    function generarListaCompras() {
+        const provFiltro = document.getElementById('select-proveedor-abasto').value;
+        const tbody = document.getElementById('tabla-abasto');
+        tbody.innerHTML = '';
+        listaComprasGenerada = [];
 
-    // ==========================================
-    // GENERACIÓN DEL REPORTE FINANCIERO
-    // ==========================================
-    async function generarReporte() {
-        const btn = document.getElementById('btn-generar');
-        btn.innerText = "⏳ Consultando...";
-        btn.disabled = true;
+        // Filtrar y calcular la diferencia
+        inventarioMaestroCache.forEach(item => {
+            // Ignorar si no tiene stock_minimo configurado
+            if(!item.stock_minimo || item.stock_minimo <= 0) return;
 
-        const strStart = document.getElementById('date-start').value;
-        const strEnd = document.getElementById('date-end').value;
-        const employeeId = document.getElementById('select-employee').value;
+            // Si el stock actual es menor al objetivo, entra a la lista de compras
+            if(item.stock < item.stock_minimo) {
+                // Aplicar filtro de proveedor
+                if(provFiltro === 'TODOS' || item.proveedor === provFiltro) {
+                    const faltante = item.stock_minimo - item.stock;
+                    listaComprasGenerada.push({
+                        categoria: item.categoria || 'N/A',
+                        nombre: item.nombre,
+                        proveedor: item.proveedor || 'Sin asignar',
+                        stock: item.stock,
+                        minimo: item.stock_minimo,
+                        faltante: faltante
+                    });
+                }
+            }
+        });
 
-        if (!strStart || !strEnd) {
-            alert("Por favor, selecciona un rango de fechas válido.");
-            btn.innerText = "📊 Generar Reporte";
-            btn.disabled = false;
+        // Ordenar alfabéticamente por proveedor y luego por nombre
+        listaComprasGenerada.sort((a, b) => {
+            if(a.proveedor < b.proveedor) return -1;
+            if(a.proveedor > b.proveedor) return 1;
+            return a.nombre.localeCompare(b.nombre);
+        });
+
+        document.getElementById('resumen-compras').innerText = `(${listaComprasGenerada.length} artículos críticos encontrados)`;
+
+        if(listaComprasGenerada.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--accent-green); padding: 20px; font-weight:bold;">¡Felicidades! Todo el inventario está por encima del nivel mínimo.</td></tr>';
             return;
         }
 
-        const startDate = new Date(strStart + 'T00:00:00');
-        const endDate = new Date(strEnd + 'T23:59:59');
+        // Dibujar Tabla
+        listaComprasGenerada.forEach(item => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td style="text-transform: uppercase; font-size: 0.8em; color: gray;">${item.categoria}</td>
+                <td><strong>${item.nombre}</strong></td>
+                <td>${item.proveedor}</td>
+                <td style="text-align: center; color: ${item.stock <= 0 ? 'var(--danger-red)' : 'black'}; font-weight:bold;">${item.stock}</td>
+                <td style="text-align: center; color: gray;">${item.minimo}</td>
+                <td style="text-align: center;"><span class="badge-critical">+${item.faltante}</span></td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
 
-        try {
-            const q = query(
-                collection(db, "transactions"), 
-                where("timestamp", ">=", startDate), 
-                where("timestamp", "<=", endDate)
-            );
-            
-            const snap = await getDocs(q);
-            
-            // 🚨 SOLUCIÓN AL COSTO: Bajar catálogo y forzar limpieza financiera
-            const invSnap = await getDocs(collection(db, "inventory_master"));
-            const catalogoCostos = {};
-            invSnap.forEach(d => {
-                const data = d.data();
-                // Buscamos bajo diferentes nombres posibles por si cambió tu base de datos
-                const costoRaw = data.costo !== undefined ? data.costo : (data.precio_compra || data.costo_compra || 0);
-                catalogoCostos[d.id] = limpiarDinero(costoRaw); 
-            });
+    // Exportar la Orden de Compra a PDF
+    function exportarListaComprasPDF() {
+        if(listaComprasGenerada.length === 0) return alert("Genera la lista de faltantes primero.");
+        if (!window.jspdf || !window.jspdf.jsPDF) return alert("La librería PDF no cargó correctamente.");
 
-            let totalVentas = 0;
-            let totalCostos = 0;
-            let totalUtilidad = 0;
-            let conteoMovimientos = 0;
-            const filasTabla = [];
+        const provFiltro = document.getElementById('select-proveedor-abasto').value;
+        const fechaHoy = new Date().toLocaleString('es-MX');
 
-            snap.forEach(docSnap => {
-                const tx = docSnap.data();
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('p', 'pt', 'letter');
+        const pageWidth = doc.internal.pageSize.width;
 
-                if (employeeId !== "ALL" && tx.acreditado_a_id !== employeeId && tx.usuario_registro !== employeeId) {
-                    return; 
-                }
+        // Encabezado
+        doc.setFontSize(16);
+        doc.setFont("helvetica", "bold");
+        doc.text("HOSPITAL POS - ORDEN DE REABASTECIMIENTO", 40, 40);
+        
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "normal");
+        doc.text(`Fecha de Emisión: ${fechaHoy}`, 40, 55);
+        doc.text(`Filtro Aplicado: Proveedor -> ${provFiltro}`, 40, 70);
 
-                conteoMovimientos++;
+        doc.setDrawColor(44, 62, 80);
+        doc.setLineWidth(1);
+        doc.line(40, 80, pageWidth - 40, 80);
 
-                // Lógica financiera forzando números estrictos
-                const ventaTotalTx = limpiarDinero(tx.precio_venta); 
-                const cantidadTx = limpiarDinero(tx.cantidad) || 1;
-                
-                // Prioridad para buscar costo
-                let costoUnitario = 0;
-                if (tx.costo_unitario !== undefined) {
-                    costoUnitario = limpiarDinero(tx.costo_unitario);
-                } else if (catalogoCostos[tx.itemId] !== undefined) {
-                    costoUnitario = catalogoCostos[tx.itemId];
-                }
+        // Tabla de datos
+        const tableBody = listaComprasGenerada.map(item => [
+            item.categoria.toUpperCase(),
+            item.nombre,
+            item.proveedor,
+            item.stock.toString(),
+            item.minimo.toString(),
+            item.faltante.toString()
+        ]);
 
-                const costoTotalTx = costoUnitario * cantidadTx;
-                const utilidadTx = ventaTotalTx - costoTotalTx;
+        doc.autoTable({
+            startY: 90,
+            head: [['Categoría', 'Artículo', 'Proveedor', 'Stock Act.', 'Objetivo', 'PEDIR']],
+            body: tableBody,
+            theme: 'striped',
+            headStyles: { fillColor: [52, 73, 94], textColor: 255 },
+            columnStyles: { 
+                0: { cellWidth: 70 },
+                3: { halign: 'center' }, 
+                4: { halign: 'center' }, 
+                5: { halign: 'center', fontStyle: 'bold', textColor: [192, 57, 43] } // Pedir en rojo/negrita
+            },
+            styles: { fontSize: 9 }
+        });
 
-                // Acumuladores
-                totalVentas += ventaTotalTx;
-                totalCostos += costoTotalTx;
-                totalUtilidad += utilidadTx;
+        // Firmas de Autorización
+        let finalY = doc.lastAutoTable.finalY + 60;
+        if (finalY > doc.internal.pageSize.height - 40) { doc.addPage(); finalY = 60; }
 
-                const fechaFormat = tx.timestamp ? new Date(tx.timestamp.toDate()).toLocaleString('es-MX') : 'Desconocida';
-                const utilidadClass = utilidadTx > 0 ? 'profit-positive' : (utilidadTx === 0 ? 'profit-zero' : '');
+        doc.setDrawColor(0);
+        doc.setLineWidth(0.5);
+        doc.line(100, finalY, 250, finalY);
+        doc.line(pageWidth - 250, finalY, pageWidth - 100, finalY);
+        
+        doc.text("Firma de Almacén", 175, finalY + 15, { align: 'center' });
+        doc.text("Autorización Administrativa", pageWidth - 175, finalY + 15, { align: 'center' });
 
-                filasTabla.push(`
-                    <tr>
-                        <td>${fechaFormat}</td>
-                        <td><strong>${tx.nombre}</strong></td>
-                        <td>${tx.acreditado_a_nombre || 'Sistema'}</td>
-                        <td class="text-center">${cantidadTx}</td>
-                        <td class="text-right" style="color: gray;">$${costoUnitario.toLocaleString('es-MX', {minimumFractionDigits: 2})}</td>
-                        <td class="text-right font-weight-bold">$${ventaTotalTx.toLocaleString('es-MX', {minimumFractionDigits: 2})}</td>
-                        <td class="text-right ${utilidadClass}">$${utilidadTx.toLocaleString('es-MX', {minimumFractionDigits: 2})}</td>
-                    </tr>
-                `);
-            });
-
-            // Escribimos en el HTML formateando como moneda real
-            document.getElementById('kpi-ventas').innerText = `$${totalVentas.toLocaleString('es-MX', {minimumFractionDigits: 2})}`;
-            document.getElementById('kpi-costos').innerText = `$${totalCostos.toLocaleString('es-MX', {minimumFractionDigits: 2})}`;
-            document.getElementById('kpi-utilidad').innerText = `$${totalUtilidad.toLocaleString('es-MX', {minimumFractionDigits: 2})}`;
-            document.getElementById('kpi-movimientos').innerText = conteoMovimientos;
-
-            const tbody = document.getElementById('table-body');
-            if (filasTabla.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" class="text-center" style="color: gray; padding: 40px;">No se encontraron ventas para este periodo/empleado.</td></tr>`;
-            } else {
-                tbody.innerHTML = filasTabla.reverse().join('');
-            }
-
-        } catch (error) {
-            console.error("Error generando reporte:", error);
-            if (error.message.includes("index")) {
-                alert("⚠️ Firebase requiere crear un índice para buscar por fechas. Abre la consola F12, haz clic en el link azul que arroja el error y espera 5 minutos a que se genere.");
-            } else {
-                alert("Ocurrió un error al consultar la base de datos.");
-            }
-        } finally {
-            btn.innerText = "📊 Generar Reporte";
-            btn.disabled = false;
-        }
+        doc.save(`Orden_Compra_${provFiltro.replace(/\s+/g, '_')}.pdf`);
     }
 </script>
 </body>
