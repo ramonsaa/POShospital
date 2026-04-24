@@ -91,7 +91,6 @@
         .internal-mode .pos-top-bar { background: #fffcf5; border-bottom: 2px solid var(--warning); }
         .internal-mode .pos-p-name { color: var(--warning); }
 
-        /* Botón Ver Cuenta para Admin */
         #btn-ver-cuenta {
             background: var(--primary); color: white; border: none; padding: 8px 12px;
             border-radius: 6px; font-weight: bold; font-size: 0.85em; cursor: pointer;
@@ -272,8 +271,14 @@
 
             if (docSnap.exists()) {
                 const data = docSnap.data();
-                // GUARDAMOS EL FLAG es_admin
-                empleadoActual = { uid: user.uid, nombre: data.nombre, rol: data.rol, es_admin: data.es_admin === true };
+                // APLICAMOS RBAC (Permisos Granulares)
+                empleadoActual = { 
+                    uid: user.uid, 
+                    nombre: data.nombre, 
+                    rol: data.rol, 
+                    es_admin: data.es_admin === true,
+                    permisos: data.permisos || {}
+                };
                 
                 document.getElementById('login-view').style.display = 'none';
                 document.getElementById('app-view').style.display = 'flex';
@@ -382,8 +387,8 @@
         document.getElementById('pos-patient-name').innerText = nombre;
         document.getElementById('pos-patient-room').innerText = `Cuarto: ${cuarto}`;
         
-        // Habilitar botón de ver cuenta si es Administrador
-        if (empleadoActual.es_admin) {
+        // VERIFICACIÓN DE PERMISOS PARA MOSTRAR LA CUENTA
+        if (empleadoActual.es_admin === true || empleadoActual.permisos.ver_cuentas === true) {
             document.getElementById('btn-ver-cuenta').style.display = 'block';
         } else {
             document.getElementById('btn-ver-cuenta').style.display = 'none';
@@ -404,7 +409,7 @@
         document.getElementById('screen-pos').classList.add('internal-mode');
         document.getElementById('pos-patient-name').innerText = "Consumo Interno / Merma";
         document.getElementById('pos-patient-room').innerText = "No se cobrará a ningún paciente";
-        document.getElementById('btn-ver-cuenta').style.display = 'none'; // Ocultar siempre en consumo interno
+        document.getElementById('btn-ver-cuenta').style.display = 'none';
         
         renderizarInventarioPOS();
         actualizarBarraFlotante();
@@ -451,7 +456,7 @@
     }
 
     // ==========================================
-    // 4. VER CUENTA (SOLO ADMIN)
+    // 4. VER CUENTA (SOLO ADMIN/PERMITIDOS)
     // ==========================================
     async function abrirModalCuenta() {
         if (!pacienteActual) return;
@@ -459,7 +464,7 @@
         document.getElementById('modal-account-patient').innerText = pacienteActual.nombre;
         document.getElementById('account-modal').style.display = 'flex';
 
-        // 1. Obtener Total general de la cuenta
+        // 1. Obtener Total general
         const accRef = doc(db, "accounts", pacienteActual.id);
         getDoc(accRef).then(snap => {
             if(snap.exists()) {
@@ -558,9 +563,6 @@
     // ==========================================
     // 6. PROCESAR TRANSACCIÓN Y SUBIR A FIREBASE
     // ==========================================
-// ==========================================
-    // 6. PROCESAR TRANSACCIÓN Y SUBIR A FIREBASE
-    // ==========================================
     async function confirmarCargos() {
         const ids = Object.keys(carritoApp);
         if (ids.length === 0) return;
@@ -626,12 +628,10 @@
                 alert("✅ Cargos agregados a la cuenta del paciente.");
             }
             
-            // --- CORRECCIÓN: Vaciamos el carrito de la memoria ANTES de volver ---
             carritoApp = {}; 
-            actualizarBarraFlotante(); 
-            // ----------------------------------------------------------------------
-            
+            actualizarBarraFlotante();
             volverAPacientes(); 
+            
         } catch (error) {
             console.error(error);
             alert("❌ Error al procesar insumos.");
