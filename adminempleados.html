@@ -2,152 +2,169 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hospital - Gestión de Personal</title>
+    <title>Hospital POS - Gestión de Empleados</title>
     <style>
-        :root {
-            --primary-blue: #2c3e50;
-            --secondary-blue: #34495e;
-            --accent-green: #27ae60;
-            --danger-red: #c0392b;
-            --light-bg: #f4f7f6;
-            --border-color: #dcdde1;
-        }
+        :root { --primary-blue: #2c3e50; --accent-green: #27ae60; --bg: #f4f7f6; --danger: #c0392b; --border: #dcdde1; --warning: #f39c12;}
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--bg); display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+        
+        header { background: var(--primary-blue); color: white; padding: 10px 20px; display: flex; justify-content: space-between; border-bottom: 3px solid var(--accent-green); }
+        .user-info { font-size: 0.9em; color: #aed6f1; font-weight: bold;}
+        
+        main { display: flex; flex: 1; overflow: hidden; padding: 15px; gap: 15px; }
+        
+        /* Panel Izquierdo: Formulario */
+        .form-panel { background: white; border: 1px solid var(--border); border-radius: 4px; padding: 20px; width: 350px; display: flex; flex-direction: column; overflow-y: auto;}
+        .form-header { font-size: 1.1em; font-weight: bold; color: var(--primary-blue); margin-bottom: 15px; border-bottom: 2px solid var(--border); padding-bottom: 5px; }
+        
+        .input-group { margin-bottom: 12px; }
+        .input-group label { display: block; font-size: 0.85em; font-weight: bold; color: var(--primary-blue); margin-bottom: 4px; }
+        .input-group input, .input-group select { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 3px; box-sizing: border-box; outline: none; }
+        .input-group input:focus, .input-group select:focus { border-color: var(--accent-green); }
 
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--light-bg); margin: 0; padding: 20px; color: #2f3640; }
+        /* Matriz de Permisos */
+        .permissions-box { background: #f8f9fa; border: 1px solid var(--border); border-radius: 4px; padding: 10px; margin-bottom: 15px; }
+        .permissions-box h4 { margin: 0 0 10px 0; font-size: 0.9em; color: var(--primary-blue); }
+        .perm-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 0.85em; }
+        .perm-row input[type="checkbox"] { cursor: pointer; }
         
-        /* Pantalla de carga inicial */
-        #loading-screen { display: flex; flex-direction: column; justify-content: center; align-items: center; height: 90vh; font-size: 1.5em; color: var(--secondary-blue); }
-        
-        /* Contenido oculto por defecto hasta validar permisos */
-        #app-content { display: none; flex-direction: column; }
+        .perm-master { padding: 8px; background: #eef2f5; border-radius: 4px; border: 1px solid #cbd4db; margin-bottom: 10px; font-weight: bold;}
 
-        header { background-color: var(--primary-blue); color: white; padding: 15px 20px; border-radius: 8px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
-        .btn-header { background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 8px 15px; border-radius: 4px; cursor: pointer; font-size: 0.85em; text-decoration: none; }
-        .btn-header:hover { background: rgba(255,255,255,0.2); }
-        
-        .container { display: flex; gap: 20px; align-items: flex-start; }
-        
-        .panel { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); border: 1px solid var(--border-color); }
-        .form-panel { flex: 1; min-width: 320px; }
-        .list-panel { flex: 2; overflow-x: auto; }
+        button { width: 100%; padding: 10px; border: none; font-weight: bold; border-radius: 3px; cursor: pointer; color: white; transition: 0.2s;}
+        .btn-green { background: var(--accent-green); }
+        .btn-green:hover { opacity: 0.9; }
+        .btn-red { background: var(--danger); padding: 5px 10px; font-size: 0.8em;}
+        .btn-red:hover { opacity: 0.9; }
+        .btn-edit { background: #2980b9; padding: 5px 10px; font-size: 0.8em; margin-right: 5px;}
 
-        h2 { margin-top: 0; color: var(--primary-blue); font-size: 1.2em; border-bottom: 2px solid var(--border-color); padding-bottom: 10px; }
+        /* Panel Derecho: Lista */
+        .list-panel { background: white; border: 1px solid var(--border); border-radius: 4px; flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+        .table-container { flex: 1; overflow-y: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.85em; }
+        th { background: #eee; position: sticky; top: 0; text-align: left; padding: 10px; border-bottom: 2px solid #ccc; z-index: 1;}
+        td { padding: 10px; border-bottom: 1px solid #eee; vertical-align: top;}
+        tr:hover { background: #f0f7ff; }
 
-        .form-group { margin-bottom: 15px; }
-        label { display: block; font-weight: bold; margin-bottom: 5px; font-size: 0.9em; color: var(--secondary-blue); }
-        input[type="text"], input[type="email"], input[type="password"], select { width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 4px; box-sizing: border-box; background-color: white; }
-        select { cursor: pointer; }
+        .badge-admin { background: #fdf2e9; color: #e67e22; padding: 2px 5px; border-radius: 3px; font-size: 0.8em; font-weight: bold; display: inline-block; margin-bottom: 3px;}
+        .badge-perm { background: #eef2f5; color: #34495e; padding: 2px 5px; border-radius: 3px; font-size: 0.75em; border: 1px solid #dcdde1; display: inline-block; margin: 2px; }
         
-        .checkbox-group { display: flex; align-items: center; gap: 10px; background: #eef2f5; padding: 15px; border-radius: 4px; border: 1px solid var(--border-color); }
-        .checkbox-group input { width: 20px; height: 20px; cursor: pointer; }
-        
-        button { background-color: var(--accent-green); color: white; border: none; padding: 12px 20px; width: 100%; font-size: 1em; font-weight: bold; border-radius: 4px; cursor: pointer; transition: 0.2s; }
-        button:hover { background-color: #219a52; }
-        button:disabled { background-color: #95a5a6; cursor: not-allowed; }
-        
-        .btn-delete { background-color: var(--danger-red); width: auto; padding: 6px 10px; font-size: 0.8em; }
-        .btn-delete:hover { background-color: #a93226; }
+        .pin-box { font-family: monospace; font-size: 1.2em; font-weight: bold; letter-spacing: 2px; color: var(--primary-blue); background: #f4f7f6; padding: 2px 6px; border-radius: 3px;}
 
-        table { width: 100%; border-collapse: collapse; font-size: 0.9em; }
-        th, td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border-color); }
-        th { background-color: #f8f9fa; color: var(--secondary-blue); }
-        .badge-admin { background: #e3f2fd; color: #1565c0; padding: 4px 8px; border-radius: 4px; font-size: 0.8em; font-weight: bold; }
-        .badge-user { background: #f2f4f4; color: #7f8c8d; padding: 4px 8px; border-radius: 4px; font-size: 0.8em; font-weight: bold; }
-        .uid-text { font-family: monospace; color: gray; font-size: 0.85em; }
-        .rol-text { font-size: 1.1em; color: var(--primary-blue); font-weight: bold; margin-bottom: 4px; }
+        /* MODALES */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 100; justify-content: center; align-items: center; }
+        .modal-content { background: white; border-radius: 5px; padding: 20px; width: 350px; display: flex; flex-direction: column; box-shadow: 0 5px 15px rgba(0,0,0,0.3);}
     </style>
 </head>
 <body>
 
-    <div id="loading-screen">
-        <h2>🔒 Verificando credenciales de seguridad...</h2>
+<header>
+    <div><strong>HOSPITAL POS</strong> | Gestión de Personal y Permisos</div>
+    <div style="display: flex; gap: 15px; align-items: center;">
+        <span id="user-display" class="user-info">Verificando sesión...</span>
+        <a href="index.html" style="color: white; text-decoration: none; border: 1px solid white; padding: 5px 10px; border-radius: 4px; font-size: 0.85em;">← Volver a Recepción</a>
     </div>
+</header>
 
-    <div id="app-content">
-        <header>
-            <div>
-                <h1 style="margin: 0; font-size: 1.5em;">Gestión de Personal y Permisos</h1>
-                <span style="font-size: 0.85em; color: #aed6f1;">Panel de Administración Avanzada</span>
-            </div>
-            <div style="display: flex; gap: 15px; align-items: center;">
-                <span style="font-weight: bold; color: #aed6f1;" id="admin-name-display"></span>
-                <a href="index.html" class="btn-header">Volver al POS</a>
-                <button id="btn-logout" class="btn-header" style="background: var(--danger-red); border-color: #e74c3c;">Cerrar Sesión</button>
-            </div>
-        </header>
+<main>
+    <div class="form-panel">
+        <div class="form-header">➕ Registrar / Editar Empleado</div>
+        
+        <input type="hidden" id="emp-id"> <div class="input-group">
+            <label>Nombre Completo</label>
+            <input type="text" id="emp-nombre" placeholder="Ej. Dr. Juan Pérez" required>
+        </div>
+        
+        <div class="input-group">
+            <label>Puesto / Rol (Referencia)</label>
+            <select id="emp-rol">
+                <option value="enfermeria">Enfermería</option>
+                <option value="medico">Médico(a)</option>
+                <option value="recepcion">Recepción / Caja</option>
+                <option value="administracion">Administración</option>
+                <option value="sistema">Kiosco / Sistema</option>
+            </select>
+        </div>
 
-        <div class="container">
-            <div class="panel form-panel">
-                <h2>➕ Alta de Empleado</h2>
-                <form id="form-empleado">
-                    <div class="form-group">
-                        <label>Nombre Completo</label>
-                        <input type="text" id="emp-nombre" placeholder="Ej. Dr. Arreola" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Puesto</label>
-                        <select id="emp-rol" required>
-                            <option value="" disabled selected>Seleccione un puesto...</option>
-                            <option value="Doctor">Doctor</option>
-                            <option value="Enfermera">Enfermera</option>
-                            <option value="Recepcion">Recepción</option>
-                            <option value="Administrador">Administrador</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Correo Electrónico (Login Móvil)</label>
-                        <input type="email" id="emp-email" placeholder="correo@hospital.com" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Contraseña (Mínimo 6 caracteres)</label>
-                        <input type="password" id="emp-password" placeholder="••••••" required minlength="6">
-                    </div>
-                    <div class="form-group">
-                        <label>PIN de Acceso (Tablet Cuartos)</label>
-                        <input type="text" id="emp-pin" placeholder="Ej. 1234" required maxlength="4" pattern="\d{4}" title="Debe ser un PIN de 4 números">
-                    </div>
-                    
-                    <div class="form-group checkbox-group">
-                        <input type="checkbox" id="emp-admin">
-                        <div>
-                            <strong style="color: var(--primary-blue);">Permisos de Administrador</strong>
-                            <div style="font-size: 0.8em; color: gray;">Si se marca, podrá entrar al POS Web y gestionar personal.</div>
-                        </div>
-                    </div>
-
-                    <button type="submit" id="btn-registrar">Registrar Empleado</button>
-                </form>
+        <div class="input-group">
+            <label>PIN de Acceso (4 dígitos)</label>
+            <input type="text" id="emp-pin" placeholder="Ej. 1234" maxlength="4" required style="font-family: monospace; font-size: 1.1em; letter-spacing: 2px;">
+            <small style="color: gray; font-size: 0.75em;">Usado en Tablets y POS</small>
+        </div>
+        
+        <div class="permissions-box">
+            <h4>Niveles de Acceso</h4>
+            
+            <div class="perm-master">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" id="perm-admin_global" onchange="toggleAdminGlobal()"> 
+                    <span style="color: var(--warning);">⭐ Administrador Global (Acceso Total)</span>
+                </label>
             </div>
 
-            <div class="panel list-panel">
-                <h2>👥 Plantilla Registrada</h2>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Nombre</th>
-                            <th>PIN</th>
-                            <th>Correo / UID</th>
-                            <th>Puesto y Permisos</th>
-                            <th>Acción</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tabla-empleados">
-                        <tr><td colspan="5" style="text-align: center;">Cargando empleados...</td></tr>
-                    </tbody>
-                </table>
+            <div id="granular-permissions">
+                <div class="perm-row">
+                    <input type="checkbox" id="perm-modificar_inventario" class="perm-check">
+                    <label for="perm-modificar_inventario">Modificar Inventario / Stock</label>
+                </div>
+                <div class="perm-row">
+                    <input type="checkbox" id="perm-registrar_pacientes" class="perm-check">
+                    <label for="perm-registrar_pacientes">Registrar / Editar Pacientes</label>
+                </div>
+                <div class="perm-row">
+                    <input type="checkbox" id="perm-borrar_pacientes" class="perm-check">
+                    <label for="perm-borrar_pacientes">Borrar Pacientes</label>
+                </div>
+                <div class="perm-row">
+                    <input type="checkbox" id="perm-cerrar_cuentas" class="perm-check">
+                    <label for="perm-cerrar_cuentas">Liquidar / Cerrar Cuentas</label>
+                </div>
+                <div class="perm-row">
+                    <input type="checkbox" id="perm-borrar_cargos" class="perm-check">
+                    <label for="perm-borrar_cargos">Borrar Insumos cobrados a una cuenta</label>
+                </div>
             </div>
         </div>
+
+        <div id="auth-section" style="padding: 10px; border: 1px dashed var(--warning); border-radius: 4px; margin-bottom: 15px; background: #fffcf5;">
+            <p style="margin: 0 0 10px 0; font-size: 0.8em; font-weight: bold; color: var(--warning);">Credenciales de App Móvil</p>
+            <div class="input-group">
+                <label>Correo Electrónico</label>
+                <input type="email" id="emp-email" placeholder="ejemplo@hospital.com">
+            </div>
+            <div class="input-group" style="margin-bottom: 0;">
+                <label>Contraseña</label>
+                <input type="text" id="emp-pass" placeholder="Mínimo 6 caracteres">
+            </div>
+        </div>
+
+        <button class="btn-green" id="btn-save-emp" onclick="guardarEmpleado()">💾 Guardar Empleado</button>
+        <button class="btn-edit" id="btn-cancel-edit" style="display: none; background: gray; width: 100%; margin-top: 10px;" onclick="cancelarEdicion()">Cancelar Edición</button>
     </div>
+
+    <div class="list-panel">
+        <div class="panel-header">Directorio de Personal Activo</div>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nombre y Puesto</th>
+                        <th>PIN</th>
+                        <th>Permisos Asignados</th>
+                        <th style="width: 130px;">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="tabla-empleados">
+                    <tr><td colspan="4" style="text-align: center; color: gray;">Cargando personal...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</main>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-    import { getFirestore, collection, onSnapshot, doc, getDoc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
-    import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+    import { getFirestore, collection, onSnapshot, doc, setDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
-    // 1. CONFIGURACIÓN DE FIREBASE
     const firebaseConfig = {
         apiKey: "AIzaSyA0yq1qdkxcOmwCaUxGiFpYj0mUrVQyD-Q",
         authDomain: "hospital1-admin.firebaseapp.com",
@@ -161,146 +178,230 @@
     const db = getFirestore(app);
     const auth = getAuth(app);
 
-    // APP SECUNDARIA (Para registrar sin cerrar la sesión actual del administrador)
-    const secondaryApp = initializeApp(firebaseConfig, "SecondaryApp");
-    const secondaryAuth = getAuth(secondaryApp);
+    // Variables Globales
+    let empleadosData = [];
+    let isEditing = false;
+    let authCache = null; // Para poder crear usuarios sin perder la sesión del admin
 
-    window.eliminarEmpleado = eliminarEmpleado;
+    // Exportar funciones
+    window.toggleAdminGlobal = toggleAdminGlobal;
+    window.guardarEmpleado = guardarEmpleado;
+    window.prepararEdicion = prepararEdicion;
+    window.cancelarEdicion = cancelarEdicion;
+    window.borrarEmpleado = borrarEmpleado;
 
-    // ==========================================
-    // SISTEMA DE SEGURIDAD Y BLINDAJE
-    // ==========================================
-    onAuthStateChanged(auth, async (user) => {
+    // Validación de sesión
+    onAuthStateChanged(auth, (user) => {
         if (user) {
-            try {
-                const docRef = doc(db, "employees", user.uid);
-                const docSnap = await getDoc(docRef);
-
-                if (docSnap.exists() && docSnap.data().es_admin === true) {
-                    // ¡ACCESO PERMITIDO!
-                    document.getElementById('admin-name-display').innerText = `👤 ${docSnap.data().nombre}`;
-                    document.getElementById('loading-screen').style.display = 'none';
-                    document.getElementById('app-content').style.display = 'flex';
-                    
-                    escucharEmpleados(); // Arranca la tabla
-                } else {
-                    // ACCESO DENEGADO
-                    alert("Acceso Denegado: No tienes privilegios de Administrador para ver esta página.");
-                    await signOut(auth);
-                    window.location.href = "login.html";
-                }
-            } catch (error) {
-                console.error("Error al verificar permisos:", error);
-                alert("Error de conexión al verificar credenciales.");
-            }
+            document.getElementById('user-display').innerText = user.email;
         } else {
-            // NO HAY SESIÓN
             window.location.href = "login.html";
         }
     });
 
-    document.getElementById('btn-logout').addEventListener('click', () => { signOut(auth); });
-
-    // UX: AUTO-MARCAR ADMIN SI EL PUESTO ES ADMINISTRADOR
-    document.getElementById('emp-rol').addEventListener('change', (e) => {
-        const adminCheckbox = document.getElementById('emp-admin');
-        if(e.target.value === 'Administrador') {
-            adminCheckbox.checked = true;
-        }
-    });
-
-    // 2. ESCUCHAR EMPLEADOS EN TIEMPO REAL
-    function escucharEmpleados() {
-        onSnapshot(collection(db, "employees"), (snap) => {
-            const tbody = document.getElementById('tabla-empleados');
-            tbody.innerHTML = '';
-            
-            if(snap.empty) {
-                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color:gray;">No hay empleados registrados.</td></tr>';
-                return;
-            }
-
-            snap.forEach((docSnap) => {
-                const emp = docSnap.data();
-                const uid = docSnap.id;
-                
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td><strong>${emp.nombre}</strong></td>
-                    <td style="font-size: 1.2em; font-weight: bold; color: var(--accent-green); letter-spacing: 2px;">${emp.pin}</td>
-                    <td>
-                        <div>${emp.email}</div>
-                        <div class="uid-text">UID: ${uid}</div>
-                    </td>
-                    <td>
-                        <div class="rol-text">${emp.rol || 'Sin Puesto'}</div>
-                        <span class="${emp.es_admin ? 'badge-admin' : 'badge-user'}">
-                            ${emp.es_admin ? '⭐ Acceso Total' : 'Acceso Restringido'}
-                        </span>
-                    </td>
-                    <td>
-                        <button class="btn-delete" onclick="eliminarEmpleado('${uid}', '${emp.nombre}')">Borrar Perfil</button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
+    // Lógica visual del Checkbox Master
+    function toggleAdminGlobal() {
+        const isAdmin = document.getElementById('perm-admin_global').checked;
+        const checkboxes = document.querySelectorAll('.perm-check');
+        
+        checkboxes.forEach(chk => {
+            chk.checked = isAdmin;
+            chk.disabled = isAdmin; // Si es admin, no dejamos desmarcar los otros
         });
     }
 
-    // 3. REGISTRAR UNIFICANDO AUTH Y FIRESTORE
-    document.getElementById('form-empleado').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        
-        const btn = document.getElementById('btn-registrar');
-        btn.disabled = true;
-        btn.innerText = "⏳ Creando y unificando...";
+    // Escuchar Empleados
+    onSnapshot(collection(db, "employees"), (snap) => {
+        const tbody = document.getElementById('tabla-empleados');
+        tbody.innerHTML = '';
+        empleadosData = [];
 
-        const nombre = document.getElementById('emp-nombre').value;
-        const rol = document.getElementById('emp-rol').value;
-        const email = document.getElementById('emp-email').value;
-        const password = document.getElementById('emp-password').value;
-        const pin = document.getElementById('emp-pin').value;
-        const esAdmin = document.getElementById('emp-admin').checked;
-
-        try {
-            // Se crea en la app secundaria para no desloguear al administrador actual
-            const userCredential = await createUserWithEmailAndPassword(secondaryAuth, email, password);
-            const uidMaestro = userCredential.user.uid;
-
-            await signOut(secondaryAuth);
-
-            await setDoc(doc(db, "employees", uidMaestro), {
-                nombre: nombre,
-                rol: rol,
-                email: email,
-                pin: pin,
-                es_admin: esAdmin
-            });
-
-            alert(`✅ Empleado ${nombre} registrado con éxito.\nUID Unificado: ${uidMaestro}`);
-            document.getElementById('form-empleado').reset();
-
-        } catch (error) {
-            console.error("Error al registrar:", error);
-            if (error.code === 'auth/email-already-in-use') {
-                alert("❌ Error: Este correo ya está registrado en el sistema.");
-            } else {
-                alert(`❌ Error al crear empleado: ${error.message}`);
-            }
-        } finally {
-            btn.disabled = false;
-            btn.innerText = "Registrar Empleado";
+        if (snap.empty) {
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">No hay personal registrado.</td></tr>';
+            return;
         }
+
+        snap.forEach(docSnap => {
+            const emp = { id: docSnap.id, ...docSnap.data() };
+            empleadosData.push(emp);
+            
+            let badgesHTML = '';
+            
+            if (emp.es_admin) {
+                badgesHTML = `<span class="badge-admin">⭐ Admin Global</span>`;
+            } else {
+                // Dibujar badges granulares
+                if(emp.permisos?.modificar_inventario) badgesHTML += `<span class="badge-perm">Inventario</span>`;
+                if(emp.permisos?.registrar_pacientes) badgesHTML += `<span class="badge-perm">Alta Pacientes</span>`;
+                if(emp.permisos?.borrar_pacientes) badgesHTML += `<span class="badge-perm">Borrar Pacientes</span>`;
+                if(emp.permisos?.cerrar_cuentas) badgesHTML += `<span class="badge-perm">Cerrar Cuentas</span>`;
+                if(emp.permisos?.borrar_cargos) badgesHTML += `<span class="badge-perm">Borrar Cargos</span>`;
+                
+                if(badgesHTML === '') badgesHTML = '<span style="color:gray; font-size:0.8em;">Solo Lectura / Móvil</span>';
+            }
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>
+                    <strong>${emp.nombre}</strong><br>
+                    <small style="color:gray;">${emp.rol.toUpperCase()}</small>
+                </td>
+                <td><span class="pin-box">${emp.pin}</span></td>
+                <td>${badgesHTML}</td>
+                <td>
+                    <button class="btn-edit" onclick="prepararEdicion('${emp.id}')">✏️</button>
+                    <button class="btn-red" onclick="borrarEmpleado('${emp.id}', '${emp.nombre}')">🗑️</button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
     });
 
-    // 4. ELIMINAR PERFIL EN FIRESTORE
-    async function eliminarEmpleado(uid, nombre) {
-        if(confirm(`¿Estás seguro de eliminar los permisos y perfil de ${nombre}?\n\nNota: Esto le revocará el acceso al sistema inmediatamente.`)) {
+    function recopilarPermisos() {
+        return {
+            modificar_inventario: document.getElementById('perm-modificar_inventario').checked,
+            registrar_pacientes: document.getElementById('perm-registrar_pacientes').checked,
+            borrar_pacientes: document.getElementById('perm-borrar_pacientes').checked,
+            cerrar_cuentas: document.getElementById('perm-cerrar_cuentas').checked,
+            borrar_cargos: document.getElementById('perm-borrar_cargos').checked
+        };
+    }
+
+    async function guardarEmpleado() {
+        const nombre = document.getElementById('emp-nombre').value.trim();
+        const rol = document.getElementById('emp-rol').value;
+        const pin = document.getElementById('emp-pin').value.trim();
+        const isAdmin = document.getElementById('perm-admin_global').checked;
+        
+        if(!nombre || pin.length < 4) return alert("Falta nombre o el PIN debe ser de 4 dígitos.");
+
+        const btn = document.getElementById('btn-save-emp');
+        btn.disabled = true;
+        btn.innerText = "⏳ Guardando...";
+
+        const idEdicion = document.getElementById('emp-id').value;
+
+        try {
+            if (isEditing && idEdicion) {
+                // MODO EDICIÓN (Solo Firestore, no Auth)
+                await updateDoc(doc(db, "employees", idEdicion), {
+                    nombre: nombre,
+                    rol: rol,
+                    pin: pin,
+                    es_admin: isAdmin,
+                    permisos: isAdmin ? {} : recopilarPermisos()
+                });
+                alert("✅ Empleado actualizado.");
+                cancelarEdicion();
+
+            } else {
+                // MODO CREACIÓN (Auth + Firestore)
+                const email = document.getElementById('emp-email').value.trim();
+                const pass = document.getElementById('emp-pass').value;
+
+                if(!email || pass.length < 6) {
+                    alert("Para cuentas nuevas se requiere Correo y Contraseña (mínimo 6 caracteres).");
+                    btn.disabled = false;
+                    btn.innerText = "💾 Guardar Empleado";
+                    return;
+                }
+
+                // Truco de App Secundaria para crear usuario sin cerrar sesión al Admin actual
+                if(!authCache) {
+                    authCache = initializeApp(firebaseConfig, "SecondaryApp");
+                }
+                const secondaryAuth = getAuth(authCache);
+                
+                const userCredential = await createUserWithEmailAndPassword(secondaryAuth, email, pass);
+                const nuevoUid = userCredential.user.uid;
+
+                // Cerrar sesión en la app secundaria inmediatamente
+                await secondaryAuth.signOut();
+
+                // Guardar en Firestore con el UID correcto
+                await setDoc(doc(db, "employees", nuevoUid), {
+                    nombre: nombre,
+                    rol: rol,
+                    pin: pin,
+                    es_admin: isAdmin,
+                    permisos: isAdmin ? {} : recopilarPermisos()
+                });
+
+                alert("✅ Nuevo empleado registrado con éxito.");
+                cancelarEdicion(); // Sirve para limpiar el form
+            }
+
+        } catch (error) {
+            console.error(error);
+            alert("❌ Error al guardar: " + error.message);
+        } finally {
+            btn.disabled = false;
+            btn.innerText = isEditing ? "💾 Guardar Cambios" : "💾 Guardar Empleado";
+        }
+    }
+
+    function prepararEdicion(id) {
+        const emp = empleadosData.find(e => e.id === id);
+        if(!emp) return;
+
+        isEditing = true;
+        document.getElementById('emp-id').value = emp.id;
+        document.getElementById('emp-nombre').value = emp.nombre;
+        document.getElementById('emp-rol').value = emp.rol;
+        document.getElementById('emp-pin').value = emp.pin;
+        
+        // Bloquear sección de Auth porque Firebase no deja editar email/pass fácilmente desde cliente
+        document.getElementById('auth-section').style.display = 'none';
+        
+        // Restaurar checks
+        document.getElementById('perm-admin_global').checked = !!emp.es_admin;
+        
+        const p = emp.permisos || {};
+        document.getElementById('perm-modificar_inventario').checked = !!p.modificar_inventario;
+        document.getElementById('perm-registrar_pacientes').checked = !!p.registrar_pacientes;
+        document.getElementById('perm-borrar_pacientes').checked = !!p.borrar_pacientes;
+        document.getElementById('perm-cerrar_cuentas').checked = !!p.cerrar_cuentas;
+        document.getElementById('perm-borrar_cargos').checked = !!p.borrar_cargos;
+
+        toggleAdminGlobal(); // Dispara la lógica visual
+
+        document.getElementById('btn-save-emp').innerText = "💾 Guardar Cambios";
+        document.getElementById('btn-save-emp').style.background = "#2980b9";
+        document.getElementById('btn-cancel-edit').style.display = "block";
+    }
+
+    function cancelarEdicion() {
+        isEditing = false;
+        document.getElementById('emp-id').value = '';
+        document.getElementById('emp-nombre').value = '';
+        document.getElementById('emp-rol').value = 'enfermeria';
+        document.getElementById('emp-pin').value = '';
+        document.getElementById('emp-email').value = '';
+        document.getElementById('emp-pass').value = '';
+        
+        document.getElementById('auth-section').style.display = 'block';
+        
+        document.getElementById('perm-admin_global').checked = false;
+        document.querySelectorAll('.perm-check').forEach(chk => {
+            chk.checked = false;
+            chk.disabled = false;
+        });
+
+        document.getElementById('btn-save-emp').innerText = "💾 Guardar Empleado";
+        document.getElementById('btn-save-emp').style.background = "var(--accent-green)";
+        document.getElementById('btn-cancel-edit').style.display = "none";
+    }
+
+    async function borrarEmpleado(id, nombre) {
+        if(confirm(`⚠️ ¿Estás completamente seguro de borrar a "${nombre}"?\n\nSu historial en los registros permanecerá, pero ya no podrá acceder al sistema.`)) {
             try {
-                await deleteDoc(doc(db, "employees", uid));
+                await deleteDoc(doc(db, "employees", id));
+                // Nota: Eliminar un usuario de Firestore no lo borra automáticamente de Firebase Authentication 
+                // (por seguridad de Firebase). Si deseas que no puedan loguearse, esto los bloqueará porque 
+                // el POS siempre busca si el UID existe en Firestore al iniciar sesión.
             } catch (error) {
                 console.error(error);
-                alert("Error al eliminar el empleado. ¿Tienes permisos suficientes?");
+                alert("Error al intentar borrar.");
             }
         }
     }
