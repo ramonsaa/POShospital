@@ -44,7 +44,7 @@
         .modal-content { background: white; border-radius: 8px; padding: 20px; display: flex; flex-direction: column; gap: 15px; box-shadow: 0 5px 25px rgba(0,0,0,0.3);}
         
         #kit-builder-modal .modal-content { width: 600px; max-width: 90%; }
-        #stock-modal .modal-content, #edit-modal .modal-content { width: 450px; max-width: 90%; }
+        #stock-modal .modal-content, #edit-modal .modal-content, #proveedores-modal .modal-content { width: 450px; max-width: 90%; }
 
         .form-group { display: flex; flex-direction: column; gap: 5px; }
         .form-group label { font-size: 0.85em; font-weight: bold; color: var(--primary-blue); }
@@ -58,8 +58,6 @@
 </head>
 <body>
 
-<datalist id="lista-proveedores"></datalist>
-
 <header>
     <div><strong>HOSPITAL POS</strong> | Control de Inventario y Catálogo</div>
     <div style="display: flex; gap: 15px; align-items: center;">
@@ -70,14 +68,19 @@
 
 <main>
     <section>
-        <div class="panel-header">📦 Almacén Físico (Master)</div>
+        <div class="panel-header">
+            📦 Almacén Físico (Master)
+            <button class="btn-dark" style="font-size: 0.8em;" onclick="abrirProveedoresModal()">🚚 Proveedores</button>
+        </div>
         <div class="toolbar">
             <input type="text" id="inv-nombre" placeholder="Nombre del artículo..." style="flex:2; min-width: 150px;">
             <select id="inv-categoria" style="width: 130px;">
                 <option value="insumo">🩹 Insumo</option>
                 <option value="medicamento">💊 Medicamento</option>
             </select>
-            <input type="text" id="inv-proveedor" list="lista-proveedores" placeholder="Proveedor..." style="flex:1; min-width: 120px;">
+            <select id="inv-proveedor" style="flex:1; min-width: 120px;">
+                <option value="">Cargando proveedores...</option>
+            </select>
             <input type="number" id="inv-costo" placeholder="Costo Unit ($)" style="width: 110px;">
             <input type="number" id="inv-minimo" placeholder="Stock Mínimo" style="width: 100px;" title="Avisar cuando llegue a esta cantidad">
             <button class="btn-green" id="btn-add-inv">➕ Añadir</button>
@@ -122,6 +125,29 @@
         </div>
     </section>
 </main>
+
+<div id="proveedores-modal" class="modal-overlay">
+    <div class="modal-content">
+        <h3 style="margin:0; color: var(--primary-blue);">🚚 Gestor de Proveedores</h3>
+        <p style="margin:0; font-size:0.85em; color:gray;">La lista maestra para evitar errores de escritura.</p>
+        
+        <div style="display: flex; gap: 10px;">
+            <input type="text" id="nuevo-prov-nombre" placeholder="Nombre del proveedor..." style="flex: 1; padding: 8px;">
+            <button class="btn-green" onclick="agregarProveedor()">Añadir</button>
+        </div>
+        
+        <div style="border: 1px solid var(--border); height: 200px; overflow-y: auto; background: #fdfdfd;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.9em;">
+                <tbody id="lista-proveedores-modal">
+                    </tbody>
+            </table>
+        </div>
+        
+        <div style="display: flex; justify-content: flex-end; margin-top: 5px;">
+            <button class="btn-red" onclick="cerrarProveedoresModal()">Cerrar</button>
+        </div>
+    </div>
+</div>
 
 <div id="stock-modal" class="modal-overlay">
     <div class="modal-content">
@@ -169,7 +195,8 @@
             </div>
             <div class="form-group" style="flex:1;">
                 <label>Proveedor</label>
-                <input type="text" id="edit-proveedor" list="lista-proveedores" style="width: 100%; box-sizing: border-box;">
+                <select id="edit-proveedor" style="width: 100%; box-sizing: border-box;">
+                    </select>
             </div>
         </div>
 
@@ -236,9 +263,6 @@
     let uidAdmin = null;
     let correoAdmin = "Sistema";
 
-    // ==========================================
-    // GATEKEEPER (RBAC) - Solo Entran Administradores de Inventario
-    // ==========================================
     onAuthStateChanged(auth, async (user) => {
         if (user) {
             const docRef = doc(db, "employees", user.uid);
@@ -287,12 +311,18 @@
     window.abrirStockPorID = abrirStockPorID; 
     window.publicarEnMenu = publicarEnMenu;
     window.quitarDelMenu = quitarDelMenu;
+    
+    window.abrirProveedoresModal = abrirProveedoresModal;
+    window.cerrarProveedoresModal = cerrarProveedoresModal;
+    window.agregarProveedor = agregarProveedor;
+    window.borrarProveedor = borrarProveedor;
 
     // Atajos
     document.addEventListener('keydown', (e) => {
         const modalStock = document.getElementById('stock-modal');
         const modalKit = document.getElementById('kit-builder-modal');
         const modalEdit = document.getElementById('edit-modal');
+        const modalProv = document.getElementById('proveedores-modal');
 
         if (modalStock.style.display === 'flex') {
             if (e.key === 'Escape') cerrarStockModal();
@@ -300,22 +330,73 @@
         }
         if (modalKit.style.display === 'flex' && e.key === 'Escape') cerrarKitBuilder();
         if (modalEdit.style.display === 'flex' && e.key === 'Escape') cerrarEditarModal();
+        if (modalProv.style.display === 'flex' && e.key === 'Escape') cerrarProveedoresModal();
     });
 
-    // --- CARGA DE ALMACÉN FÍSICO Y PROVEEDORES DINÁMICOS ---
+
+    // --- GESTIÓN DE PROVEEDORES (NUEVO) ---
+    onSnapshot(collection(db, "suppliers"), (snap) => {
+        const selectInv = document.getElementById('inv-proveedor');
+        const selectEdit = document.getElementById('edit-proveedor');
+        const listModal = document.getElementById('lista-proveedores-modal');
+        
+        const valInv = selectInv.value;
+        const valEdit = selectEdit.value;
+
+        selectInv.innerHTML = '<option value="">Sin Asignar / Interno</option>';
+        selectEdit.innerHTML = '<option value="">Sin Asignar / Interno</option>';
+        listModal.innerHTML = '';
+
+        let proveedores = [];
+        snap.forEach(doc => proveedores.push({id: doc.id, ...doc.data()}));
+        proveedores.sort((a,b) => a.nombre.localeCompare(b.nombre));
+
+        proveedores.forEach(prov => {
+            selectInv.innerHTML += `<option value="${prov.nombre}">${prov.nombre}</option>`;
+            selectEdit.innerHTML += `<option value="${prov.nombre}">${prov.nombre}</option>`;
+            
+            listModal.innerHTML += `
+                <tr>
+                    <td style="padding: 8px;">${prov.nombre}</td>
+                    <td style="text-align:right; padding: 8px;">
+                        <button class="btn-red" style="padding:4px 8px; font-size:0.8em;" onclick="borrarProveedor('${prov.id}')">Eliminar</button>
+                    </td>
+                </tr>
+            `;
+        });
+
+        selectInv.value = valInv;
+        selectEdit.value = valEdit;
+    });
+
+    function abrirProveedoresModal() { document.getElementById('proveedores-modal').style.display = 'flex'; }
+    function cerrarProveedoresModal() { document.getElementById('proveedores-modal').style.display = 'none'; }
+    
+    async function agregarProveedor() {
+        const nombre = document.getElementById('nuevo-prov-nombre').value.trim();
+        if(!nombre) return alert("Ingrese un nombre válido");
+        try {
+            await addDoc(collection(db, "suppliers"), { nombre: nombre });
+            document.getElementById('nuevo-prov-nombre').value = '';
+        } catch(e) { console.error(e); alert("Error al guardar proveedor"); }
+    }
+    
+    async function borrarProveedor(id) {
+        if(confirm("¿Seguro que deseas borrar este proveedor de la lista maestra? (Los insumos que ya lo tengan asignado no se modificarán, pero ya no aparecerá en el menú).")) {
+            await deleteDoc(doc(db, "suppliers", id));
+        }
+    }
+
+
+    // --- CARGA DE ALMACÉN FÍSICO ---
     onSnapshot(collection(db, "inventory_master"), (snap) => {
         const tbody = document.getElementById('tabla-inventario');
         tbody.innerHTML = ''; 
         inventarioFisicoData = [];
-        let setProveedores = new Set();
 
         snap.forEach(docSnap => {
             const item = { id: docSnap.id, ...docSnap.data() };
             inventarioFisicoData.push(item);
-            
-            if(item.proveedor && item.proveedor.trim() !== "") {
-                setProveedores.add(item.proveedor);
-            }
             
             const tr = document.createElement('tr');
             
@@ -366,12 +447,6 @@
             `;
             tbody.appendChild(tr);
         });
-        
-        const dlProveedores = document.getElementById('lista-proveedores');
-        dlProveedores.innerHTML = '';
-        setProveedores.forEach(prov => {
-            dlProveedores.innerHTML += `<option value="${prov}">`;
-        });
 
         actualizarSelectConstructor(); 
     });
@@ -379,7 +454,7 @@
     document.getElementById('btn-add-inv').onclick = async () => {
         const nombre = document.getElementById('inv-nombre').value.trim();
         const categoria = document.getElementById('inv-categoria').value;
-        const proveedor = document.getElementById('inv-proveedor').value.trim();
+        const proveedor = document.getElementById('inv-proveedor').value; // Ahora viene del select
         const costo = parseFloat(document.getElementById('inv-costo').value) || 0;
         const minimo = parseInt(document.getElementById('inv-minimo').value) || 0;
         
@@ -392,7 +467,7 @@
             await addDoc(collection(db, "inventory_master"), { 
                 nombre: nombre, 
                 categoria: categoria,
-                proveedor: proveedor || "No especificado",
+                proveedor: proveedor || "Sin Asignar",
                 precio_compra: costo, 
                 precio_venta: 0,
                 stock: 0, 
@@ -412,7 +487,6 @@
         }
     };
 
-    // --- NUEVAS FUNCIONES BUSCADORAS (Stock y Edición) ---
     function abrirStockPorID(id) {
         const item = inventarioFisicoData.find(i => i.id === id);
         if(item) {
@@ -494,7 +568,7 @@
         const id = document.getElementById('edit-id').value;
         const nombre = document.getElementById('edit-nombre').value.trim();
         const cat = document.getElementById('edit-categoria').value;
-        const prov = document.getElementById('edit-proveedor').value.trim();
+        const prov = document.getElementById('edit-proveedor').value; // Ahora viene del select
         const costo = parseFloat(document.getElementById('edit-costo').value) || 0;
         const pVenta = parseFloat(document.getElementById('edit-precio-venta').value) || 0;
         const minimo = parseInt(document.getElementById('edit-minimo').value) || 0;
@@ -504,7 +578,7 @@
         updateDoc(doc(db, "inventory_master", id), {
             nombre: nombre,
             categoria: cat,
-            proveedor: prov,
+            proveedor: prov || "Sin Asignar",
             precio_compra: costo,
             precio_venta: pVenta,
             stock_minimo: minimo
