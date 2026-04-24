@@ -4,44 +4,52 @@
     <meta charset="UTF-8">
     <title>Hospital POS - Gestor de Inventario y Catálogo</title>
     <style>
-        :root { --primary-blue: #2c3e50; --accent-green: #27ae60; --bg: #f4f7f6; --danger: #c0392b; --border: #dcdde1; }
+        :root { --primary-blue: #2c3e50; --accent-green: #27ae60; --bg: #f4f7f6; --danger: #c0392b; --border: #dcdde1; --warning: #f39c12; }
         body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--bg); display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
         
         header { background: var(--primary-blue); color: white; padding: 10px 20px; display: flex; justify-content: space-between; border-bottom: 3px solid var(--accent-green); }
         .user-info { font-size: 0.9em; color: #aed6f1; font-weight: bold;}
         
         main { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; padding: 5px; flex: 1; overflow: hidden; }
+        @media (max-width: 1024px) { main { grid-template-columns: 1fr; overflow-y: auto; } }
+
         section { background: white; border: 1px solid var(--border); display: flex; flex-direction: column; border-radius: 4px; overflow: hidden; }
         .panel-header { background: #34495e; color: white; padding: 10px; font-weight: bold; text-transform: uppercase; display: flex; justify-content: space-between; align-items: center;}
         
-        .toolbar { padding: 10px; background: #fdfdfd; border-bottom: 1px solid var(--border); display: flex; gap: 10px; }
-        input[type="text"], input[type="number"] { padding: 6px; border: 1px solid #ccc; outline: none; border-radius: 3px; }
-        input[type="text"]:focus, input[type="number"]:focus { border-color: var(--accent-green); }
+        .toolbar { padding: 10px; background: #fdfdfd; border-bottom: 1px solid var(--border); display: flex; gap: 10px; flex-wrap: wrap; align-items: center;}
+        input[type="text"], input[type="number"], select { padding: 6px; border: 1px solid #ccc; outline: none; border-radius: 3px; font-family: inherit;}
+        input[type="text"]:focus, input[type="number"]:focus, select:focus { border-color: var(--accent-green); }
         
-        button { padding: 6px 12px; cursor: pointer; border: none; font-weight: bold; border-radius: 3px; color: white; }
+        button { padding: 6px 12px; cursor: pointer; border: none; font-weight: bold; border-radius: 3px; color: white; transition: 0.2s;}
         .btn-green { background: var(--accent-green); }
         .btn-blue { background: #2980b9; }
-        .btn-publish { background: #e67e22; }
+        .btn-publish { background: var(--warning); }
         .btn-red { background: var(--danger); }
         .btn-dark { background: #34495e; }
-        button:hover { opacity: 0.9; }
+        button:hover { opacity: 0.8; transform: scale(0.98);}
 
         .table-container { flex: 1; overflow-y: auto; }
         table { width: 100%; border-collapse: collapse; font-size: 0.85em; }
         th { background: #eee; position: sticky; top: 0; text-align: left; padding: 8px; border-bottom: 2px solid #ccc; z-index: 1;}
-        td { padding: 8px; border-bottom: 1px solid #eee; }
+        td { padding: 8px; border-bottom: 1px solid #eee; vertical-align: middle; }
         tr:hover { background: #f0f7ff; }
 
-        .badge-published { background: #e8f5e9; color: #2e7d32; padding: 2px 5px; border-radius: 3px; font-size: 0.8em; font-weight: bold;}
-        .badge-draft { background: #fdf2e9; color: #e67e22; padding: 2px 5px; border-radius: 3px; font-size: 0.8em; font-weight: bold;}
+        .badge-published { background: #e8f5e9; color: #2e7d32; padding: 3px 6px; border-radius: 4px; font-size: 0.8em; font-weight: bold;}
+        .badge-draft { background: #fdf2e9; color: #e67e22; padding: 3px 6px; border-radius: 4px; font-size: 0.8em; font-weight: bold;}
+        .badge-cat-med { background: #e3f2fd; color: #1565c0; padding: 2px 5px; border-radius: 3px; font-size: 0.8em; font-weight: bold; }
+        .badge-cat-ins { background: #f4ecf7; color: #7d3c98; padding: 2px 5px; border-radius: 3px; font-size: 0.8em; font-weight: bold; }
 
         /* MODALES */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 100; justify-content: center; align-items: center; }
-        .modal-content { background: white; border-radius: 5px; padding: 20px; display: flex; flex-direction: column; gap: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.3);}
+        .modal-content { background: white; border-radius: 8px; padding: 20px; display: flex; flex-direction: column; gap: 15px; box-shadow: 0 5px 25px rgba(0,0,0,0.3);}
         
-        #kit-builder-modal .modal-content { width: 600px; }
-        #stock-modal .modal-content { width: 400px; }
+        #kit-builder-modal .modal-content { width: 600px; max-width: 90%; }
+        #stock-modal .modal-content, #edit-modal .modal-content { width: 450px; max-width: 90%; }
 
+        .form-group { display: flex; flex-direction: column; gap: 5px; }
+        .form-group label { font-size: 0.85em; font-weight: bold; color: var(--primary-blue); }
+        .form-row { display: flex; gap: 10px; }
+        
         .kit-item-row { display: flex; justify-content: space-between; background: #f9f9f9; padding: 5px; border: 1px solid #eee; margin-bottom: 5px;}
         optgroup { font-weight: bold; color: var(--primary-blue); background: #f4f7f6;}
         
@@ -49,6 +57,8 @@
     </style>
 </head>
 <body>
+
+<datalist id="lista-proveedores"></datalist>
 
 <header>
     <div><strong>HOSPITAL POS</strong> | Control de Inventario y Catálogo</div>
@@ -62,17 +72,26 @@
     <section>
         <div class="panel-header">📦 Almacén Físico (Master)</div>
         <div class="toolbar">
-            <input type="text" id="inv-nombre" placeholder="Nuevo insumo..." style="flex:2;">
+            <input type="text" id="inv-nombre" placeholder="Nombre del artículo..." style="flex:2; min-width: 150px;">
+            
+            <select id="inv-categoria" style="width: 130px;">
+                <option value="insumo">🩹 Insumo</option>
+                <option value="medicamento">💊 Medicamento</option>
+            </select>
+            
+            <input type="text" id="inv-proveedor" list="lista-proveedores" placeholder="Proveedor..." style="flex:1; min-width: 120px;">
+            
             <input type="number" id="inv-costo" placeholder="Costo Compra ($)" style="width: 120px;">
-            <button class="btn-green" id="btn-add-inv">➕ Ingresar Nuevo</button>
+            
+            <button class="btn-green" id="btn-add-inv">➕ Añadir</button>
         </div>
         <div class="table-container">
             <table>
                 <thead>
                     <tr>
-                        <th>Artículo</th>
-                        <th>Stock Actual</th>
-                        <th>Estado en Menú</th>
+                        <th>Artículo y Detalles</th>
+                        <th>Stock</th>
+                        <th>Estado POS</th>
                         <th>Acciones</th>
                     </tr>
                 </thead>
@@ -133,6 +152,48 @@
     </div>
 </div>
 
+<div id="edit-modal" class="modal-overlay">
+    <div class="modal-content">
+        <h3 style="margin:0; color: var(--primary-blue);">✏️ Editar Artículo de Inventario</h3>
+        <input type="hidden" id="edit-id">
+        
+        <div class="form-group">
+            <label>Nombre del Artículo</label>
+            <input type="text" id="edit-nombre">
+        </div>
+        
+        <div class="form-row">
+            <div class="form-group" style="flex:1;">
+                <label>Categoría</label>
+                <select id="edit-categoria" style="width: 100%;">
+                    <option value="insumo">🩹 Insumo</option>
+                    <option value="medicamento">💊 Medicamento</option>
+                </select>
+            </div>
+            <div class="form-group" style="flex:1;">
+                <label>Proveedor</label>
+                <input type="text" id="edit-proveedor" list="lista-proveedores" style="width: 100%; box-sizing: border-box;">
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group" style="flex:1;">
+                <label>Costo de Compra ($)</label>
+                <input type="number" id="edit-costo" style="width: 100%; box-sizing: border-box;">
+            </div>
+            <div class="form-group" style="flex:1;">
+                <label>Precio Venta POS ($)</label>
+                <input type="number" id="edit-precio-venta" style="width: 100%; box-sizing: border-box;" placeholder="Si aplica">
+            </div>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 15px;">
+            <button class="btn-red" onclick="cerrarEditarModal()">Cancelar</button>
+            <button class="btn-blue" onclick="guardarEdicion()">💾 Guardar Cambios</button>
+        </div>
+    </div>
+</div>
+
 <div id="kit-builder-modal" class="modal-overlay">
     <div class="modal-content">
         <h3 style="margin:0; color: var(--primary-blue);">🛠️ Constructor de Paquetes Híbridos</h3>
@@ -189,67 +250,186 @@
     let insumosParaKitActual = []; 
     let itemParaAjuste = null;
 
+    // Exportaciones de botones al entorno Global (Window)
+    window.cerrarStockModal = cerrarStockModal;
+    window.evaluarAjusteNegativo = evaluarAjusteNegativo;
+    window.guardarAjusteStock = guardarAjusteStock;
+    window.cerrarEditarModal = cerrarEditarModal;
+    window.guardarEdicion = guardarEdicion;
+    window.borrarInsumo = borrarInsumo;
+    window.abrirKitBuilder = abrirKitBuilder;
+    window.cerrarKitBuilder = cerrarKitBuilder;
+    window.agregarInsumoAKit = agregarInsumoAKit;
+    window.quitarDeKit = quitarDeKit;
+    window.guardarKitEnFirebase = guardarKitEnFirebase;
+    window.borrarServicio = borrarServicio;
+
     /* ==========================================
        ATAJOS DE TECLADO PARA MODALES (Esc / Enter)
        ========================================== */
     document.addEventListener('keydown', (e) => {
         const modalStock = document.getElementById('stock-modal');
         const modalKit = document.getElementById('kit-builder-modal');
+        const modalEdit = document.getElementById('edit-modal');
 
-        // Si el modal de stock está abierto
         if (modalStock.style.display === 'flex') {
-            if (e.key === 'Escape') {
-                cerrarStockModal();
-            } else if (e.key === 'Enter') {
-                e.preventDefault(); // Evita comportamientos raros de forms
-                guardarAjusteStock();
-            }
+            if (e.key === 'Escape') cerrarStockModal();
+            else if (e.key === 'Enter') { e.preventDefault(); guardarAjusteStock(); }
         }
         
-        // Si el modal de kit está abierto
-        if (modalKit.style.display === 'flex') {
-            if (e.key === 'Escape') {
-                cerrarKitBuilder();
-            }
-        }
+        if (modalKit.style.display === 'flex' && e.key === 'Escape') cerrarKitBuilder();
+        if (modalEdit.style.display === 'flex' && e.key === 'Escape') cerrarEditarModal();
     });
 
-    // --- 1. CARGA DE ALMACÉN FÍSICO ---
+    // --- 1. CARGA DE ALMACÉN FÍSICO Y PROVEEDORES DINÁMICOS ---
     onSnapshot(collection(db, "inventory_master"), (snap) => {
         const tbody = document.getElementById('tabla-inventario');
         tbody.innerHTML = ''; 
         inventarioFisicoData = [];
+        
+        // Recolector de Proveedores para la lista desplegable inteligente
+        let setProveedores = new Set();
 
         snap.forEach(docSnap => {
             const item = { id: docSnap.id, ...docSnap.data() };
             inventarioFisicoData.push(item);
             
+            // Recolectar proveedor si existe
+            if(item.proveedor && item.proveedor.trim() !== "") {
+                setProveedores.add(item.proveedor);
+            }
+            
             const tr = document.createElement('tr');
+            
+            // Badges visuales
             const estadoBadge = item.publicado_en_pos 
-                ? `<span class="badge-published">✔️ En Menú ($${item.precio_venta})</span>` 
+                ? `<span class="badge-published">✔️ Menú ($${item.precio_venta || 0})</span>` 
                 : `<span class="badge-draft">Oculto</span>`;
                 
+            const catBadge = item.categoria === 'medicamento' 
+                ? `<span class="badge-cat-med">💊 Medicamento</span>` 
+                : `<span class="badge-cat-ins">🩹 Insumo</span>`;
+
+            // Botón Publicar/Ocultar
             const btnPublicar = item.publicado_en_pos
-                ? `<button class="btn-red" style="font-size:0.7em;" onclick="quitarDelMenu('${item.id}')">Ocultar</button>`
+                ? `<button class="btn-publish" style="font-size:0.7em; background:#e67e22;" onclick="quitarDelMenu('${item.id}')">Ocultar</button>`
                 : `<button class="btn-publish" style="font-size:0.7em;" onclick="publicarEnMenu('${item.id}', '${item.nombre}')">🏷️ Al Menú</button>`;
 
             const safeItem = JSON.stringify(item).replace(/"/g, '&quot;');
             
             tr.innerHTML = `
-                <td><strong>${item.nombre}</strong><br><small style="color:gray;">Costo: $${item.precio_compra||0}</small></td>
-                <td><strong style="font-size: 1.1em;">${item.stock}</strong></td>
-                <td>${estadoBadge}</td>
-                <td style="display:flex; gap:5px;">
-                    <button class="btn-dark" style="font-size:0.7em;" onclick="abrirStockModal(${safeItem})">⚖️ Ajustar Stock</button>
-                    ${btnPublicar}
+                <td>
+                    <strong style="font-size: 1.05em;">${item.nombre}</strong><br>
+                    <div style="margin-top: 4px;">
+                        ${catBadge} <small style="color:gray;"> | Prov: ${item.proveedor || 'N/A'}</small>
+                    </div>
+                    <small style="color:var(--primary-blue); font-weight: bold; margin-top:2px; display:block;">Costo Compra: $${item.precio_compra||0}</small>
+                </td>
+                <td style="text-align: center;"><strong style="font-size: 1.3em;">${item.stock}</strong></td>
+                <td style="text-align: center;">${estadoBadge}</td>
+                <td style="min-width: 190px;">
+                    <div style="display:flex; gap:5px; flex-wrap:wrap; justify-content: flex-start;">
+                        <button class="btn-dark" style="font-size:0.7em;" onclick="abrirStockModal(${safeItem})">⚖️ Stock</button>
+                        ${btnPublicar}
+                        <button class="btn-blue" style="font-size:0.7em;" onclick="abrirEditarModal(${safeItem})">✏️ Editar</button>
+                        <button class="btn-red" style="font-size:0.7em;" onclick="borrarInsumo('${item.id}', '${item.nombre}')">🗑️ Borrar</button>
+                    </div>
                 </td>
             `;
             tbody.appendChild(tr);
         });
+        
+        // Actualizar Datalist de Proveedores (Para que "aprenda" los nombres)
+        const dlProveedores = document.getElementById('lista-proveedores');
+        dlProveedores.innerHTML = '';
+        setProveedores.forEach(prov => {
+            dlProveedores.innerHTML += `<option value="${prov}">`;
+        });
+
         actualizarSelectConstructor(); 
     });
 
-    // --- 2. LÓGICA DE AJUSTE DE STOCK ---
+    // --- 2. ALTAS Y EDICIÓN DE INSUMOS ---
+    document.getElementById('btn-add-inv').onclick = async () => {
+        const nombre = document.getElementById('inv-nombre').value.trim();
+        const categoria = document.getElementById('inv-categoria').value;
+        const proveedor = document.getElementById('inv-proveedor').value.trim();
+        const costo = parseFloat(document.getElementById('inv-costo').value) || 0;
+        
+        if(!nombre) return alert("Ingrese el nombre del insumo o medicamento.");
+        
+        const btn = document.getElementById('btn-add-inv');
+        btn.disabled = true;
+
+        try {
+            await addDoc(collection(db, "inventory_master"), { 
+                nombre: nombre, 
+                categoria: categoria,
+                proveedor: proveedor || "No especificado",
+                precio_compra: costo, 
+                precio_venta: 0,
+                stock: 0, 
+                publicado_en_pos: false, 
+                tipo: 'fisico' 
+            });
+            // Limpiar campos
+            document.getElementById('inv-nombre').value = ''; 
+            document.getElementById('inv-proveedor').value = '';
+            document.getElementById('inv-costo').value = '';
+        } catch (e) {
+            console.error(e);
+            alert("Error al agregar.");
+        } finally {
+            btn.disabled = false;
+        }
+    };
+
+    window.abrirEditarModal = (item) => {
+        document.getElementById('edit-id').value = item.id;
+        document.getElementById('edit-nombre').value = item.nombre || '';
+        document.getElementById('edit-categoria').value = item.categoria || 'insumo';
+        document.getElementById('edit-proveedor').value = item.proveedor || '';
+        document.getElementById('edit-costo').value = item.precio_compra || 0;
+        document.getElementById('edit-precio-venta').value = item.precio_venta || 0;
+        document.getElementById('edit-modal').style.display = 'flex';
+    };
+
+    function cerrarEditarModal() {
+        document.getElementById('edit-modal').style.display = 'none';
+    }
+
+    function guardarEdicion() {
+        const id = document.getElementById('edit-id').value;
+        const nombre = document.getElementById('edit-nombre').value.trim();
+        const cat = document.getElementById('edit-categoria').value;
+        const prov = document.getElementById('edit-proveedor').value.trim();
+        const costo = parseFloat(document.getElementById('edit-costo').value) || 0;
+        const pVenta = parseFloat(document.getElementById('edit-precio-venta').value) || 0;
+
+        if(!nombre) return alert("El nombre no puede estar vacío.");
+
+        updateDoc(doc(db, "inventory_master", id), {
+            nombre: nombre,
+            categoria: cat,
+            proveedor: prov,
+            precio_compra: costo,
+            precio_venta: pVenta
+        }).then(() => {
+            cerrarEditarModal();
+        }).catch(err => {
+            console.error(err);
+            alert("Error al actualizar el artículo.");
+        });
+    }
+
+    function borrarInsumo(id, nombre) {
+        if(confirm(`⚠️ ¿Estás TOTALMENTE SEGURO de eliminar "${nombre}"?\n\nEsto lo borrará permanentemente del inventario. Si este artículo fue cobrado en el pasado, el registro de la cuenta del paciente quedará intacto, pero el ítem ya no se podrá buscar aquí.`)) {
+            deleteDoc(doc(db, "inventory_master", id))
+            .catch(e => { console.error(e); alert("Error al eliminar."); });
+        }
+    }
+
+    // --- 3. LÓGICA DE AJUSTE DE STOCK ---
     window.abrirStockModal = (item) => {
         itemParaAjuste = item;
         document.getElementById('stock-item-nombre').innerText = item.nombre;
@@ -259,19 +439,17 @@
         document.getElementById('zona-perdida').style.display = 'none';
         
         document.getElementById('stock-modal').style.display = 'flex';
-        
-        // Timeout súper corto para asegurar que el DOM ya pintó el modal antes de hacer focus
         setTimeout(() => { inputCant.focus(); }, 50); 
     };
 
-    window.cerrarStockModal = () => { document.getElementById('stock-modal').style.display = 'none'; itemParaAjuste = null; };
+    function cerrarStockModal() { document.getElementById('stock-modal').style.display = 'none'; itemParaAjuste = null; };
 
-    window.evaluarAjusteNegativo = () => {
+    function evaluarAjusteNegativo() {
         const val = parseFloat(document.getElementById('stock-cant').value) || 0;
         document.getElementById('zona-perdida').style.display = (val < 0) ? 'block' : 'none';
     };
 
-    window.guardarAjusteStock = async () => {
+    async function guardarAjusteStock() {
         const val = parseInt(document.getElementById('stock-cant').value);
         if(isNaN(val) || val === 0) return alert("Ingrese una cantidad válida (+ o -)");
 
@@ -306,9 +484,7 @@
             });
 
             const invRef = doc(db, "inventory_master", itemParaAjuste.id);
-            batch.update(invRef, {
-                stock: increment(val)
-            });
+            batch.update(invRef, { stock: increment(val) });
 
             await batch.commit();
             cerrarStockModal();
@@ -319,7 +495,24 @@
         }
     };
 
-    // --- RESTO DEL CÓDIGO (Servicios y Kits) ---
+    // --- 4. PUBLICACIÓN EN POS ---
+    window.publicarEnMenu = async (id, nombre) => {
+        // En lugar de alert, usamos la data actual para autocompletar si ya tiene precio
+        const itemActual = inventarioFisicoData.find(i => i.id === id);
+        const precioSugerido = itemActual.precio_venta > 0 ? itemActual.precio_venta : "";
+        const precio = prompt(`Para publicar "${nombre}" en la tablet y app, asigna el Precio de Venta al público ($):`, precioSugerido);
+        
+        if(precio !== null && precio !== "") {
+            await updateDoc(doc(db, "inventory_master", id), { 
+                publicado_en_pos: true, 
+                precio_venta: parseFloat(precio) 
+            });
+        }
+    };
+
+    window.quitarDelMenu = async (id) => { await updateDoc(doc(db, "inventory_master", id), { publicado_en_pos: false }); };
+
+    // --- 5. SERVICIOS Y KITS ---
     onSnapshot(collection(db, "services_and_kits"), (snap) => {
         const tbody = document.getElementById('tabla-servicios');
         tbody.innerHTML = ''; serviciosPurosData = [];
@@ -331,7 +524,7 @@
                 <td><strong>${item.nombre}</strong><br><small style="color:gray;">${esKit ? (item.insumos_vinculados?.length + ' items') : ''}</small></td>
                 <td>${esKit ? '📦 Paquete' : '🩺 Servicio'}</td>
                 <td><strong style="color:var(--accent-green)">$${item.precio_venta}</strong></td>
-                <td><button class="btn-red" style="font-size:0.7em;" onclick="borrarServicio('${docSnap.id}')">Borrar</button></td>
+                <td><button class="btn-red" style="font-size:0.7em;" onclick="borrarServicio('${docSnap.id}')">🗑️ Borrar</button></td>
             </tr>`;
         });
         actualizarSelectConstructor();
@@ -352,33 +545,23 @@
         select.innerHTML = html;
     }
 
-    document.getElementById('btn-add-inv').onclick = async () => {
-        const nombre = document.getElementById('inv-nombre').value;
-        const costo = parseFloat(document.getElementById('inv-costo').value) || 0;
-        if(!nombre) return alert("Ingrese el nombre del insumo");
-        await addDoc(collection(db, "inventory_master"), { nombre, precio_compra: costo, stock: 0, publicado_en_pos: false, tipo: 'fisico' });
-        document.getElementById('inv-nombre').value = ''; document.getElementById('inv-costo').value = '';
-    };
-
-    window.publicarEnMenu = async (id, nombre) => {
-        const precio = prompt(`¿Precio de venta en POS para "${nombre}"?`);
-        if(precio) await updateDoc(doc(db, "inventory_master", id), { publicado_en_pos: true, precio_venta: parseFloat(precio) });
-    };
-
-    window.quitarDelMenu = async (id) => { await updateDoc(doc(db, "inventory_master", id), { publicado_en_pos: false }); };
-
     document.getElementById('btn-add-srv').onclick = async () => {
-        const nombre = document.getElementById('srv-nombre').value;
+        const nombre = document.getElementById('srv-nombre').value.trim();
         const costo = parseFloat(document.getElementById('srv-costo').value) || 0;
         const precio = parseFloat(document.getElementById('srv-precio').value) || 0;
-        if(!nombre || !precio) return alert("Faltan datos");
+        if(!nombre || !precio) return alert("Faltan datos obligatorios para crear el servicio.");
+        
         await addDoc(collection(db, "services_and_kits"), { nombre, costo_aproximado: costo, precio_venta: precio, tipo: 'servicio' });
         document.getElementById('srv-nombre').value = '';
     };
 
-    window.borrarServicio = async (id) => { if(confirm("¿Seguro?")) await deleteDoc(doc(db, "services_and_kits", id)); };
+    function borrarServicio(id) { 
+        if(confirm("¿Seguro que deseas eliminar este servicio/paquete del menú de cobros?")) {
+            deleteDoc(doc(db, "services_and_kits", id)); 
+        }
+    };
 
-    window.abrirKitBuilder = () => { 
+    function abrirKitBuilder() { 
         insumosParaKitActual = []; 
         document.getElementById('kit-nombre').value = ''; 
         document.getElementById('kit-precio').value = ''; 
@@ -387,9 +570,9 @@
         setTimeout(() => { document.getElementById('kit-nombre').focus(); }, 50);
     };
     
-    window.cerrarKitBuilder = () => { document.getElementById('kit-builder-modal').style.display = 'none'; };
+    function cerrarKitBuilder() { document.getElementById('kit-builder-modal').style.display = 'none'; };
 
-    window.agregarInsumoAKit = () => {
+    function agregarInsumoAKit() {
         const select = document.getElementById('kit-select-insumo'); if(!select.value) return;
         const [tipo, id_item] = select.value.split('|');
         const n = select.options[select.selectedIndex].text; const nombre = tipo === 'fisico' ? n.split(' (')[0] : n; 
@@ -398,7 +581,7 @@
         actualizarListaKitUI();
     };
 
-    window.quitarDeKit = (index) => { insumosParaKitActual.splice(index, 1); actualizarListaKitUI(); };
+    function quitarDeKit(index) { insumosParaKitActual.splice(index, 1); actualizarListaKitUI(); };
 
     function actualizarListaKitUI() {
         const list = document.getElementById('kit-items-list'); list.innerHTML = '';
@@ -409,9 +592,19 @@
     }
 
     window.guardarKitEnFirebase = async () => {
-        const nombre = document.getElementById('kit-nombre').value; const precio = parseFloat(document.getElementById('kit-precio').value);
-        if(!nombre || !precio || insumosParaKitActual.length === 0) return alert("Agrega nombre, precio y al menos un ítem.");
-        await addDoc(collection(db, "services_and_kits"), { nombre, precio_venta: precio, tipo: 'kit', insumos_vinculados: insumosParaKitActual });
+        const nombre = document.getElementById('kit-nombre').value.trim(); 
+        const precio = parseFloat(document.getElementById('kit-precio').value);
+        
+        if(!nombre || !precio || insumosParaKitActual.length === 0) {
+            return alert("Agrega nombre, precio y al menos un ítem al paquete.");
+        }
+        
+        await addDoc(collection(db, "services_and_kits"), { 
+            nombre: nombre, 
+            precio_venta: precio, 
+            tipo: 'kit', 
+            insumos_vinculados: insumosParaKitActual 
+        });
         cerrarKitBuilder();
     };
 </script>
