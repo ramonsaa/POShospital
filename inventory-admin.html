@@ -78,7 +78,8 @@
                 <option value="medicamento">💊 Medicamento</option>
             </select>
             <input type="text" id="inv-proveedor" list="lista-proveedores" placeholder="Proveedor..." style="flex:1; min-width: 120px;">
-            <input type="number" id="inv-costo" placeholder="Costo Compra ($)" style="width: 120px;">
+            <input type="number" id="inv-costo" placeholder="Costo Unit ($)" style="width: 110px;">
+            <input type="number" id="inv-minimo" placeholder="Stock Mínimo" style="width: 100px;" title="Avisar cuando llegue a esta cantidad">
             <button class="btn-green" id="btn-add-inv">➕ Añadir</button>
         </div>
         <div class="table-container">
@@ -86,8 +87,8 @@
                 <thead>
                     <tr>
                         <th>Artículo y Detalles</th>
-                        <th>Stock</th>
-                        <th>Estado POS</th>
+                        <th style="text-align: center;">Stock</th>
+                        <th style="text-align: center;">Estado POS</th>
                         <th>Acciones</th>
                     </tr>
                 </thead>
@@ -181,6 +182,10 @@
                 <label>Precio Venta POS ($)</label>
                 <input type="number" id="edit-precio-venta" style="width: 100%; box-sizing: border-box;" placeholder="Si aplica">
             </div>
+            <div class="form-group" style="flex:1;">
+                <label>Stock Mínimo</label>
+                <input type="number" id="edit-minimo" style="width: 100%; box-sizing: border-box;" placeholder="Objetivo">
+            </div>
         </div>
 
         <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 15px;">
@@ -246,217 +251,21 @@
     let insumosParaKitActual = []; 
     let itemParaAjuste = null;
 
-    // ==========================================
-    // DECLARACIÓN DE FUNCIONES GLOBALES
-    // ==========================================
-
-    function abrirStockModal(item) {
-        itemParaAjuste = item;
-        document.getElementById('stock-item-nombre').innerText = item.nombre;
-        const inputCant = document.getElementById('stock-cant');
-        inputCant.value = '';
-        document.getElementById('stock-motivo').value = '';
-        document.getElementById('zona-perdida').style.display = 'none';
-        
-        document.getElementById('stock-modal').style.display = 'flex';
-        setTimeout(() => { inputCant.focus(); }, 50); 
-    }
-
-    function cerrarStockModal() { 
-        document.getElementById('stock-modal').style.display = 'none'; 
-        itemParaAjuste = null; 
-    }
-
-    function evaluarAjusteNegativo() {
-        const val = parseFloat(document.getElementById('stock-cant').value) || 0;
-        document.getElementById('zona-perdida').style.display = (val < 0) ? 'block' : 'none';
-    }
-
-    async function guardarAjusteStock() {
-        const val = parseInt(document.getElementById('stock-cant').value);
-        if(isNaN(val) || val === 0) return alert("Ingrese una cantidad válida (+ o -)");
-
-        const motivo = document.getElementById('stock-motivo').value.trim();
-        let tipoOperacion = 'ingreso_inventario';
-        
-        if (val < 0) {
-            const radioSeleccionado = document.querySelector('input[name="tipo_salida"]:checked').value;
-            tipoOperacion = (radioSeleccionado === 'perdida') ? 'perdida_borrado' : 'ajuste_inventario';
-            
-            if(tipoOperacion === 'perdida_borrado' && motivo === "") {
-                return alert("Las mermas o pérdidas requieren justificar un motivo.");
-            }
-        }
-
-        try {
-            const batch = writeBatch(db);
-            const logRef = doc(collection(db, "transactions"));
-            const costoTotalMovimiento = Math.abs(val) * (itemParaAjuste.precio_compra || 0);
-
-            batch.set(logRef, {
-                pacienteId: "SISTEMA_INTERNO",
-                itemId: itemParaAjuste.id,
-                nombre: itemParaAjuste.nombre,
-                cantidad: val, 
-                costo_compra_total: costoTotalMovimiento, 
-                usuario_registro: uidAdmin,
-                acreditado_a_nombre: correoAdmin,
-                motivo: motivo || "Ajuste directo",
-                timestamp: serverTimestamp(),
-                tipo_operacion: tipoOperacion
-            });
-
-            const invRef = doc(db, "inventory_master", itemParaAjuste.id);
-            batch.update(invRef, { stock: increment(val) });
-
-            await batch.commit();
-            cerrarStockModal();
-
-        } catch (error) {
-            console.error(error);
-            alert("Error al guardar el ajuste.");
-        }
-    }
-
-    function abrirEditarModal(item) {
-        document.getElementById('edit-id').value = item.id;
-        document.getElementById('edit-nombre').value = item.nombre || '';
-        document.getElementById('edit-categoria').value = item.categoria || 'insumo';
-        document.getElementById('edit-proveedor').value = item.proveedor || '';
-        document.getElementById('edit-costo').value = item.precio_compra || 0;
-        document.getElementById('edit-precio-venta').value = item.precio_venta || 0;
-        document.getElementById('edit-modal').style.display = 'flex';
-    }
-
-    function cerrarEditarModal() {
-        document.getElementById('edit-modal').style.display = 'none';
-    }
-
-    function guardarEdicion() {
-        const id = document.getElementById('edit-id').value;
-        const nombre = document.getElementById('edit-nombre').value.trim();
-        const cat = document.getElementById('edit-categoria').value;
-        const prov = document.getElementById('edit-proveedor').value.trim();
-        const costo = parseFloat(document.getElementById('edit-costo').value) || 0;
-        const pVenta = parseFloat(document.getElementById('edit-precio-venta').value) || 0;
-
-        if(!nombre) return alert("El nombre no puede estar vacío.");
-
-        updateDoc(doc(db, "inventory_master", id), {
-            nombre: nombre,
-            categoria: cat,
-            proveedor: prov,
-            precio_compra: costo,
-            precio_venta: pVenta
-        }).then(() => {
-            cerrarEditarModal();
-        }).catch(err => {
-            console.error(err);
-            alert("Error al actualizar el artículo.");
-        });
-    }
-
-    function borrarInsumo(id, nombre) {
-        if(confirm(`⚠️ ¿Estás TOTALMENTE SEGURO de eliminar "${nombre}"?\n\nEsto lo borrará permanentemente del inventario.`)) {
-            deleteDoc(doc(db, "inventory_master", id)).catch(e => { console.error(e); alert("Error al eliminar."); });
-        }
-    }
-
-    async function publicarEnMenu(id, nombre) {
-        const itemActual = inventarioFisicoData.find(i => i.id === id);
-        const precioSugerido = itemActual.precio_venta > 0 ? itemActual.precio_venta : "";
-        const precio = prompt(`Precio de Venta al público en POS ($) para "${nombre}":`, precioSugerido);
-        
-        if(precio !== null && precio !== "") {
-            await updateDoc(doc(db, "inventory_master", id), { publicado_en_pos: true, precio_venta: parseFloat(precio) });
-        }
-    }
-
-    async function quitarDelMenu(id) { 
-        await updateDoc(doc(db, "inventory_master", id), { publicado_en_pos: false }); 
-    }
-
-    function borrarServicio(id) { 
-        if(confirm("¿Seguro que deseas eliminar este servicio/paquete del menú de cobros?")) {
-            deleteDoc(doc(db, "services_and_kits", id)); 
-        }
-    }
-
-    function abrirKitBuilder() { 
-        insumosParaKitActual = []; 
-        document.getElementById('kit-nombre').value = ''; 
-        document.getElementById('kit-precio').value = ''; 
-        actualizarListaKitUI(); 
-        document.getElementById('kit-builder-modal').style.display = 'flex'; 
-        setTimeout(() => { document.getElementById('kit-nombre').focus(); }, 50);
-    }
-    
-    function cerrarKitBuilder() { 
-        document.getElementById('kit-builder-modal').style.display = 'none'; 
-    }
-
-    function agregarInsumoAKit() {
-        const select = document.getElementById('kit-select-insumo'); if(!select.value) return;
-        const [tipo, id_item] = select.value.split('|');
-        const n = select.options[select.selectedIndex].text; const nombre = tipo === 'fisico' ? n.split(' (')[0] : n; 
-        const cant = parseInt(document.getElementById('kit-cant-insumo').value) || 1;
-        insumosParaKitActual.push({ id_insumo: id_item, nombre, cantidad: cant, tipo_item: tipo });
-        actualizarListaKitUI();
-    }
-
-    function quitarDeKit(index) { 
-        insumosParaKitActual.splice(index, 1); 
-        actualizarListaKitUI(); 
-    }
-
-    function actualizarListaKitUI() {
-        const list = document.getElementById('kit-items-list'); list.innerHTML = '';
-        insumosParaKitActual.forEach((item, index) => {
-            const icono = item.tipo_item === 'fisico' ? '📦' : '🩺';
-            list.innerHTML += `<div class="kit-item-row"><span>${icono} ${item.cantidad}x ${item.nombre}</span><button class="btn-red" style="padding: 2px 5px; font-size:0.7em;" onclick="quitarDeKit(${index})">X</button></div>`;
-        });
-    }
-
-    async function guardarKitEnFirebase() {
-        const nombre = document.getElementById('kit-nombre').value.trim(); 
-        const precio = parseFloat(document.getElementById('kit-precio').value);
-        
-        if(!nombre || !precio || insumosParaKitActual.length === 0) {
-            return alert("Agrega nombre, precio y al menos un ítem al paquete.");
-        }
-        
-        await addDoc(collection(db, "services_and_kits"), { 
-            nombre: nombre, 
-            precio_venta: precio, 
-            tipo: 'kit', 
-            insumos_vinculados: insumosParaKitActual 
-        });
-        cerrarKitBuilder();
-    }
-
-    // ==========================================
-    // EXPORTACIÓN A WINDOW
-    // ==========================================
-    window.abrirStockModal = abrirStockModal;
+    // Exportaciones Globales
     window.cerrarStockModal = cerrarStockModal;
     window.evaluarAjusteNegativo = evaluarAjusteNegativo;
     window.guardarAjusteStock = guardarAjusteStock;
-    window.abrirEditarModal = abrirEditarModal;
     window.cerrarEditarModal = cerrarEditarModal;
     window.guardarEdicion = guardarEdicion;
     window.borrarInsumo = borrarInsumo;
-    window.publicarEnMenu = publicarEnMenu;
-    window.quitarDelMenu = quitarDelMenu;
-    window.borrarServicio = borrarServicio;
     window.abrirKitBuilder = abrirKitBuilder;
     window.cerrarKitBuilder = cerrarKitBuilder;
     window.agregarInsumoAKit = agregarInsumoAKit;
     window.quitarDeKit = quitarDeKit;
     window.guardarKitEnFirebase = guardarKitEnFirebase;
+    window.borrarServicio = borrarServicio;
 
-    /* ==========================================
-       ATAJOS DE TECLADO
-       ========================================== */
+    // Atajos
     document.addEventListener('keydown', (e) => {
         const modalStock = document.getElementById('stock-modal');
         const modalKit = document.getElementById('kit-builder-modal');
@@ -466,7 +275,6 @@
             if (e.key === 'Escape') cerrarStockModal();
             else if (e.key === 'Enter') { e.preventDefault(); guardarAjusteStock(); }
         }
-        
         if (modalKit.style.display === 'flex' && e.key === 'Escape') cerrarKitBuilder();
         if (modalEdit.style.display === 'flex' && e.key === 'Escape') cerrarEditarModal();
     });
@@ -501,6 +309,18 @@
                 ? `<button class="btn-publish" style="font-size:0.7em; background:#e67e22;" onclick="quitarDelMenu('${item.id}')">Ocultar</button>`
                 : `<button class="btn-publish" style="font-size:0.7em;" onclick="publicarEnMenu('${item.id}', '${item.nombre}')">🏷️ Al Menú</button>`;
 
+            // Lógica de Alerta de Stock Mínimo
+            let alertaStock = '';
+            let colorStock = 'black';
+            if (item.stock_minimo && item.stock_minimo > 0) {
+                if (item.stock <= item.stock_minimo) {
+                    alertaStock = `<div style="color: var(--danger); font-size: 0.75em; font-weight: bold; margin-top: 5px;">⚠️ Reabastecer</div>`;
+                    colorStock = 'var(--danger)';
+                } else {
+                    alertaStock = `<div style="color: gray; font-size: 0.75em; margin-top: 5px;">Mín: ${item.stock_minimo}</div>`;
+                }
+            }
+
             const safeItem = JSON.stringify(item).replace(/"/g, '&quot;');
             
             tr.innerHTML = `
@@ -511,7 +331,10 @@
                     </div>
                     <small style="color:var(--primary-blue); font-weight: bold; margin-top:2px; display:block;">Costo Compra: $${item.precio_compra||0}</small>
                 </td>
-                <td style="text-align: center;"><strong style="font-size: 1.3em;">${item.stock}</strong></td>
+                <td style="text-align: center; vertical-align: top; padding-top: 15px;">
+                    <strong style="font-size: 1.3em; color: ${colorStock};">${item.stock}</strong>
+                    ${alertaStock}
+                </td>
                 <td style="text-align: center;">${estadoBadge}</td>
                 <td style="min-width: 190px;">
                     <div style="display:flex; gap:5px; flex-wrap:wrap; justify-content: flex-start;">
@@ -539,6 +362,7 @@
         const categoria = document.getElementById('inv-categoria').value;
         const proveedor = document.getElementById('inv-proveedor').value.trim();
         const costo = parseFloat(document.getElementById('inv-costo').value) || 0;
+        const minimo = parseInt(document.getElementById('inv-minimo').value) || 0;
         
         if(!nombre) return alert("Ingrese el nombre del insumo o medicamento.");
         
@@ -553,12 +377,14 @@
                 precio_compra: costo, 
                 precio_venta: 0,
                 stock: 0, 
+                stock_minimo: minimo,
                 publicado_en_pos: false, 
                 tipo: 'fisico' 
             });
             document.getElementById('inv-nombre').value = ''; 
             document.getElementById('inv-proveedor').value = '';
             document.getElementById('inv-costo').value = '';
+            document.getElementById('inv-minimo').value = '';
         } catch (e) {
             console.error(e);
             alert("Error al agregar.");
@@ -567,7 +393,117 @@
         }
     };
 
-    // --- 5. SERVICIOS Y KITS ---
+    // --- FUNCIONES DE MODALES DE INVENTARIO ---
+    function abrirStockModal(item) {
+        itemParaAjuste = item;
+        document.getElementById('stock-item-nombre').innerText = item.nombre;
+        const inputCant = document.getElementById('stock-cant');
+        inputCant.value = '';
+        document.getElementById('stock-motivo').value = '';
+        document.getElementById('zona-perdida').style.display = 'none';
+        
+        document.getElementById('stock-modal').style.display = 'flex';
+        setTimeout(() => { inputCant.focus(); }, 50); 
+    }
+
+    function cerrarStockModal() { document.getElementById('stock-modal').style.display = 'none'; itemParaAjuste = null; }
+
+    function evaluarAjusteNegativo() {
+        const val = parseFloat(document.getElementById('stock-cant').value) || 0;
+        document.getElementById('zona-perdida').style.display = (val < 0) ? 'block' : 'none';
+    }
+
+    async function guardarAjusteStock() {
+        const val = parseInt(document.getElementById('stock-cant').value);
+        if(isNaN(val) || val === 0) return alert("Ingrese una cantidad válida (+ o -)");
+
+        const motivo = document.getElementById('stock-motivo').value.trim();
+        let tipoOperacion = 'ingreso_inventario';
+        
+        if (val < 0) {
+            const radioSeleccionado = document.querySelector('input[name="tipo_salida"]:checked').value;
+            tipoOperacion = (radioSeleccionado === 'perdida') ? 'perdida_borrado' : 'ajuste_inventario';
+            if(tipoOperacion === 'perdida_borrado' && motivo === "") return alert("Las mermas o pérdidas requieren justificar un motivo.");
+        }
+
+        try {
+            const batch = writeBatch(db);
+            const logRef = doc(collection(db, "transactions"));
+            const costoTotalMovimiento = Math.abs(val) * (itemParaAjuste.precio_compra || 0);
+
+            batch.set(logRef, {
+                pacienteId: "SISTEMA_INTERNO",
+                itemId: itemParaAjuste.id,
+                nombre: itemParaAjuste.nombre,
+                cantidad: val, 
+                costo_compra_total: costoTotalMovimiento, 
+                usuario_registro: uidAdmin,
+                acreditado_a_nombre: correoAdmin,
+                motivo: motivo || "Ajuste directo",
+                timestamp: serverTimestamp(),
+                tipo_operacion: tipoOperacion
+            });
+
+            const invRef = doc(db, "inventory_master", itemParaAjuste.id);
+            batch.update(invRef, { stock: increment(val) });
+
+            await batch.commit();
+            cerrarStockModal();
+        } catch (error) {
+            console.error(error); alert("Error al guardar el ajuste.");
+        }
+    }
+
+    function abrirEditarModal(item) {
+        document.getElementById('edit-id').value = item.id;
+        document.getElementById('edit-nombre').value = item.nombre || '';
+        document.getElementById('edit-categoria').value = item.categoria || 'insumo';
+        document.getElementById('edit-proveedor').value = item.proveedor || '';
+        document.getElementById('edit-costo').value = item.precio_compra || 0;
+        document.getElementById('edit-precio-venta').value = item.precio_venta || 0;
+        document.getElementById('edit-minimo').value = item.stock_minimo || 0;
+        document.getElementById('edit-modal').style.display = 'flex';
+    }
+
+    function cerrarEditarModal() { document.getElementById('edit-modal').style.display = 'none'; }
+
+    function guardarEdicion() {
+        const id = document.getElementById('edit-id').value;
+        const nombre = document.getElementById('edit-nombre').value.trim();
+        const cat = document.getElementById('edit-categoria').value;
+        const prov = document.getElementById('edit-proveedor').value.trim();
+        const costo = parseFloat(document.getElementById('edit-costo').value) || 0;
+        const pVenta = parseFloat(document.getElementById('edit-precio-venta').value) || 0;
+        const minimo = parseInt(document.getElementById('edit-minimo').value) || 0;
+
+        if(!nombre) return alert("El nombre no puede estar vacío.");
+
+        updateDoc(doc(db, "inventory_master", id), {
+            nombre: nombre,
+            categoria: cat,
+            proveedor: prov,
+            precio_compra: costo,
+            precio_venta: pVenta,
+            stock_minimo: minimo
+        }).then(() => { cerrarEditarModal(); }).catch(err => { console.error(err); alert("Error al actualizar."); });
+    }
+
+    function borrarInsumo(id, nombre) {
+        if(confirm(`⚠️ ¿Estás TOTALMENTE SEGURO de eliminar "${nombre}"?\n\nEsto lo borrará permanentemente del inventario.`)) {
+            deleteDoc(doc(db, "inventory_master", id)).catch(e => { console.error(e); alert("Error al eliminar."); });
+        }
+    }
+
+    window.publicarEnMenu = async (id, nombre) => {
+        const itemActual = inventarioFisicoData.find(i => i.id === id);
+        const precioSugerido = itemActual.precio_venta > 0 ? itemActual.precio_venta : "";
+        const precio = prompt(`Para publicar "${nombre}" en POS, asigna el Precio de Venta ($):`, precioSugerido);
+        if(precio !== null && precio !== "") await updateDoc(doc(db, "inventory_master", id), { publicado_en_pos: true, precio_venta: parseFloat(precio) });
+    };
+
+    window.quitarDelMenu = async (id) => { await updateDoc(doc(db, "inventory_master", id), { publicado_en_pos: false }); };
+
+    // --- SERVICIOS Y KITS ---
     onSnapshot(collection(db, "services_and_kits"), (snap) => {
         const tbody = document.getElementById('tabla-servicios');
         tbody.innerHTML = ''; serviciosPurosData = [];
@@ -610,6 +546,45 @@
         document.getElementById('srv-nombre').value = '';
     };
 
+    function borrarServicio(id) { 
+        if(confirm("¿Seguro que deseas eliminar este servicio/paquete del menú de cobros?")) deleteDoc(doc(db, "services_and_kits", id)); 
+    }
+
+    function abrirKitBuilder() { 
+        insumosParaKitActual = []; 
+        document.getElementById('kit-nombre').value = ''; document.getElementById('kit-precio').value = ''; 
+        actualizarListaKitUI(); document.getElementById('kit-builder-modal').style.display = 'flex'; 
+        setTimeout(() => { document.getElementById('kit-nombre').focus(); }, 50);
+    }
+    
+    function cerrarKitBuilder() { document.getElementById('kit-builder-modal').style.display = 'none'; }
+
+    function agregarInsumoAKit() {
+        const select = document.getElementById('kit-select-insumo'); if(!select.value) return;
+        const [tipo, id_item] = select.value.split('|');
+        const n = select.options[select.selectedIndex].text; const nombre = tipo === 'fisico' ? n.split(' (')[0] : n; 
+        const cant = parseInt(document.getElementById('kit-cant-insumo').value) || 1;
+        insumosParaKitActual.push({ id_insumo: id_item, nombre, cantidad: cant, tipo_item: tipo });
+        actualizarListaKitUI();
+    }
+
+    function quitarDeKit(index) { insumosParaKitActual.splice(index, 1); actualizarListaKitUI(); }
+
+    function actualizarListaKitUI() {
+        const list = document.getElementById('kit-items-list'); list.innerHTML = '';
+        insumosParaKitActual.forEach((item, index) => {
+            const icono = item.tipo_item === 'fisico' ? '📦' : '🩺';
+            list.innerHTML += `<div class="kit-item-row"><span>${icono} ${item.cantidad}x ${item.nombre}</span><button class="btn-red" style="padding: 2px 5px; font-size:0.7em;" onclick="quitarDeKit(${index})">X</button></div>`;
+        });
+    }
+
+    async function guardarKitEnFirebase() {
+        const nombre = document.getElementById('kit-nombre').value.trim(); 
+        const precio = parseFloat(document.getElementById('kit-precio').value);
+        if(!nombre || !precio || insumosParaKitActual.length === 0) return alert("Agrega nombre, precio y al menos un ítem al paquete.");
+        await addDoc(collection(db, "services_and_kits"), { nombre: nombre, precio_venta: precio, tipo: 'kit', insumos_vinculados: insumosParaKitActual });
+        cerrarKitBuilder();
+    }
 </script>
 </body>
 </html>
