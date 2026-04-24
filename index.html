@@ -9,19 +9,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 
     <style>
-        :root {
-            --primary-blue: #2c3e50;
-            --secondary-blue: #34495e;
-            --accent-green: #27ae60;
-            --danger-red: #c0392b;
-            --warning-orange: #d35400;
-            --light-bg: #f4f7f6;
-            --white: #ffffff;
-            --border-color: #dcdde1;
-            --text-dark: #2f3640;
-            --cart-width: 0px; 
-        }
-
+        :root { --primary-blue: #2c3e50; --secondary-blue: #34495e; --accent-green: #27ae60; --danger-red: #c0392b; --warning-orange: #d35400; --light-bg: #f4f7f6; --white: #ffffff; --border-color: #dcdde1; --text-dark: #2f3640; --cart-width: 0px; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background-color: var(--light-bg); color: var(--text-dark); display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
         
         header { background-color: var(--primary-blue); color: var(--white); padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid var(--accent-green); z-index: 10;}
@@ -30,18 +18,8 @@
         button.btn-header { background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 0.85em; }
         button.btn-header:hover { background: rgba(255,255,255,0.2); }
         button.btn-logout { background: #c0392b; border-color: #e74c3c; }
-        button.btn-logout:hover { background: #a93226; }
 
-        main { 
-            display: grid; 
-            grid-template-columns: var(--cart-width) 280px 1fr 380px; 
-            gap: 1px; 
-            background-color: var(--border-color); 
-            flex: 1; 
-            overflow: hidden; 
-            transition: grid-template-columns 0.3s ease-in-out;
-        }
-
+        main { display: grid; grid-template-columns: var(--cart-width) 280px 1fr 380px; gap: 1px; background-color: var(--border-color); flex: 1; overflow: hidden; transition: grid-template-columns 0.3s ease-in-out; }
         section { background-color: var(--white); display: flex; flex-direction: column; overflow: hidden; }
         .panel-header { background-color: var(--secondary-blue); color: var(--white); padding: 8px 12px; font-size: 0.85em; font-weight: bold; text-transform: uppercase; display: flex; justify-content: space-between; align-items: center; }
         
@@ -73,7 +51,6 @@
         
         .nurse-badge { font-size: 0.75em; background: #e8f5e9; color: #2e7d32; padding: 2px 6px; border-radius: 3px; font-weight: 600;}
         .system-badge { font-size: 0.75em; background: #e3f2fd; color: #1565c0; padding: 2px 6px; border-radius: 3px; font-weight: 600;}
-        .stock-warning { color: var(--danger-red); font-weight: bold; }
 
         /* CARRITO DESLIZANTE */
         #cart-section { background-color: #1a252f; color: white; border-right: 3px solid var(--accent-green); transition: border-color 0.3s; }
@@ -89,7 +66,6 @@
         .qty-btn:hover { background: #2c3e50; }
         .qty-val { width: 30px; text-align: center; font-size: 0.85em; font-weight: bold;}
         .cart-price { color: var(--accent-green); font-weight: bold; font-size: 0.9em;}
-        .internal-cart .cart-price { color: var(--warning-orange); }
         .cart-badge { font-size: 0.7em; color: #95a5a6; display: block; margin-top: 2px;}
         .cart-summary { padding: 15px; background: rgba(0,0,0,0.2); border-top: 1px solid #2c3e50; }
         
@@ -104,7 +80,6 @@
         .lock-subtitle { color: #aed6f1; margin-bottom: 30px; font-size: 1.2em; }
         #unlock-pin { font-size: 2em; width: 180px; text-align: center; letter-spacing: 10px; border-radius: 8px; border: none; padding: 15px; outline: none; }
         #unlock-pin:focus { border: 3px solid var(--accent-green); }
-
         .checkbox-label-print { display: flex; align-items: center; gap: 10px; font-weight: bold; color: var(--secondary-blue); cursor: pointer; background: #f8f9fa; padding: 10px; border-radius: 5px; border: 1px solid var(--border-color); }
         .checkbox-label-print input { width: 20px; height: 20px; }
     </style>
@@ -121,9 +96,9 @@
 </div>
 
 <header>
-    <div><strong>HOSPITAL POS</strong> | Panel Administrativo</div>
+    <div><strong>HOSPITAL POS</strong> | Panel de Recepción</div>
     <div class="header-actions">
-        <a href="inventory-admin.html" style="color: white; font-size: 0.85em; text-decoration: none; border: 1px solid white; padding: 5px; border-radius: 4px;">📦 Ir a Inventario</a>
+        <a href="inventory-admin.html" id="link-inventario" style="color: white; font-size: 0.85em; text-decoration: none; border: 1px solid white; padding: 5px; border-radius: 4px;">📦 Ir a Inventario</a>
         <span class="user-info"> | <span id="user-display">Verificando sesión...</span></span>
         <span class="user-info"> | <span id="clock">--:--</span></span>
         <button id="btn-fullscreen" class="btn-header">🖵 Pantalla Completa</button>
@@ -141,21 +116,19 @@
                 <span id="cart-total-text" style="color: var(--accent-green);">$0.00</span>
             </div>
             <button class="btn-action btn-success" id="btn-procesar-carrito" style="width: 100%; padding: 10px; margin-bottom: 10px; justify-content: center;">Confirmar Cargos</button>
-            <button class="btn-action" style="width: 100%; padding: 8px; background: gray; justify-content: center; color: white;" id="btn-vaciar-carrito" onclick="vaciarCarrito()">Vaciar Lista</button>
+            <button class="btn-action" style="width: 100%; padding: 8px; background: gray; justify-content: center; color: white;" onclick="vaciarCarrito()">Vaciar Lista</button>
         </div>
     </section>
 
     <section>
         <div class="panel-header">Pacientes Activos <span>[F1]</span></div>
-        
         <div class="search-container" style="display: flex; flex-direction: column; gap: 10px;">
             <div style="display: flex; gap: 10px;">
                 <button class="btn-action btn-warning" onclick="activarModoInterno()" style="flex: 1; justify-content: center;" title="Extraer insumos sin cuenta de paciente">📋 Uso Interno</button>
-                <button class="btn-action btn-success" onclick="abrirModalNuevo()" style="flex: 1; justify-content: center;">➕ Nuevo</button>
+                <button class="btn-action btn-success" id="btn-nuevo-paciente" onclick="abrirModalNuevo()" style="flex: 1; justify-content: center;">➕ Nuevo Paciente</button>
             </div>
             <input type="text" id="search-patients" placeholder="Buscar cuarto o paciente... [F1]">
         </div>
-        
         <div class="data-list">
             <table>
                 <thead><tr><th>Cuarto</th><th>Paciente</th></tr></thead>
@@ -175,7 +148,13 @@
             <div class="data-list">
                 <table>
                     <thead>
-                        <tr id="table-head-tx"><th>Concepto</th><th>Cant.</th><th>Total</th><th>Acreditado a</th></tr>
+                        <tr id="table-head-tx">
+                            <th>Concepto</th>
+                            <th style="text-align:center;">Cant.</th>
+                            <th id="th-subtotal" style="text-align:right;">Subtotal</th>
+                            <th>Responsable</th>
+                            <th id="th-borrar-cargo" style="width: 30px;"></th>
+                        </tr>
                     </thead>
                     <tbody id="lista-transacciones"></tbody>
                 </table>
@@ -183,46 +162,36 @@
             <div class="action-bar" id="action-bar-cuenta">
                 <button class="btn-action btn-primary" id="btn-imprimir">🖨️ Imprimir [P]</button>
                 <button class="btn-action btn-success" id="btn-liquidar">💰 Liquidar</button>
-                <button class="btn-action btn-danger" onclick="abrirModalBorrar()">🗑️ Borrar [DEL]</button>
+                <button class="btn-action btn-danger" id="btn-borrar-paciente" onclick="abrirModalBorrar()">🗑️ Borrar [DEL]</button>
             </div>
         </div>
     </section>
 
     <section>
         <div class="panel-header">Catálogo de Cargos <span>[F2]</span></div>
-        
         <div class="search-container" style="background:#eef2f5; border-bottom: 2px solid var(--primary-blue);">
             <label style="font-size: 0.8em; font-weight: bold; color: var(--primary-blue); display: block; margin-bottom: 5px;">Acreditar movimiento a:</label>
-            <select id="select-empleado">
-                <option value="">Cargando personal...</option>
-            </select>
+            <select id="select-empleado"><option value="">Cargando personal...</option></select>
         </div>
-
         <div class="search-container">
             <input type="text" id="inventory-search" placeholder="Buscar código o descripción... [F2]">
         </div>
-
         <div class="dual-list-container">
             <div class="list-section">
                 <div class="list-title">Servicios y Paquetes (Clic para confirmar)</div>
                 <div class="data-list">
                     <table id="tabla-servicios-main">
-                        <thead><tr><th>Descripción</th><th>Precio</th></tr></thead>
-                        <tbody id="lista-servicios">
-                            <tr><td colspan="2" style="text-align: center; color: gray;">Cargando servicios...</td></tr>
-                        </tbody>
+                        <thead><tr><th>Descripción</th><th id="th-precio-serv">Precio</th></tr></thead>
+                        <tbody id="lista-servicios"></tbody>
                     </table>
                 </div>
             </div>
-
             <div class="list-section">
                 <div class="list-title">Inventario Físico (Clic para pre-checkout)</div>
                 <div class="data-list">
                     <table id="tabla-inventario-main">
-                        <thead><tr><th>Descripción</th><th>Stock</th><th>Precio</th></tr></thead>
-                        <tbody id="lista-inventario">
-                            <tr><td colspan="3" style="text-align: center; color: gray;">Cargando inventario...</td></tr>
-                        </tbody>
+                        <thead><tr><th>Descripción</th><th>Stock</th><th id="th-precio-inv">Precio</th></tr></thead>
+                        <tbody id="lista-inventario"></tbody>
                     </table>
                 </div>
             </div>
@@ -234,31 +203,25 @@
     <div class="modal-content">
         <h3 id="modal-title" style="margin-top:0; color:var(--primary-blue);">✏️ Editar Paciente</h3>
         <input type="text" id="modal-nombre" placeholder="Nombre completo">
-        
         <div style="display:flex; gap:10px; align-items:center;">
             <input type="text" id="modal-cuarto" placeholder="Número de Cuarto" style="flex:1;">
             <label style="display:flex; align-items:center; gap:5px; font-weight:bold; font-size:0.85em; color:var(--secondary-blue);">
                 <input type="checkbox" id="modal-ambulatorio" onchange="toggleAmbulatorio()"> Ambulatorio
             </label>
         </div>
-
         <div style="margin-top: 5px;">
             <label style="font-size: 0.8em; font-weight: bold; color: var(--secondary-blue);">Fecha y Hora de Ingreso</label>
             <input type="datetime-local" id="modal-fecha-ingreso">
         </div>
-
         <label style="display:flex; align-items:center; gap:10px; font-weight:bold; color:var(--secondary-blue); margin-top: 5px;">
             <input type="checkbox" id="modal-anonimo" style="width:auto;"> Activar Modo Anónimo (Tablet)
         </label>
-        
         <select id="modal-nivel">
             <option value="baja">🔵 Nivel: Azul (Estable)</option>
             <option value="media">🟠 Nivel: Naranja (Precaución)</option>
             <option value="alta">🔴 Nivel: Rojo (Crítico)</option>
         </select>
-        
         <textarea id="modal-alergias" rows="3" placeholder="Observaciones / Alergias..."></textarea>
-        
         <div style="display:flex; gap:10px; margin-top:10px;">
             <button class="btn-action" style="flex:1; background: gray; color: white; justify-content: center;" onclick="cerrarModalPaciente()">Cancelar</button>
             <button class="btn-action btn-success" style="flex:1; justify-content: center;" id="btn-guardar-paciente" onclick="guardarPaciente()">💾 Guardar</button>
@@ -269,17 +232,14 @@
 <div id="delete-modal" class="modal-overlay">
     <div class="modal-content">
         <h3 style="margin-top:0; color:var(--danger-red);">⚠️ Confirmar Eliminación</h3>
-        <p style="font-size: 0.9em; color: var(--secondary-blue); margin-top: 0;">Estás a punto de eliminar esta cuenta y su historial. <strong>¿Qué deseas hacer con los insumos cobrados?</strong></p>
-        
+        <p style="font-size: 0.9em; color: var(--secondary-blue); margin-top: 0;">Estás a punto de eliminar esta cuenta. <strong>¿Qué deseas hacer con los insumos cobrados?</strong></p>
         <select id="delete-action-select" style="margin-bottom: 15px; background-color: #f8f9fa;">
             <option value="devolver">♻️ Devolver stock al inventario</option>
             <option value="perdida">📉 Registrar como Pérdida / Merma</option>
             <option value="desaparecer">💨 Solo desaparecer (No afecta inventario)</option>
         </select>
-
-        <p style="font-size: 0.85em; color: var(--danger-red); margin-bottom: 5px;">Para confirmar, escribe <strong>BORRAR</strong> en mayúsculas:</p>
+        <p style="font-size: 0.85em; color: var(--danger-red); margin-bottom: 5px;">Escribe <strong>BORRAR</strong> en mayúsculas:</p>
         <input type="text" id="delete-confirm-text" placeholder="Escribe BORRAR aquí" autocomplete="off">
-        
         <div style="display:flex; gap:10px; margin-top:15px;">
             <button class="btn-action" style="flex:1; background: gray; color: white; justify-content: center;" onclick="cerrarModalBorrar()">Cancelar</button>
             <button class="btn-action btn-danger" style="flex:1; justify-content: center;" id="btn-confirmar-borrar" onclick="ejecutarBorrado()">Eliminar Cuenta</button>
@@ -290,23 +250,10 @@
 <div id="print-modal" class="modal-overlay">
     <div class="modal-content">
         <h3 style="margin-top:0; color:var(--primary-blue);">🖨️ Exportar a PDF</h3>
-        <p style="font-size: 0.9em; color: var(--secondary-blue);">Selecciona las firmas que deseas incluir al final del documento:</p>
-        
-        <label class="checkbox-label-print">
-            <input type="checkbox" id="chk-sig-hospital">
-            Firma del Hospital (Representante)
-        </label>
-        
-        <label class="checkbox-label-print">
-            <input type="checkbox" id="chk-sig-paciente">
-            Firma del Paciente (<span id="print-paciente-name"></span>)
-        </label>
-        
-        <label class="checkbox-label-print">
-            <input type="checkbox" id="chk-sig-familiar">
-            Firma de Familiar o Responsable
-        </label>
-
+        <p style="font-size: 0.9em; color: var(--secondary-blue);">Selecciona las firmas al calce:</p>
+        <label class="checkbox-label-print"><input type="checkbox" id="chk-sig-hospital"> Firma del Hospital (Representante)</label>
+        <label class="checkbox-label-print"><input type="checkbox" id="chk-sig-paciente"> Firma del Paciente (<span id="print-paciente-name"></span>)</label>
+        <label class="checkbox-label-print"><input type="checkbox" id="chk-sig-familiar"> Firma de Familiar o Responsable</label>
         <div style="display:flex; gap:10px; margin-top:20px;">
             <button class="btn-action" style="flex:1; background: gray; color: white; justify-content: center;" onclick="cerrarModalImpresion()">Cancelar</button>
             <button class="btn-action btn-primary" style="flex:1; justify-content: center;" id="btn-generar-pdf" onclick="ejecutarExportacionPDF()">📄 Generar PDF</button>
@@ -316,7 +263,7 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-    import { getFirestore, collection, query, where, onSnapshot, getDocs, doc, getDoc, addDoc, updateDoc, increment, serverTimestamp, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+    import { getFirestore, collection, query, where, onSnapshot, getDocs, doc, getDoc, addDoc, updateDoc, deleteDoc, increment, serverTimestamp, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
     import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
     const firebaseConfig = {
@@ -348,9 +295,11 @@
     window.cerrarModalImpresion = cerrarModalImpresion;
     window.ejecutarExportacionPDF = ejecutarExportacionPDF;
     window.activarModoInterno = activarModoInterno; 
+    window.borrarCargoIndividual = borrarCargoIndividual; // NUEVO
 
     let modoModal = 'nuevo';
 
+    // ESTADO DE PERMISOS
     window.AppState = {
         pacienteActualId: null,
         pacienteActualData: null,
@@ -358,6 +307,8 @@
         uidRecepcionista: null,
         nombreRecepcionista: null,
         pinRecepcionista: null,
+        es_admin: false,
+        permisos: {},
         unsubscribeTransacciones: null,
         carrito: {} 
     };
@@ -366,17 +317,10 @@
     // CAPTURA ESTRICTA DE TECLAS (F1, F2) Y BLOQUEO
     // ==========================================
     window.addEventListener('keydown', function(e) {
-        if (e.key === 'F1') {
-            e.preventDefault();
-            e.stopPropagation();
-            document.getElementById('search-patients').focus();
-        } else if (e.key === 'F2') {
-            e.preventDefault();
-            e.stopPropagation();
-            document.getElementById('inventory-search').focus();
-        }
+        if (e.key === 'F1') { e.preventDefault(); e.stopPropagation(); document.getElementById('search-patients').focus(); } 
+        else if (e.key === 'F2') { e.preventDefault(); e.stopPropagation(); document.getElementById('inventory-search').focus(); }
         resetearInactividad();
-    }, true); // El parámetro 'true' fuerza la captura antes de que el navegador intervenga.
+    }, true); 
 
     document.addEventListener('mousemove', resetearInactividad);
     document.addEventListener('click', resetearInactividad);
@@ -394,7 +338,7 @@
     }
 
     // ==========================================
-    // SISTEMA DE SEGURIDAD Y BLINDAJE
+    // SISTEMA DE SEGURIDAD (RBAC)
     // ==========================================
     onAuthStateChanged(auth, async (user) => {
         if (user) {
@@ -405,30 +349,31 @@
 
                 if (docSnap.exists()) {
                     const empleado = docSnap.data();
-                    if (empleado.es_admin === true) {
-                        document.getElementById('user-display').innerText = `👤 ${empleado.nombre}`;
-                        AppState.uidRecepcionista = user.uid;
-                        AppState.nombreRecepcionista = empleado.nombre;
-                        AppState.pinRecepcionista = empleado.pin;
-                        
-                        iniciarReloj();
-                        configurarPantallaCompleta();
-                        configurarBuscadores();
-                        iniciarSistema();
-                        resetearInactividad(); 
-                    } else {
-                        alert(`Acceso Denegado\n\nHola ${empleado.nombre}, no tienes permisos de administrador.`);
-                        await signOut(auth);
-                        window.location.href = "login.html";
-                    }
+                    
+                    // CARGAMOS TODOS LOS PERMISOS A LA MEMORIA RAM
+                    AppState.uidRecepcionista = user.uid;
+                    AppState.nombreRecepcionista = empleado.nombre;
+                    AppState.pinRecepcionista = empleado.pin;
+                    AppState.es_admin = empleado.es_admin === true;
+                    AppState.permisos = empleado.permisos || {};
+                    
+                    // Ya no bloqueamos a los que no son admin, los dejamos pasar pero censurados
+                    document.getElementById('user-display').innerText = `👤 ${empleado.nombre}`;
+                    iniciarReloj();
+                    configurarPantallaCompleta();
+                    configurarBuscadores();
+                    iniciarSistema();
+                    resetearInactividad(); 
+                    
+                    // 🌟 MAGIA RBAC: Adaptar Interfaz
+                    aplicarRestriccionesInterfaz();
+
                 } else {
                     alert("Acceso Denegado: Cuenta sin perfil asignado.");
                     await signOut(auth);
                     window.location.href = "login.html";
                 }
-            } catch (error) {
-                console.error(error);
-            }
+            } catch (error) { console.error(error); }
         } else {
             window.location.href = "login.html";
         }
@@ -441,13 +386,48 @@
             document.getElementById('lock-screen').style.display = 'none';
             resetearInactividad();
         } else {
-            alert("❌ PIN Incorrecto. Intente nuevamente.");
+            alert("❌ PIN Incorrecto.");
             document.getElementById('unlock-pin').value = '';
             document.getElementById('unlock-pin').focus();
         }
     }
 
     document.getElementById('unlock-pin').addEventListener('keypress', (e) => { if (e.key === 'Enter') desbloquearSistema(); });
+
+    // ==========================================
+    // APLICACIÓN DE PERMISOS GRANULARES A LA UI
+    // ==========================================
+    function aplicarRestriccionesInterfaz() {
+        if (AppState.es_admin) return; // Si es admin, no censurar nada.
+
+        // 1. Ocultar link de Administrar Inventario
+        if (!AppState.permisos.modificar_inventario) {
+            document.getElementById('link-inventario').style.display = 'none';
+        }
+
+        // 2. Ocultar Alta/Edición de Pacientes
+        if (!AppState.permisos.registrar_pacientes) {
+            document.getElementById('btn-nuevo-paciente').style.display = 'none';
+        }
+
+        // 3. Ocultar Borrado de Pacientes
+        if (!AppState.permisos.borrar_pacientes) {
+            document.getElementById('btn-borrar-paciente').style.display = 'none';
+        }
+
+        // 4. Ocultar Liquidación
+        if (!AppState.permisos.cerrar_cuentas) {
+            document.getElementById('btn-liquidar').style.display = 'none';
+        }
+
+        // 5. Censurar Precios si no puede Ver Cuentas
+        if (!AppState.permisos.ver_cuentas) {
+            document.getElementById('th-subtotal').style.display = 'none';
+            document.getElementById('th-precio-serv').style.display = 'none';
+            document.getElementById('th-precio-inv').style.display = 'none';
+        }
+    }
+
 
     // ==========================================
     // INICIALIZACIÓN
@@ -471,15 +451,10 @@
         });
     }
 
-    // ==========================================
-    // ESCUCHAS DE FIREBASE BLINDADOS CONTRA FALLOS
-    // ==========================================
     function escucharEmpleados() {
         const selector = document.getElementById('select-empleado');
-        
         onSnapshot(collection(db, "employees"), (snap) => {
             selector.innerHTML = '';
-            
             const optionYo = document.createElement('option');
             optionYo.value = AppState.uidRecepcionista;
             optionYo.text = `${AppState.nombreRecepcionista} (Yo)`;
@@ -496,9 +471,7 @@
                 }
             });
         }, (error) => {
-            console.error("Error Firebase:", error);
-            // Si bloquea reglas, forzamos tu usuario para que la interfaz no colapse
-            selector.innerHTML = `<option value="${AppState.uidRecepcionista}">${AppState.nombreRecepcionista} (Error Reglas)</option>`;
+            selector.innerHTML = `<option value="${AppState.uidRecepcionista}">${AppState.nombreRecepcionista} (Yo)</option>`;
         });
     }
 
@@ -519,60 +492,50 @@
                 tr.onclick = () => seleccionarPaciente(docSnap.id, data, tr);
                 tbody.appendChild(tr);
             });
-        }, (error) => {
-            console.error(error);
-            tbody.innerHTML = '<tr><td colspan="2" style="text-align: center; color: var(--danger-red);">❌ Error de permisos</td></tr>';
-        });
+        }, (error) => { tbody.innerHTML = '<tr><td colspan="2" style="text-align: center; color: var(--danger-red);">❌ Error de permisos</td></tr>'; });
     }
 
     function escucharServiciosYPaquetes() {
         const tbody = document.getElementById('lista-servicios');
+        const puedeVerPrecios = AppState.es_admin || AppState.permisos.ver_cuentas;
+        
         onSnapshot(collection(db, "services_and_kits"), (snap) => {
             tbody.innerHTML = '';
-            if(snap.empty) {
-                tbody.innerHTML = '<tr><td colspan="2" style="text-align: center; color: gray;">Sin servicios registrados</td></tr>';
-                return;
-            }
+            if(snap.empty) return;
             snap.forEach((docSnap) => {
                 const item = { id: docSnap.id, ...docSnap.data() };
                 const tr = document.createElement('tr');
                 const icono = item.tipo === 'kit' ? '📦 ' : '🩺 ';
-                tr.innerHTML = `<td>${icono}${item.nombre}</td><td style="text-align:right;">$${item.precio_venta.toLocaleString('es-MX')}</td>`;
+                
+                let tdPrecio = puedeVerPrecios ? `<td>$${item.precio_venta.toLocaleString('es-MX')}</td>` : '';
+                tr.innerHTML = `<td>${icono}${item.nombre}</td>${tdPrecio}`;
+                
                 tr.onclick = () => procesarServicioOKit(item); 
                 tbody.appendChild(tr);
             });
-        }, (error) => {
-            console.error(error);
-            tbody.innerHTML = '<tr><td colspan="2" style="text-align: center; color: var(--danger-red);">❌ Error de permisos</td></tr>';
         });
     }
 
     function escucharInventarioFisico() {
         const tbody = document.getElementById('lista-inventario');
+        const puedeVerPrecios = AppState.es_admin || AppState.permisos.ver_cuentas;
+
         onSnapshot(collection(db, "inventory_master"), (snap) => {
             tbody.innerHTML = '';
-            if(snap.empty) {
-                tbody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: gray;">Inventario vacío</td></tr>';
-                return;
-            }
+            if(snap.empty) return;
             snap.forEach((docSnap) => {
                 const i = { id: docSnap.id, ...docSnap.data(), tipo: 'fisico' };
                 if(i.publicado_en_pos) {
                     const tr = document.createElement('tr');
-                    tr.innerHTML = `<td>${i.nombre}</td><td style="text-align:center;" class="${i.stock < 10 ? 'stock-warning':''}">${i.stock}</td><td style="text-align:right;">$${i.precio_venta.toLocaleString('es-MX')}</td>`;
+                    let tdPrecio = puedeVerPrecios ? `<td>$${i.precio_venta.toLocaleString('es-MX')}</td>` : '';
+                    tr.innerHTML = `<td>${i.nombre}</td><td class="${i.stock < 10 ? 'stock-warning':''}">${i.stock}</td>${tdPrecio}`;
                     tr.onclick = () => agregarAlCarrito(i); 
                     tbody.appendChild(tr);
                 }
             });
-        }, (error) => {
-            console.error(error);
-            tbody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: var(--danger-red);">❌ Error de permisos</td></tr>';
         });
     }
 
-    // ==========================================
-    // SELECCIÓN DE MODOS (PACIENTE vs INTERNO)
-    // ==========================================
     function activarModoInterno() {
         if(Object.keys(AppState.carrito).length > 0) {
             if(!confirm("Tienes insumos pendientes. ¿Vaciar carrito y cambiar a Uso Interno?")) return;
@@ -584,9 +547,7 @@
         AppState.pacienteActualData = null;
         
         document.querySelectorAll('#lista-pacientes tr').forEach(r => r.classList.remove('selected-row'));
-        
         document.getElementById('header-cuenta').innerHTML = `Modo Activo <span style="color:var(--warning-orange); font-weight:bold;">USO INTERNO / MERMA</span>`;
-        
         document.getElementById('resumen-cuenta').innerHTML = `
             <div style="font-size: 1.05em; color: var(--text-dark);">
                 <strong>⚠️ Extracción de Insumos al Hospital</strong><br>
@@ -627,13 +588,34 @@
         actualizarUIResumenCuenta();
 
         if(AppState.unsubscribeTransacciones) AppState.unsubscribeTransacciones();
+        
+        // 🌟 LÓGICA CENSURA EN TRANSACCIONES
+        const puedeVerCuentas = AppState.es_admin || AppState.permisos.ver_cuentas;
+        const puedeBorrarCargos = AppState.es_admin || AppState.permisos.borrar_cargos;
+
         AppState.unsubscribeTransacciones = onSnapshot(query(collection(db, "transactions"), where("pacienteId", "==", id)), (snap) => {
             const tbody = document.getElementById('lista-transacciones'); tbody.innerHTML = '';
-            const txs = []; snap.forEach(d => txs.push(d.data()));
+            const txs = []; snap.forEach(d => { txs.push({id: d.id, ...d.data()}) });
             txs.sort((a,b) => (b.timestamp?.toMillis()||0) - (a.timestamp?.toMillis()||0));
+            
             txs.forEach((tx) => {
                 const tr = document.createElement('tr');
-                tr.innerHTML = `<td>${tx.nombre}</td><td style="text-align:center;">${tx.cantidad || 1}</td><td style="text-align:right;">$${tx.precio_venta.toLocaleString('es-MX')}</td><td><span class="${tx.acreditado_a_nombre===AppState.nombreRecepcionista?'system-badge':'nurse-badge'}">${tx.acreditado_a_nombre}</span></td>`;
+                
+                let tdSubtotal = puedeVerCuentas ? `<td style="text-align:right;">$${tx.precio_venta.toLocaleString('es-MX')}</td>` : '';
+                
+                // Botón de Borrado Individual (X roja pequeña)
+                let tdBorrar = '';
+                if (puedeBorrarCargos) {
+                    tdBorrar = `<td><button class="btn-red" style="font-size:0.7em; padding: 2px 6px;" onclick="borrarCargoIndividual('${tx.id}', '${tx.itemId}', ${tx.cantidad}, '${tx.tipo_operacion}', ${tx.precio_venta})">X</button></td>`;
+                }
+
+                tr.innerHTML = `
+                    <td>${tx.nombre}</td>
+                    <td style="text-align:center;">${tx.cantidad || 1}</td>
+                    ${tdSubtotal}
+                    <td><span class="${tx.acreditado_a_nombre===AppState.nombreRecepcionista?'system-badge':'nurse-badge'}">${tx.acreditado_a_nombre}</span></td>
+                    ${tdBorrar}
+                `;
                 tbody.appendChild(tr);
             });
         });
@@ -644,6 +626,18 @@
         const data = AppState.pacienteActualData;
         const cuartoDisplay = data.es_ambulatorio ? 'AMB' : (data.cuarto_id || 'AMB');
         
+        let btnEditarHTML = '';
+        if (AppState.es_admin || AppState.permisos.registrar_pacientes) {
+            btnEditarHTML = `<button class="btn-action btn-primary" onclick="abrirModalEdicion()" style="padding:5px 10px; font-size:0.8em;">✏️ Editar</button>`;
+        }
+
+        let totalCuentaHTML = '';
+        if (AppState.es_admin || AppState.permisos.ver_cuentas) {
+            totalCuentaHTML = `<div class="total-amount" style="margin-top:10px; align-self:flex-end;">$${(data.total || 0).toLocaleString('es-MX')}</div>`;
+        } else {
+            totalCuentaHTML = `<div class="total-amount" style="margin-top:10px; align-self:flex-end; color: gray; font-size: 1em;">Total Protegido 🔒</div>`;
+        }
+
         document.getElementById('header-cuenta').innerHTML = `Cuenta del Paciente <span>CUARTO ${cuartoDisplay}</span>`;
         document.getElementById('resumen-cuenta').innerHTML = `
             <div style="display:flex; justify-content:space-between; align-items:flex-start; width:100%;">
@@ -653,14 +647,46 @@
                         Obs: ${data.alergias || 'Ninguna registrada'}
                     </div>
                 </div>
-                <button class="btn-action btn-primary" onclick="abrirModalEdicion()" style="padding:5px 10px; font-size:0.8em;">✏️ Editar</button>
+                ${btnEditarHTML}
             </div>
-            <div class="total-amount" style="margin-top:10px; align-self:flex-end;">$${(data.total || 0).toLocaleString('es-MX')}</div>
+            ${totalCuentaHTML}
         `;
     }
 
     // ==========================================
-    // EXPORTACIÓN A PDF (ESTILO FLEXOWASH)
+    // NUEVO: BORRAR UN CARGO INDIVIDUAL
+    // ==========================================
+    async function borrarCargoIndividual(txId, itemId, cantidad, tipoOperacion, precioVenta) {
+        if(!confirm("⚠️ ¿Deseas eliminar este cargo?\n\nSi es un insumo físico, el stock se devolverá automáticamente al inventario general.")) return;
+        
+        try {
+            const batch = writeBatch(db);
+            
+            // 1. Borrar de transacciones
+            batch.delete(doc(db, "transactions", txId));
+            
+            // 2. Restar dinero a la cuenta del paciente
+            const accRef = doc(db, "accounts", AppState.pacienteActualId);
+            batch.update(accRef, { total: increment(-precioVenta) });
+
+            // 3. Devolver Insumos si es físico o tablet/movil
+            if (tipoOperacion === 'cargo_directo' || tipoOperacion === 'cargo_directo_tablet' || tipoOperacion === 'cargo_directo_movil') {
+                batch.update(doc(db, "inventory_master", itemId), { stock: increment(cantidad) });
+            }
+
+            // (Opcional avanzado: devolver items de un Kit)
+
+            await batch.commit();
+            alert("Cargo cancelado con éxito.");
+        } catch (e) {
+            console.error(e);
+            alert("Error al intentar cancelar el cargo.");
+        }
+    }
+
+
+    // ==========================================
+    // EXPORTACIÓN A PDF Y LIQUIDACIÓN
     // ==========================================
     document.getElementById('btn-imprimir').addEventListener('click', abrirModalImpresion);
 
@@ -688,7 +714,7 @@
 
         try {
             if (!window.jspdf || !window.jspdf.jsPDF) {
-                throw new Error("La librería de PDF no cargó correctamente. Revisa tu conexión o desactiva tu bloqueador de anuncios.");
+                throw new Error("La librería de PDF no cargó correctamente.");
             }
 
             const data = AppState.pacienteActualData;
@@ -713,11 +739,8 @@
             const fechaEmision = new Date().toLocaleString('es-MX');
             let fechaIngreso = 'N/A';
             if (data.fecha_ingreso) {
-                if (typeof data.fecha_ingreso.toDate === 'function') {
-                    fechaIngreso = new Date(data.fecha_ingreso.toDate()).toLocaleString('es-MX'); 
-                } else if (data.fecha_ingreso instanceof Date) {
-                    fechaIngreso = data.fecha_ingreso.toLocaleString('es-MX'); 
-                }
+                if (typeof data.fecha_ingreso.toDate === 'function') fechaIngreso = new Date(data.fecha_ingreso.toDate()).toLocaleString('es-MX'); 
+                else if (data.fecha_ingreso instanceof Date) fechaIngreso = data.fecha_ingreso.toLocaleString('es-MX'); 
             }
 
             const { jsPDF } = window.jspdf;
@@ -771,21 +794,13 @@
             const splitObs = doc.splitTextToSize(observacionesStr, 230);
             doc.text(splitObs, 385, 100);
 
-            if (typeof doc.autoTable !== 'function') {
-                throw new Error("El plugin de tablas (AutoTable) no se cargó correctamente.");
-            }
-
             doc.autoTable({
                 startY: 135,
                 head: [['Fecha / Hora', 'Concepto', 'Cant.', 'Acreditado a', 'Subtotal']],
                 body: tableBody,
                 theme: 'striped',
                 headStyles: { fillColor: [44, 62, 80], textColor: 255 },
-                columnStyles: {
-                    0: { cellWidth: 100 },
-                    2: { cellWidth: 40, halign: 'center' },
-                    4: { halign: 'right' }
-                },
+                columnStyles: { 0: { cellWidth: 100 }, 2: { cellWidth: 40, halign: 'center' }, 4: { halign: 'right' } },
                 styles: { fontSize: 9 }
             });
 
@@ -801,12 +816,7 @@
 
             if (firmas.length > 0) {
                 finalY += 80; 
-                
-                if (finalY > doc.internal.pageSize.height - 40) {
-                    doc.addPage();
-                    finalY = 80;
-                }
-
+                if (finalY > doc.internal.pageSize.height - 40) { doc.addPage(); finalY = 80; }
                 doc.setDrawColor(0);
                 doc.setLineWidth(0.5);
                 doc.setFontSize(10);
@@ -814,13 +824,9 @@
 
                 firmas.forEach((firma, index) => {
                     let xPos;
-                    if (firmas.length === 1) {
-                        xPos = pageWidth / 2;
-                    } else if (firmas.length === 2) {
-                        xPos = (index === 0) ? pageWidth * 0.30 : pageWidth * 0.70;
-                    } else if (firmas.length === 3) {
-                        xPos = (index === 0) ? pageWidth * 0.20 : (index === 1) ? pageWidth * 0.50 : pageWidth * 0.80;
-                    }
+                    if (firmas.length === 1) xPos = pageWidth / 2;
+                    else if (firmas.length === 2) xPos = (index === 0) ? pageWidth * 0.30 : pageWidth * 0.70;
+                    else if (firmas.length === 3) xPos = (index === 0) ? pageWidth * 0.20 : (index === 1) ? pageWidth * 0.50 : pageWidth * 0.80;
 
                     doc.line(xPos - 70, finalY, xPos + 70, finalY);
                     doc.text(firma, xPos, finalY + 15, { align: 'center' });
@@ -831,12 +837,8 @@
             cerrarModalImpresion();
 
         } catch(error) {
-            console.error("Error al exportar PDF:", error);
-            alert(`Ocurrió un error al generar el PDF:\n${error.message}`);
-        } finally {
-            btn.innerText = "📄 Generar PDF";
-            btn.disabled = false;
-        }
+            console.error(error); alert(`Ocurrió un error al generar el PDF:\n${error.message}`);
+        } finally { btn.innerText = "📄 Generar PDF"; btn.disabled = false; }
     }
 
     document.getElementById('btn-liquidar').addEventListener('click', liquidarCuenta);
@@ -858,9 +860,7 @@
                     document.getElementById('resumen-cuenta').innerHTML = `<div>Seleccione un paciente de la lista.</div>`;
                     document.getElementById('lista-transacciones').innerHTML = '';
                     alert("Cuenta liquidada con éxito.");
-                } catch(e) { 
-                    console.error(e); 
-                }
+                } catch(e) { console.error(e); }
             }
         }
     }
@@ -872,21 +872,15 @@
         document.getElementById('delete-modal').style.display = 'flex';
     }
 
-    function cerrarModalBorrar() {
-        document.getElementById('delete-modal').style.display = 'none';
-    }
+    function cerrarModalBorrar() { document.getElementById('delete-modal').style.display = 'none'; }
 
     async function ejecutarBorrado() {
         const palabra = document.getElementById('delete-confirm-text').value;
-        if (palabra !== "BORRAR") {
-            alert("Debes escribir la palabra BORRAR en mayúsculas para confirmar.");
-            return;
-        }
+        if (palabra !== "BORRAR") return alert("Debes escribir la palabra BORRAR en mayúsculas para confirmar.");
 
         const accionInsumos = document.getElementById('delete-action-select').value;
         const btn = document.getElementById('btn-confirmar-borrar');
-        btn.disabled = true;
-        btn.innerText = "Eliminando...";
+        btn.disabled = true; btn.innerText = "Eliminando...";
 
         try {
             const batch = writeBatch(db);
@@ -906,14 +900,9 @@
                     } else if (accionInsumos === 'perdida') {
                         const lossRef = doc(collection(db, "inventory_losses"));
                         batch.set(lossRef, {
-                            itemId: tx.itemId,
-                            nombre: tx.nombre,
-                            cantidad: tx.cantidad,
-                            precio_perdida: tx.precio_venta,
-                            fecha: serverTimestamp(),
-                            usuario_registro: AppState.uidRecepcionista,
-                            motivo: "Eliminación de cuenta",
-                            cuenta_eliminada_id: accountId
+                            itemId: tx.itemId, nombre: tx.nombre, cantidad: tx.cantidad,
+                            precio_perdida: tx.precio_venta, fecha: serverTimestamp(),
+                            usuario_registro: AppState.uidRecepcionista, motivo: "Eliminación de cuenta", cuenta_eliminada_id: accountId
                         });
                     }
                 }
@@ -930,12 +919,7 @@
             cerrarModalBorrar();
             alert("🗑️ Cuenta eliminada correctamente.");
             
-        } catch(e) { 
-            console.error(e); 
-        } finally {
-            btn.disabled = false;
-            btn.innerText = "Eliminar Cuenta";
-        }
+        } catch(e) { console.error(e); } finally { btn.disabled = false; btn.innerText = "Eliminar Cuenta"; }
     }
 
     // ==========================================
@@ -944,14 +928,8 @@
     function toggleAmbulatorio() {
         const isAmbulatorio = document.getElementById('modal-ambulatorio').checked;
         const inputCuarto = document.getElementById('modal-cuarto');
-        if(isAmbulatorio) {
-            inputCuarto.value = '';
-            inputCuarto.disabled = true;
-            inputCuarto.placeholder = 'N/A (Ambulatorio)';
-        } else {
-            inputCuarto.disabled = false;
-            inputCuarto.placeholder = 'Número de Cuarto';
-        }
+        if(isAmbulatorio) { inputCuarto.value = ''; inputCuarto.disabled = true; inputCuarto.placeholder = 'N/A (Ambulatorio)'; } 
+        else { inputCuarto.disabled = false; inputCuarto.placeholder = 'Número de Cuarto'; }
     }
 
     function abrirModalNuevo() {
@@ -984,22 +962,17 @@
             const date = d.fecha_ingreso.toDate();
             date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
             document.getElementById('modal-fecha-ingreso').value = date.toISOString().slice(0,16);
-        } else {
-            document.getElementById('modal-fecha-ingreso').value = '';
-        }
+        } else { document.getElementById('modal-fecha-ingreso').value = ''; }
 
         toggleAmbulatorio();
         document.getElementById('patient-modal').style.display = 'flex';
     }
 
-    function cerrarModalPaciente() {
-        document.getElementById('patient-modal').style.display = 'none';
-    }
+    function cerrarModalPaciente() { document.getElementById('patient-modal').style.display = 'none'; }
 
     async function guardarPaciente() {
         const btn = document.getElementById('btn-guardar-paciente');
-        btn.disabled = true;
-        btn.innerText = "Guardando...";
+        btn.disabled = true; btn.innerText = "Guardando...";
 
         const esAmbulatorio = document.getElementById('modal-ambulatorio').checked;
         const cuartoVal = esAmbulatorio ? 'AMB' : document.getElementById('modal-cuarto').value;
@@ -1014,44 +987,29 @@
             alergias: document.getElementById('modal-alergias').value
         };
 
-        if (fechaInput) {
-            datos.fecha_ingreso = new Date(fechaInput);
-        } else if (modoModal === 'nuevo') {
-            datos.fecha_ingreso = serverTimestamp();
-        }
+        if (fechaInput) datos.fecha_ingreso = new Date(fechaInput);
+        else if (modoModal === 'nuevo') datos.fecha_ingreso = serverTimestamp();
 
         try {
             if(modoModal === 'nuevo') {
-                datos.estado = 'abierta';
-                datos.total = 0;
+                datos.estado = 'abierta'; datos.total = 0;
                 await addDoc(collection(db, "accounts"), datos);
             } else {
                 if(!AppState.pacienteActualId) return;
                 await updateDoc(doc(db, "accounts", AppState.pacienteActualId), datos);
-                
-                if (datos.fecha_ingreso instanceof Date) {
-                    datos.fecha_ingreso = { toDate: () => datos.fecha_ingreso }; 
-                }
+                if (datos.fecha_ingreso instanceof Date) datos.fecha_ingreso = { toDate: () => datos.fecha_ingreso }; 
                 AppState.pacienteActualData = { ...AppState.pacienteActualData, ...datos };
                 actualizarUIResumenCuenta(); 
             }
             cerrarModalPaciente();
-        } catch (error) {
-            console.error(error);
-        } finally {
-            btn.disabled = false;
-            btn.innerText = "💾 Guardar";
-        }
+        } catch (error) { console.error(error); } finally { btn.disabled = false; btn.innerText = "💾 Guardar"; }
     }
 
     // ==========================================
     // LÓGICA DE CARGOS Y CARRITO
     // ==========================================
     async function procesarServicioOKit(item) {
-        if (AppState.isModoInterno) {
-            alert("Los servicios médicos y honorarios no aplican para consumo interno.");
-            return;
-        }
+        if (AppState.isModoInterno) return alert("Los servicios médicos y honorarios no aplican para consumo interno.");
         if (!AppState.pacienteActualId) return alert("Selecciona un paciente primero.");
         
         const selector = document.getElementById('select-empleado');
@@ -1066,15 +1024,9 @@
             const refTx = doc(collection(db, "transactions"));
             
             batch.set(refTx, {
-                pacienteId: AppState.pacienteActualId,
-                itemId: item.id,
-                nombre: item.nombre,
-                cantidad: 1,
-                precio_venta: item.precio_venta,
-                usuario_registro: AppState.uidRecepcionista,
-                acreditado_a_id: ac_id,
-                acreditado_a_nombre: ac_nombre,
-                timestamp: serverTimestamp(),
+                pacienteId: AppState.pacienteActualId, itemId: item.id, nombre: item.nombre,
+                cantidad: 1, precio_venta: item.precio_venta, usuario_registro: AppState.uidRecepcionista,
+                acreditado_a_id: ac_id, acreditado_a_nombre: ac_nombre, timestamp: serverTimestamp(),
                 tipo_operacion: item.tipo === 'kit' ? 'cargo_kit' : 'cargo_servicio'
             });
 
@@ -1091,9 +1043,7 @@
             }
 
             await batch.commit();
-        } catch (error) { 
-            console.error(error);
-        }
+        } catch (error) { console.error(error); }
     }
 
     function agregarAlCarrito(item) {
@@ -1115,7 +1065,6 @@
         if (!AppState.carrito[cartKey]) return;
         const obj = AppState.carrito[cartKey];
         const nuevaCantidad = obj.cantidad + delta;
-
         if (nuevaCantidad <= 0) delete AppState.carrito[cartKey];
         else if (nuevaCantidad <= obj.item.stock) obj.cantidad = nuevaCantidad;
         else alert("No hay suficiente stock en inventario.");
@@ -1133,10 +1082,15 @@
         if(items.length === 0) { document.documentElement.style.setProperty('--cart-width', '0px'); return; }
         document.documentElement.style.setProperty('--cart-width', '300px');
 
+        const puedeVerPrecios = AppState.es_admin || AppState.permisos.ver_cuentas;
+
         items.forEach(key => {
             const cObj = AppState.carrito[key];
             const subtotal = cObj.cantidad * cObj.item.precio_venta;
             totalCash += subtotal;
+            
+            let htmlPrecio = puedeVerPrecios ? `<div class="cart-price">$${subtotal.toLocaleString('es-MX')}</div>` : '';
+
             lista.innerHTML += `
             <div class="cart-item">
                 <div class="cart-item-title">${cObj.item.nombre}</div>
@@ -1147,11 +1101,16 @@
                         <div class="qty-val">${cObj.cantidad}</div>
                         <button class="qty-btn" onclick="modificarCantidad('${key}', 1)">+</button>
                     </div>
-                    <div class="cart-price">$${subtotal.toLocaleString('es-MX')}</div>
+                    ${htmlPrecio}
                 </div>
             </div>`;
         });
-        txtTotal.innerText = `$${totalCash.toLocaleString('es-MX')}`;
+        
+        if (puedeVerPrecios) {
+            txtTotal.innerText = `$${totalCash.toLocaleString('es-MX')}`;
+        } else {
+            txtTotal.innerText = '🔒';
+        }
     }
 
     document.getElementById('btn-procesar-carrito').addEventListener('click', async () => {
@@ -1165,13 +1124,9 @@
                 const obj = AppState.carrito[key];
                 const lossRef = doc(collection(db, "inventory_losses"));
                 batch.set(lossRef, {
-                    itemId: obj.item.id,
-                    nombre: obj.item.nombre,
-                    cantidad: obj.cantidad,
-                    precio_perdida: obj.item.precio_venta, 
-                    fecha: serverTimestamp(),
-                    usuario_registro: AppState.uidRecepcionista,
-                    motivo: `Consumo Interno (POS Desktop - ${AppState.nombreRecepcionista})`
+                    itemId: obj.item.id, nombre: obj.item.nombre, cantidad: obj.cantidad,
+                    precio_perdida: obj.item.precio_venta, fecha: serverTimestamp(),
+                    usuario_registro: AppState.uidRecepcionista, motivo: `Consumo Interno (POS Desktop - ${AppState.nombreRecepcionista})`
                 });
                 batch.update(doc(db, "inventory_master", obj.item.id), { stock: increment(-obj.cantidad) });
             }
@@ -1202,10 +1157,7 @@
             if(AppState.isModoInterno) alert("✅ Inventario descontado correctamente como Uso Interno/Merma.");
         } 
         catch (error) { alert("Error al procesar lote."); } 
-        finally { 
-            btn.disabled = false; 
-            btn.innerText = AppState.isModoInterno ? "Confirmar Merma" : "Confirmar Cargos"; 
-        }
+        finally { btn.disabled = false; btn.innerText = AppState.isModoInterno ? "Confirmar Merma" : "Confirmar Cargos"; }
     });
 
     function iniciarReloj() { setInterval(() => { document.getElementById('clock').innerText = new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }); }, 1000); }
