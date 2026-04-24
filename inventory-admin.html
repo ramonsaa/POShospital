@@ -217,7 +217,7 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-    import { getFirestore, collection, onSnapshot, doc, addDoc, updateDoc, deleteDoc, writeBatch, increment, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+    import { getFirestore, collection, onSnapshot, doc, getDoc, addDoc, updateDoc, deleteDoc, writeBatch, increment, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
     const firebaseConfig = {
@@ -236,11 +236,30 @@
     let uidAdmin = null;
     let correoAdmin = "Sistema";
 
-    onAuthStateChanged(auth, (user) => {
+    // ==========================================
+    // GATEKEEPER (RBAC) - Solo Entran Administradores de Inventario
+    // ==========================================
+    onAuthStateChanged(auth, async (user) => {
         if (user) {
-            uidAdmin = user.uid;
-            correoAdmin = user.email;
-            document.getElementById('user-display').innerText = user.email;
+            const docRef = doc(db, "employees", user.uid);
+            const docSnap = await getDoc(docRef);
+            
+            if (docSnap.exists()) {
+                const emp = docSnap.data();
+                const esAdmin = emp.es_admin === true;
+                const puedeModificar = emp.permisos && emp.permisos.modificar_inventario === true;
+
+                if (esAdmin || puedeModificar) {
+                    uidAdmin = user.uid;
+                    correoAdmin = user.email;
+                    document.getElementById('user-display').innerText = emp.nombre;
+                } else {
+                    alert("⛔ Acceso Denegado: No tienes los permisos necesarios para modificar el catálogo e inventario.");
+                    window.location.href = "index.html"; 
+                }
+            } else {
+                window.location.href = "login.html";
+            }
         } else {
             window.location.href = "login.html";
         }
@@ -264,8 +283,8 @@
     window.quitarDeKit = quitarDeKit;
     window.guardarKitEnFirebase = guardarKitEnFirebase;
     window.borrarServicio = borrarServicio;
-    window.abrirEditarPorID = abrirEditarPorID; // NUEVA
-    window.abrirStockPorID = abrirStockPorID; // NUEVA
+    window.abrirEditarPorID = abrirEditarPorID; 
+    window.abrirStockPorID = abrirStockPorID; 
     window.publicarEnMenu = publicarEnMenu;
     window.quitarDelMenu = quitarDelMenu;
 
@@ -323,7 +342,6 @@
                 }
             }
 
-            // CORRECCIÓN: Pasar solo el ID en lugar del objeto completo
             tr.innerHTML = `
                 <td>
                     <strong style="font-size: 1.05em;">${item.nombre}</strong><br>
