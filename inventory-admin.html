@@ -54,6 +54,9 @@
         optgroup { font-weight: bold; color: var(--primary-blue); background: #f4f7f6;}
         
         #zona-perdida { background: #fdedec; padding: 10px; border: 1px solid #fadbd8; border-radius: 4px; display: none; }
+        
+        .search-bar-container { padding: 10px; background: #eef2f5; border-bottom: 1px solid var(--border); display: flex; }
+        .search-bar-container input { width: 100%; box-sizing: border-box; padding: 8px 12px; border: 1px solid #bdc3c7; border-radius: 4px; font-size: 0.9em; }
     </style>
 </head>
 <body>
@@ -85,6 +88,11 @@
             <input type="number" id="inv-minimo" placeholder="Stock Mínimo" style="width: 100px;" title="Avisar cuando llegue a esta cantidad">
             <button class="btn-green" id="btn-add-inv">➕ Añadir</button>
         </div>
+        
+        <div class="search-bar-container">
+            <input type="text" id="buscador-inventario" placeholder="🔍 Buscar por nombre, categoría o proveedor...">
+        </div>
+
         <div class="table-container">
             <table>
                 <thead>
@@ -333,8 +341,16 @@
         if (modalProv.style.display === 'flex' && e.key === 'Escape') cerrarProveedoresModal();
     });
 
+    // Lóxica do Buscador en tempo real
+    document.getElementById('buscador-inventario').addEventListener('input', (e) => {
+        const term = e.target.value.toLowerCase();
+        document.querySelectorAll('#tabla-inventario tr').forEach(row => {
+            row.style.display = row.innerText.toLowerCase().includes(term) ? '' : 'none';
+        });
+    });
 
-    // --- GESTIÓN DE PROVEEDORES (NUEVO) ---
+
+    // --- GESTIÓN DE PROVEEDORES ---
     onSnapshot(collection(db, "suppliers"), (snap) => {
         const selectInv = document.getElementById('inv-proveedor');
         const selectEdit = document.getElementById('edit-proveedor');
@@ -388,16 +404,20 @@
     }
 
 
-    // --- CARGA DE ALMACÉN FÍSICO ---
+    // --- CARGA DE ALMACÉN FÍSICO (CON ORDE ALFABÉTICA) ---
     onSnapshot(collection(db, "inventory_master"), (snap) => {
         const tbody = document.getElementById('tabla-inventario');
         tbody.innerHTML = ''; 
         inventarioFisicoData = [];
 
         snap.forEach(docSnap => {
-            const item = { id: docSnap.id, ...docSnap.data() };
-            inventarioFisicoData.push(item);
-            
+            inventarioFisicoData.push({ id: docSnap.id, ...docSnap.data() });
+        });
+
+        // 🌟 ORDENACIÓN ALFABÉTICA (A-Z) polo nome do artigo
+        inventarioFisicoData.sort((a, b) => a.nombre.localeCompare(b.nombre));
+
+        inventarioFisicoData.forEach(item => {
             const tr = document.createElement('tr');
             
             const estadoBadge = item.publicado_en_pos 
@@ -449,12 +469,20 @@
         });
 
         actualizarSelectConstructor(); 
+        
+        // Volver a aplicar o filtro do buscador se hai texto escrito
+        const term = document.getElementById('buscador-inventario').value.toLowerCase();
+        if(term) {
+            document.querySelectorAll('#tabla-inventario tr').forEach(row => {
+                row.style.display = row.innerText.toLowerCase().includes(term) ? '' : 'none';
+            });
+        }
     });
 
     document.getElementById('btn-add-inv').onclick = async () => {
         const nombre = document.getElementById('inv-nombre').value.trim();
         const categoria = document.getElementById('inv-categoria').value;
-        const proveedor = document.getElementById('inv-proveedor').value; // Ahora viene del select
+        const proveedor = document.getElementById('inv-proveedor').value; 
         const costo = parseFloat(document.getElementById('inv-costo').value) || 0;
         const minimo = parseInt(document.getElementById('inv-minimo').value) || 0;
         
@@ -568,7 +596,7 @@
         const id = document.getElementById('edit-id').value;
         const nombre = document.getElementById('edit-nombre').value.trim();
         const cat = document.getElementById('edit-categoria').value;
-        const prov = document.getElementById('edit-proveedor').value; // Ahora viene del select
+        const prov = document.getElementById('edit-proveedor').value; 
         const costo = parseFloat(document.getElementById('edit-costo').value) || 0;
         const pVenta = parseFloat(document.getElementById('edit-precio-venta').value) || 0;
         const minimo = parseInt(document.getElementById('edit-minimo').value) || 0;
