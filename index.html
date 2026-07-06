@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hospital POS - Panel de Control</title>
+    <title>Médica San Francisco - Panel de Control</title>
     
     <!-- Librerías para exportar a PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -99,7 +99,7 @@
 </div>
 
 <header>
-    <div><strong>HOSPITAL POS</strong> | Panel de Recepción</div>
+    <div><strong>MÉDICA SAN FRANCISCO</strong> | Panel de Recepción</div>
     <div class="header-actions">
         <!-- Ocultaremos el link de inventario si no es admin/no tiene permiso -->
         <a href="inventory-admin.html" id="link-inventario" style="color: white; font-size: 0.85em; text-decoration: none; border: 1px solid white; padding: 5px; border-radius: 4px;">📦 Ir a Inventario</a>
@@ -267,7 +267,7 @@
         </select>
 
         <p style="font-size: 0.9em; color: var(--secondary-blue); margin-bottom: 10px;">Selecciona las firmas al calce:</p>
-        <label class="checkbox-label-print"><input type="checkbox" id="chk-sig-hospital"> Firma del Hospital (Representante)</label>
+        <label class="checkbox-label-print"><input type="checkbox" id="chk-sig-hospital"> Firma de la Clínica (Representante)</label>
         <label class="checkbox-label-print"><input type="checkbox" id="chk-sig-paciente"> Firma del Paciente (<span id="print-paciente-name"></span>)</label>
         <label class="checkbox-label-print"><input type="checkbox" id="chk-sig-familiar"> Firma de Familiar o Responsable</label>
         
@@ -550,7 +550,7 @@
         document.getElementById('header-cuenta').innerHTML = `Modo Activo <span style="color:var(--warning-orange); font-weight:bold;">USO INTERNO / MERMA</span>`;
         document.getElementById('resumen-cuenta').innerHTML = `
             <div style="font-size: 1.05em; color: var(--text-dark);">
-                <strong>⚠️ Extracción de Insumos al Hospital</strong><br>
+                <strong>⚠️ Extracción de Insumos a la Clínica</strong><br>
                 <span style="font-size: 0.85em; color: gray;">Los insumos procesados aquí se descontarán del stock físico y se enviarán al reporte de Pérdidas/Mermas de la administración. No se cobrarán a ningún paciente.</span>
             </div>`;
         
@@ -759,7 +759,8 @@
 
             doc.setFontSize(18);
             doc.setFont("helvetica", "bold");
-            doc.text("HOSPITAL POS", 40, 40);
+            // 🌟 CAMBIO AQUÍ: Nombre de la clínica en el PDF
+            doc.text("MÉDICA SAN FRANCISCO", 40, 40);
             
             doc.setFontSize(10);
             doc.setFont("helvetica", "normal");
@@ -799,7 +800,6 @@
             doc.setFont("helvetica", "normal");
             doc.text(data.estado ? data.estado.toUpperCase() : 'DESCONOCIDO', 350, 85);
 
-            // AGREGAR FOLIO AL PDF SI EXISTE
             if(data.folio) {
                 doc.setFont("helvetica", "bold");
                 doc.text("Folio:", 300, 100);
@@ -807,7 +807,6 @@
                 doc.text(data.folio, 350, 100);
             }
 
-            // Mover observaciones un poco más abajo si el folio existe para que no se encimen
             const obsY = data.folio ? 115 : 100;
             doc.setFont("helvetica", "bold");
             doc.text("Observaciones:", 300, obsY);
@@ -831,7 +830,7 @@
             doc.text(`GRAN TOTAL: $${(data.total || 0).toLocaleString('es-MX')} MXN`, pageWidth - 40, finalY, { align: 'right' });
 
             let firmas = [];
-            if(document.getElementById('chk-sig-hospital').checked) firmas.push("Hospital (Representante)");
+            if(document.getElementById('chk-sig-hospital').checked) firmas.push("Clínica (Representante)");
             if(document.getElementById('chk-sig-paciente').checked) firmas.push(`Paciente: ${data.es_anonimo ? 'Anónimo' : data.paciente_nombre}`);
             if(document.getElementById('chk-sig-familiar').checked) firmas.push("Familiar / Responsable");
 
@@ -959,7 +958,7 @@
         document.getElementById('modal-title').innerHTML = '➕ Nuevo Paciente';
         document.getElementById('modal-nombre').value = '';
         document.getElementById('modal-cuarto').value = '';
-        document.getElementById('modal-folio').value = ''; // Reset folio
+        document.getElementById('modal-folio').value = ''; 
         document.getElementById('modal-ambulatorio').checked = false;
         document.getElementById('modal-anonimo').checked = false;
         document.getElementById('modal-nivel').value = 'baja';
@@ -976,7 +975,7 @@
         document.getElementById('modal-title').innerHTML = '✏️ Editar Paciente';
         document.getElementById('modal-nombre').value = d.paciente_nombre || '';
         document.getElementById('modal-cuarto').value = d.cuarto_id || '';
-        document.getElementById('modal-folio').value = d.folio || ''; // Cargar folio
+        document.getElementById('modal-folio').value = d.folio || ''; 
         document.getElementById('modal-ambulatorio').checked = !!d.es_ambulatorio;
         document.getElementById('modal-anonimo').checked = !!d.es_anonimo;
         document.getElementById('modal-nivel').value = d.nivel_observacion || 'baja';
@@ -1005,7 +1004,7 @@
         const datos = {
             paciente_nombre: document.getElementById('modal-nombre').value.trim(),
             cuarto_id: cuartoVal,
-            folio: document.getElementById('modal-folio').value.trim(), // Guardar folio
+            folio: document.getElementById('modal-folio').value.trim(), 
             es_ambulatorio: esAmbulatorio,
             es_anonimo: document.getElementById('modal-anonimo').checked,
             nivel_observacion: document.getElementById('modal-nivel').value,
