@@ -3,6 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <title>Hospital POS - Gestor de Inventario y Catálogo</title>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+
     <style>
         :root { --primary-blue: #2c3e50; --accent-green: #27ae60; --bg: #f4f7f6; --danger: #c0392b; --border: #dcdde1; --warning: #f39c12; }
         body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--bg); display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
@@ -73,7 +77,10 @@
     <section>
         <div class="panel-header">
             📦 Almacén Físico (Master)
-            <button class="btn-dark" style="font-size: 0.8em;" onclick="abrirProveedoresModal()">🚚 Proveedores</button>
+            <div style="display: flex; gap: 5px;">
+                <button class="btn-blue" style="font-size: 0.8em;" onclick="imprimirInventario()">🖨️ Imprimir</button>
+                <button class="btn-dark" style="font-size: 0.8em;" onclick="abrirProveedoresModal()">🚚 Proveedores</button>
+            </div>
         </div>
         <div class="toolbar">
             <input type="text" id="inv-nombre" placeholder="Nombre del artículo..." style="flex:2; min-width: 150px;">
@@ -147,7 +154,7 @@
         <div style="border: 1px solid var(--border); height: 200px; overflow-y: auto; background: #fdfdfd;">
             <table style="width: 100%; border-collapse: collapse; font-size: 0.9em;">
                 <tbody id="lista-proveedores-modal">
-                    </tbody>
+                </tbody>
             </table>
         </div>
         
@@ -204,7 +211,7 @@
             <div class="form-group" style="flex:1;">
                 <label>Proveedor</label>
                 <select id="edit-proveedor" style="width: 100%; box-sizing: border-box;">
-                    </select>
+                </select>
             </div>
         </div>
 
@@ -324,6 +331,9 @@
     window.cerrarProveedoresModal = cerrarProveedoresModal;
     window.agregarProveedor = agregarProveedor;
     window.borrarProveedor = borrarProveedor;
+    
+    // NUEVA: Exportación PDF
+    window.imprimirInventario = imprimirInventario;
 
     // Atajos
     document.addEventListener('keydown', (e) => {
@@ -341,7 +351,6 @@
         if (modalProv.style.display === 'flex' && e.key === 'Escape') cerrarProveedoresModal();
     });
 
-    // Lóxica do Buscador en tempo real
     document.getElementById('buscador-inventario').addEventListener('input', (e) => {
         const term = e.target.value.toLowerCase();
         document.querySelectorAll('#tabla-inventario tr').forEach(row => {
@@ -349,6 +358,82 @@
         });
     });
 
+    // --- IMPRESIÓN DEL INVENTARIO ACTUAL ---
+    async function imprimirInventario() {
+        if (!window.jspdf || !window.jspdf.jsPDF) {
+            return alert("La librería PDF no cargó correctamente. Verifique su conexión.");
+        }
+
+        const btn = document.querySelector('button[onclick="imprimirInventario()"]');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = "⏳ Generando...";
+        btn.disabled = true;
+
+        try {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('p', 'pt', 'letter');
+            const pageWidth = doc.internal.pageSize.width;
+
+            // Título
+            doc.setFontSize(16);
+            doc.setFont("helvetica", "bold");
+            doc.text("HOSPITAL POS - REPORTE DE INVENTARIO FÍSICO", 40, 40);
+            
+            // Subtítulo / Detalles
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "normal");
+            doc.text(`Fecha de Emisión: ${new Date().toLocaleString('es-MX')}`, 40, 55);
+            doc.text(`Total de Artículos: ${inventarioFisicoData.length}`, 40, 70);
+
+            doc.setDrawColor(44, 62, 80);
+            doc.setLineWidth(1);
+            doc.line(40, 80, pageWidth - 40, 80);
+
+            // Preparación de filas para la tabla (Se imprime todo el arreglo base)
+            const tableBody = inventarioFisicoData.map(item => [
+                item.categoria === 'medicamento' ? 'MED' : 'INS',
+                item.nombre,
+                item.proveedor || 'N/A',
+                item.stock.toString(),
+                item.stock_minimo ? item.stock_minimo.toString() : '0',
+                `$${(item.precio_compra || 0).toLocaleString('es-MX')}`,
+                `$${(item.precio_venta || 0).toLocaleString('es-MX')}`
+            ]);
+
+            // Generación de la tabla
+            doc.autoTable({
+                startY: 90,
+                head: [['Tipo', 'Artículo', 'Proveedor', 'Stock', 'Mínimo', 'Costo Comp.', 'Precio Venta']],
+                body: tableBody,
+                theme: 'striped',
+                headStyles: { fillColor: [44, 62, 80], textColor: 255 },
+                columnStyles: { 
+                    0: { cellWidth: 40 },
+                    3: { halign: 'center', fontStyle: 'bold' }, 
+                    4: { halign: 'center' },
+                    5: { halign: 'right' },
+                    6: { halign: 'right' }
+                },
+                styles: { fontSize: 8 }
+            });
+
+            // Pie de firma opcional
+            let finalY = doc.lastAutoTable.finalY + 40;
+            if (finalY > doc.internal.pageSize.height - 40) { doc.addPage(); finalY = 40; }
+            doc.setDrawColor(0);
+            doc.setLineWidth(0.5);
+            doc.line(pageWidth / 2 - 70, finalY, pageWidth / 2 + 70, finalY);
+            doc.text("Firma de Responsable / Auditor", pageWidth / 2, finalY + 15, { align: 'center' });
+
+            doc.save(`Inventario_Hospital_${new Date().toISOString().split('T')[0]}.pdf`);
+        } catch (error) {
+            console.error(error);
+            alert("Ocurrió un error al generar el PDF del inventario.");
+        } finally {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+    }
 
     // --- GESTIÓN DE PROVEEDORES ---
     onSnapshot(collection(db, "suppliers"), (snap) => {
@@ -404,7 +489,7 @@
     }
 
 
-    // --- CARGA DE ALMACÉN FÍSICO (CON ORDE ALFABÉTICA) ---
+    // --- CARGA DE ALMACÉN FÍSICO (CON ORDEN ALFABÉTICA) ---
     onSnapshot(collection(db, "inventory_master"), (snap) => {
         const tbody = document.getElementById('tabla-inventario');
         tbody.innerHTML = ''; 
@@ -414,7 +499,6 @@
             inventarioFisicoData.push({ id: docSnap.id, ...docSnap.data() });
         });
 
-        // 🌟 ORDENACIÓN ALFABÉTICA (A-Z) polo nome do artigo
         inventarioFisicoData.sort((a, b) => a.nombre.localeCompare(b.nombre));
 
         inventarioFisicoData.forEach(item => {
@@ -470,7 +554,6 @@
 
         actualizarSelectConstructor(); 
         
-        // Volver a aplicar o filtro do buscador se hai texto escrito
         const term = document.getElementById('buscador-inventario').value.toLowerCase();
         if(term) {
             document.querySelectorAll('#tabla-inventario tr').forEach(row => {
