@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Hospital POS - Gestor de Inventario y Catálogo</title>
+    <title>Médica San Francisco - Gestor de Inventario y Catálogo</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
@@ -66,7 +66,7 @@
 <body>
 
 <header>
-    <div><strong>HOSPITAL POS</strong> | Control de Inventario y Catálogo</div>
+    <div><strong>MÉDICA SAN FRANCISCO</strong> | Control de Inventario y Catálogo</div>
     <div style="display: flex; gap: 15px; align-items: center;">
         <span id="user-display" class="user-info">Verificando sesión...</span>
         <a href="index.html" style="color: white; text-decoration: none; border: 1px solid white; padding: 5px 10px; border-radius: 4px; font-size: 0.85em;">← Volver a Recepción</a>
@@ -332,7 +332,7 @@
     window.agregarProveedor = agregarProveedor;
     window.borrarProveedor = borrarProveedor;
     
-    // NUEVA: Exportación PDF
+    // NUEVA: Exportación PDF Separado y Alfabético
     window.imprimirInventario = imprimirInventario;
 
     // Atajos
@@ -374,12 +374,10 @@
             const doc = new jsPDF('p', 'pt', 'letter');
             const pageWidth = doc.internal.pageSize.width;
 
-            // Título
             doc.setFontSize(16);
             doc.setFont("helvetica", "bold");
-            doc.text("HOSPITAL POS - REPORTE DE INVENTARIO FÍSICO", 40, 40);
+            doc.text("MÉDICA SAN FRANCISCO - REPORTE DE INVENTARIO FÍSICO", 40, 40);
             
-            // Subtítulo / Detalles
             doc.setFontSize(10);
             doc.setFont("helvetica", "normal");
             doc.text(`Fecha de Emisión: ${new Date().toLocaleString('es-MX')}`, 40, 55);
@@ -389,43 +387,87 @@
             doc.setLineWidth(1);
             doc.line(40, 80, pageWidth - 40, 80);
 
-            // Preparación de filas para la tabla (Se imprime todo el arreglo base)
-            const tableBody = inventarioFisicoData.map(item => [
-                item.categoria === 'medicamento' ? 'MED' : 'INS',
-                item.nombre,
-                item.proveedor || 'N/A',
-                item.stock.toString(),
-                item.stock_minimo ? item.stock_minimo.toString() : '0',
-                `$${(item.precio_compra || 0).toLocaleString('es-MX')}`,
-                `$${(item.precio_venta || 0).toLocaleString('es-MX')}`
-            ]);
+            // Separar y Ordenar Alfabéticamente
+            const medicamentos = inventarioFisicoData.filter(i => i.categoria === 'medicamento')
+                                                     .sort((a,b) => a.nombre.localeCompare(b.nombre));
+            
+            const insumos = inventarioFisicoData.filter(i => i.categoria === 'insumo')
+                                                .sort((a,b) => a.nombre.localeCompare(b.nombre));
 
-            // Generación de la tabla
-            doc.autoTable({
-                startY: 90,
-                head: [['Tipo', 'Artículo', 'Proveedor', 'Stock', 'Mínimo', 'Costo Comp.', 'Precio Venta']],
-                body: tableBody,
-                theme: 'striped',
-                headStyles: { fillColor: [44, 62, 80], textColor: 255 },
-                columnStyles: { 
-                    0: { cellWidth: 40 },
-                    3: { halign: 'center', fontStyle: 'bold' }, 
-                    4: { halign: 'center' },
-                    5: { halign: 'right' },
-                    6: { halign: 'right' }
-                },
-                styles: { fontSize: 8 }
-            });
+            let currentY = 100;
+
+            // 1. Tabla de Medicamentos
+            if(medicamentos.length > 0) {
+                doc.setFontSize(12);
+                doc.setFont("helvetica", "bold");
+                doc.text("MEDICAMENTOS", 40, currentY);
+                currentY += 10;
+                
+                doc.autoTable({
+                    startY: currentY,
+                    head: [['Artículo', 'Proveedor', 'Stock', 'Mínimo', 'Costo Comp.', 'Precio Venta']],
+                    body: medicamentos.map(item => [
+                        item.nombre,
+                        item.proveedor || 'N/A',
+                        item.stock.toString(),
+                        item.stock_minimo ? item.stock_minimo.toString() : '0',
+                        `$${(item.precio_compra || 0).toLocaleString('es-MX')}`,
+                        `$${(item.precio_venta || 0).toLocaleString('es-MX')}`
+                    ]),
+                    theme: 'striped',
+                    headStyles: { fillColor: [44, 62, 80], textColor: 255 },
+                    columnStyles: { 
+                        2: { halign: 'center', fontStyle: 'bold' }, 
+                        3: { halign: 'center' },
+                        4: { halign: 'right' },
+                        5: { halign: 'right' }
+                    },
+                    styles: { fontSize: 8 }
+                });
+                currentY = doc.lastAutoTable.finalY + 30;
+            }
+
+            // 2. Tabla de Insumos Físicos
+            if(insumos.length > 0) {
+                if (currentY > doc.internal.pageSize.height - 100) { doc.addPage(); currentY = 40; }
+                
+                doc.setFontSize(12);
+                doc.setFont("helvetica", "bold");
+                doc.text("INSUMOS FÍSICOS", 40, currentY);
+                currentY += 10;
+                
+                doc.autoTable({
+                    startY: currentY,
+                    head: [['Artículo', 'Proveedor', 'Stock', 'Mínimo', 'Costo Comp.', 'Precio Venta']],
+                    body: insumos.map(item => [
+                        item.nombre,
+                        item.proveedor || 'N/A',
+                        item.stock.toString(),
+                        item.stock_minimo ? item.stock_minimo.toString() : '0',
+                        `$${(item.precio_compra || 0).toLocaleString('es-MX')}`,
+                        `$${(item.precio_venta || 0).toLocaleString('es-MX')}`
+                    ]),
+                    theme: 'striped',
+                    headStyles: { fillColor: [44, 62, 80], textColor: 255 },
+                    columnStyles: { 
+                        2: { halign: 'center', fontStyle: 'bold' }, 
+                        3: { halign: 'center' },
+                        4: { halign: 'right' },
+                        5: { halign: 'right' }
+                    },
+                    styles: { fontSize: 8 }
+                });
+            }
 
             // Pie de firma opcional
-            let finalY = doc.lastAutoTable.finalY + 40;
+            let finalY = doc.lastAutoTable ? doc.lastAutoTable.finalY + 40 : currentY + 40;
             if (finalY > doc.internal.pageSize.height - 40) { doc.addPage(); finalY = 40; }
             doc.setDrawColor(0);
             doc.setLineWidth(0.5);
             doc.line(pageWidth / 2 - 70, finalY, pageWidth / 2 + 70, finalY);
             doc.text("Firma de Responsable / Auditor", pageWidth / 2, finalY + 15, { align: 'center' });
 
-            doc.save(`Inventario_Hospital_${new Date().toISOString().split('T')[0]}.pdf`);
+            doc.save(`Inventario_Medica_San_Francisco_${new Date().toISOString().split('T')[0]}.pdf`);
         } catch (error) {
             console.error(error);
             alert("Ocurrió un error al generar el PDF del inventario.");
@@ -489,7 +531,7 @@
     }
 
 
-    // --- CARGA DE ALMACÉN FÍSICO (CON ORDEN ALFABÉTICA) ---
+    // --- CARGA DE ALMACÉN FÍSICO ---
     onSnapshot(collection(db, "inventory_master"), (snap) => {
         const tbody = document.getElementById('tabla-inventario');
         tbody.innerHTML = ''; 
