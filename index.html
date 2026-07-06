@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hospital POS - Panel de Control</title>
     
+    <!-- Librerías para exportar a PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 
@@ -82,6 +83,8 @@
         #unlock-pin:focus { border: 3px solid var(--accent-green); }
         .checkbox-label-print { display: flex; align-items: center; gap: 10px; font-weight: bold; color: var(--secondary-blue); cursor: pointer; background: #f8f9fa; padding: 10px; border-radius: 5px; border: 1px solid var(--border-color); }
         .checkbox-label-print input { width: 20px; height: 20px; }
+        
+        .folio-badge { background: #34495e; color: white; padding: 2px 6px; border-radius: 3px; font-size: 0.8em; margin-left: 10px; }
     </style>
 </head>
 <body>
@@ -98,6 +101,7 @@
 <header>
     <div><strong>HOSPITAL POS</strong> | Panel de Recepción</div>
     <div class="header-actions">
+        <!-- Ocultaremos el link de inventario si no es admin/no tiene permiso -->
         <a href="inventory-admin.html" id="link-inventario" style="color: white; font-size: 0.85em; text-decoration: none; border: 1px solid white; padding: 5px; border-radius: 4px;">📦 Ir a Inventario</a>
         <span class="user-info"> | <span id="user-display">Verificando sesión...</span></span>
         <span class="user-info"> | <span id="clock">--:--</span></span>
@@ -127,11 +131,11 @@
                 <button class="btn-action btn-warning" onclick="activarModoInterno()" style="flex: 1; justify-content: center;" title="Extraer insumos sin cuenta de paciente">📋 Uso Interno</button>
                 <button class="btn-action btn-success" id="btn-nuevo-paciente" onclick="abrirModalNuevo()" style="flex: 1; justify-content: center;">➕ Nuevo Paciente</button>
             </div>
-            <input type="text" id="search-patients" placeholder="Buscar cuarto o paciente... [F1]">
+            <input type="text" id="search-patients" placeholder="Buscar cuarto, paciente o folio... [F1]">
         </div>
         <div class="data-list">
             <table>
-                <thead><tr><th>Cuarto</th><th>Paciente</th></tr></thead>
+                <thead><tr><th>Cuarto / Folio</th><th>Paciente</th></tr></thead>
                 <tbody id="lista-pacientes">
                     <tr><td colspan="2" style="text-align: center; color: gray;">Cargando pacientes...</td></tr>
                 </tbody>
@@ -153,6 +157,7 @@
                             <th style="text-align:center;">Cant.</th>
                             <th id="th-subtotal" style="text-align:right;">Subtotal</th>
                             <th>Responsable</th>
+                            <!-- Columna para la X de borrar -->
                             <th id="th-borrar-cargo" style="width: 30px;"></th>
                         </tr>
                     </thead>
@@ -199,16 +204,18 @@
     </section>
 </main>
 
+<!-- MODAL PACIENTES -->
 <div id="patient-modal" class="modal-overlay">
     <div class="modal-content">
         <h3 id="modal-title" style="margin-top:0; color:var(--primary-blue);">✏️ Editar Paciente</h3>
         <input type="text" id="modal-nombre" placeholder="Nombre completo">
         <div style="display:flex; gap:10px; align-items:center;">
             <input type="text" id="modal-cuarto" placeholder="Número de Cuarto" style="flex:1;">
-            <label style="display:flex; align-items:center; gap:5px; font-weight:bold; font-size:0.85em; color:var(--secondary-blue);">
-                <input type="checkbox" id="modal-ambulatorio" onchange="toggleAmbulatorio()"> Ambulatorio
-            </label>
+            <input type="text" id="modal-folio" placeholder="Folio / Recibo (Opcional)" style="flex:1;">
         </div>
+        <label style="display:flex; align-items:center; gap:5px; font-weight:bold; font-size:0.85em; color:var(--secondary-blue); margin-top: -5px;">
+            <input type="checkbox" id="modal-ambulatorio" onchange="toggleAmbulatorio()"> Paciente Ambulatorio / Consulta
+        </label>
         <div style="margin-top: 5px;">
             <label style="font-size: 0.8em; font-weight: bold; color: var(--secondary-blue);">Fecha y Hora de Ingreso</label>
             <input type="datetime-local" id="modal-fecha-ingreso">
@@ -229,6 +236,7 @@
     </div>
 </div>
 
+<!-- MODAL BORRAR PACIENTE -->
 <div id="delete-modal" class="modal-overlay">
     <div class="modal-content">
         <h3 style="margin-top:0; color:var(--danger-red);">⚠️ Confirmar Eliminación</h3>
@@ -247,13 +255,22 @@
     </div>
 </div>
 
+<!-- MODAL EXPORTACIÓN PDF -->
 <div id="print-modal" class="modal-overlay">
     <div class="modal-content">
-        <h3 style="margin-top:0; color:var(--primary-blue);">🖨️ Exportar a PDF</h3>
-        <p style="font-size: 0.9em; color: var(--secondary-blue);">Selecciona las firmas al calce:</p>
+        <h3 style="margin-top:0; color:var(--primary-blue);">🖨️ Opciones de Impresión</h3>
+        
+        <label style="font-weight:bold; color:var(--secondary-blue); margin-bottom:5px;">Tipo de Documento:</label>
+        <select id="print-type" style="margin-bottom: 15px; padding: 10px; background: #fdfdfd;">
+            <option value="paciente">🧾 Ticket Paciente (Sin desglose de precios)</option>
+            <option value="interno">📄 Reporte Interno (Desglose completo y operadores)</option>
+        </select>
+
+        <p style="font-size: 0.9em; color: var(--secondary-blue); margin-bottom: 10px;">Selecciona las firmas al calce:</p>
         <label class="checkbox-label-print"><input type="checkbox" id="chk-sig-hospital"> Firma del Hospital (Representante)</label>
         <label class="checkbox-label-print"><input type="checkbox" id="chk-sig-paciente"> Firma del Paciente (<span id="print-paciente-name"></span>)</label>
         <label class="checkbox-label-print"><input type="checkbox" id="chk-sig-familiar"> Firma de Familiar o Responsable</label>
+        
         <div style="display:flex; gap:10px; margin-top:20px;">
             <button class="btn-action" style="flex:1; background: gray; color: white; justify-content: center;" onclick="cerrarModalImpresion()">Cancelar</button>
             <button class="btn-action btn-primary" style="flex:1; justify-content: center;" id="btn-generar-pdf" onclick="ejecutarExportacionPDF()">📄 Generar PDF</button>
@@ -295,7 +312,7 @@
     window.cerrarModalImpresion = cerrarModalImpresion;
     window.ejecutarExportacionPDF = ejecutarExportacionPDF;
     window.activarModoInterno = activarModoInterno; 
-    window.borrarCargoIndividual = borrarCargoIndividual; // NUEVO
+    window.borrarCargoIndividual = borrarCargoIndividual;
 
     let modoModal = 'nuevo';
 
@@ -350,14 +367,12 @@
                 if (docSnap.exists()) {
                     const empleado = docSnap.data();
                     
-                    // CARGAMOS TODOS LOS PERMISOS A LA MEMORIA RAM
                     AppState.uidRecepcionista = user.uid;
                     AppState.nombreRecepcionista = empleado.nombre;
                     AppState.pinRecepcionista = empleado.pin;
                     AppState.es_admin = empleado.es_admin === true;
                     AppState.permisos = empleado.permisos || {};
                     
-                    // Ya no bloqueamos a los que no son admin, los dejamos pasar pero censurados
                     document.getElementById('user-display').innerText = `👤 ${empleado.nombre}`;
                     iniciarReloj();
                     configurarPantallaCompleta();
@@ -365,7 +380,6 @@
                     iniciarSistema();
                     resetearInactividad(); 
                     
-                    // 🌟 MAGIA RBAC: Adaptar Interfaz
                     aplicarRestriccionesInterfaz();
 
                 } else {
@@ -398,36 +412,19 @@
     // APLICACIÓN DE PERMISOS GRANULARES A LA UI
     // ==========================================
     function aplicarRestriccionesInterfaz() {
-        if (AppState.es_admin) return; // Si es admin, no censurar nada.
+        if (AppState.es_admin) return;
 
-        // 1. Ocultar link de Administrar Inventario
-        if (!AppState.permisos.modificar_inventario) {
-            document.getElementById('link-inventario').style.display = 'none';
-        }
+        if (!AppState.permisos.modificar_inventario) document.getElementById('link-inventario').style.display = 'none';
+        if (!AppState.permisos.registrar_pacientes) document.getElementById('btn-nuevo-paciente').style.display = 'none';
+        if (!AppState.permisos.borrar_pacientes) document.getElementById('btn-borrar-paciente').style.display = 'none';
+        if (!AppState.permisos.cerrar_cuentas) document.getElementById('btn-liquidar').style.display = 'none';
 
-        // 2. Ocultar Alta/Edición de Pacientes
-        if (!AppState.permisos.registrar_pacientes) {
-            document.getElementById('btn-nuevo-paciente').style.display = 'none';
-        }
-
-        // 3. Ocultar Borrado de Pacientes
-        if (!AppState.permisos.borrar_pacientes) {
-            document.getElementById('btn-borrar-paciente').style.display = 'none';
-        }
-
-        // 4. Ocultar Liquidación
-        if (!AppState.permisos.cerrar_cuentas) {
-            document.getElementById('btn-liquidar').style.display = 'none';
-        }
-
-        // 5. Censurar Precios si no puede Ver Cuentas
         if (!AppState.permisos.ver_cuentas) {
             document.getElementById('th-subtotal').style.display = 'none';
             document.getElementById('th-precio-serv').style.display = 'none';
             document.getElementById('th-precio-inv').style.display = 'none';
         }
     }
-
 
     // ==========================================
     // INICIALIZACIÓN
@@ -487,8 +484,11 @@
                 const data = docSnap.data(); 
                 const tr = document.createElement('tr');
                 if (AppState.pacienteActualId === docSnap.id) tr.classList.add('selected-row');
+                
+                const folioTxt = data.folio ? ` (F:${data.folio})` : '';
                 const cuartoDisplay = data.es_ambulatorio ? 'Amb.' : (data.cuarto_id || 'Amb.');
-                tr.innerHTML = `<td>${cuartoDisplay}</td><td>${data.paciente_nombre}</td>`;
+                
+                tr.innerHTML = `<td>${cuartoDisplay}${folioTxt}</td><td>${data.paciente_nombre}</td>`;
                 tr.onclick = () => seleccionarPaciente(docSnap.id, data, tr);
                 tbody.appendChild(tr);
             });
@@ -589,7 +589,6 @@
 
         if(AppState.unsubscribeTransacciones) AppState.unsubscribeTransacciones();
         
-        // 🌟 LÓGICA CENSURA EN TRANSACCIONES
         const puedeVerCuentas = AppState.es_admin || AppState.permisos.ver_cuentas;
         const puedeBorrarCargos = AppState.es_admin || AppState.permisos.borrar_cargos;
 
@@ -603,7 +602,6 @@
                 
                 let tdSubtotal = puedeVerCuentas ? `<td style="text-align:right;">$${tx.precio_venta.toLocaleString('es-MX')}</td>` : '';
                 
-                // Botón de Borrado Individual (X roja pequeña)
                 let tdBorrar = '';
                 if (puedeBorrarCargos) {
                     tdBorrar = `<td><button class="btn-red" style="font-size:0.7em; padding: 2px 6px;" onclick="borrarCargoIndividual('${tx.id}', '${tx.itemId}', ${tx.cantidad}, '${tx.tipo_operacion}', ${tx.precio_venta})">X</button></td>`;
@@ -637,12 +635,14 @@
         } else {
             totalCuentaHTML = `<div class="total-amount" style="margin-top:10px; align-self:flex-end; color: gray; font-size: 1em;">Total Protegido 🔒</div>`;
         }
+        
+        const folioBadge = data.folio ? `<span class="folio-badge">Folio: ${data.folio}</span>` : '';
 
         document.getElementById('header-cuenta').innerHTML = `Cuenta del Paciente <span>CUARTO ${cuartoDisplay}</span>`;
         document.getElementById('resumen-cuenta').innerHTML = `
             <div style="display:flex; justify-content:space-between; align-items:flex-start; width:100%;">
                 <div>
-                    <div style="font-size:1.1em;">Paciente: <strong>${data.paciente_nombre}</strong></div>
+                    <div style="font-size:1.1em;">Paciente: <strong>${data.paciente_nombre}</strong>${folioBadge}</div>
                     <div style="color:${data.nivel_observacion === 'alta' ? 'var(--danger-red)' : data.nivel_observacion === 'media' ? '#d35400' : 'gray'}; font-size:0.85em; margin-top:5px;">
                         Obs: ${data.alergias || 'Ninguna registrada'}
                     </div>
@@ -653,31 +653,21 @@
         `;
     }
 
-    // ==========================================
-    // NUEVO: BORRAR UN CARGO INDIVIDUAL
-    // ==========================================
     async function borrarCargoIndividual(txId, itemId, cantidad, tipoOperacion, precioVenta) {
         if(!confirm("⚠️ ¿Deseas eliminar este cargo?\n\nSi es un insumo físico, el stock se devolverá automáticamente al inventario general.")) return;
         
         try {
             const batch = writeBatch(db);
-            
-            // 1. Borrar de transacciones
             batch.delete(doc(db, "transactions", txId));
             
-            // 2. Restar dinero a la cuenta del paciente
             const accRef = doc(db, "accounts", AppState.pacienteActualId);
             batch.update(accRef, { total: increment(-precioVenta) });
 
-            // 3. Devolver Insumos si es físico o tablet/movil
             if (tipoOperacion === 'cargo_directo' || tipoOperacion === 'cargo_directo_tablet' || tipoOperacion === 'cargo_directo_movil') {
                 batch.update(doc(db, "inventory_master", itemId), { stock: increment(cantidad) });
             }
 
-            // (Opcional avanzado: devolver items de un Kit)
-
             await batch.commit();
-            alert("Cargo cancelado con éxito.");
         } catch (e) {
             console.error(e);
             alert("Error al intentar cancelar el cargo.");
@@ -699,6 +689,7 @@
         document.getElementById('chk-sig-hospital').checked = false;
         document.getElementById('chk-sig-paciente').checked = false;
         document.getElementById('chk-sig-familiar').checked = false;
+        document.getElementById('print-type').value = 'paciente'; // Default a ticket paciente
         
         document.getElementById('print-modal').style.display = 'flex';
     }
@@ -718,6 +709,7 @@
             }
 
             const data = AppState.pacienteActualData;
+            const printType = document.getElementById('print-type').value;
             
             const q = query(collection(db, "transactions"), where("pacienteId", "==", AppState.pacienteActualId));
             const snap = await getDocs(q);
@@ -725,13 +717,31 @@
             snap.forEach(d => txs.push(d.data()));
             txs.sort((a,b) => (a.timestamp?.toMillis()||0) - (b.timestamp?.toMillis()||0));
 
-            const tableBody = txs.map(tx => [
-                (tx.timestamp && typeof tx.timestamp.toDate === 'function') ? new Date(tx.timestamp.toDate()).toLocaleString('es-MX') : 'Pendiente',
-                tx.nombre,
-                tx.cantidad.toString(),
-                tx.acreditado_a_nombre,
-                `$${tx.precio_venta.toLocaleString('es-MX')}`
-            ]);
+            let tableHead = [];
+            let tableBody = [];
+            let columnStyles = {};
+
+            if (printType === 'paciente') {
+                // TICKET PACIENTE (Limpio, sin precios individuales ni operadores)
+                tableHead = [['Fecha / Hora', 'Concepto', 'Cant.']];
+                tableBody = txs.map(tx => [
+                    (tx.timestamp && typeof tx.timestamp.toDate === 'function') ? new Date(tx.timestamp.toDate()).toLocaleString('es-MX') : 'Pendiente',
+                    tx.nombre,
+                    tx.cantidad.toString()
+                ]);
+                columnStyles = { 0: { cellWidth: 120 }, 2: { cellWidth: 50, halign: 'center' } };
+            } else {
+                // REPORTE INTERNO (Desglose completo)
+                tableHead = [['Fecha / Hora', 'Concepto', 'Cant.', 'Acreditado a', 'Subtotal']];
+                tableBody = txs.map(tx => [
+                    (tx.timestamp && typeof tx.timestamp.toDate === 'function') ? new Date(tx.timestamp.toDate()).toLocaleString('es-MX') : 'Pendiente',
+                    tx.nombre,
+                    tx.cantidad.toString(),
+                    tx.acreditado_a_nombre,
+                    `$${tx.precio_venta.toLocaleString('es-MX')}`
+                ]);
+                columnStyles = { 0: { cellWidth: 100 }, 2: { cellWidth: 40, halign: 'center' }, 4: { halign: 'right' } };
+            }
 
             let observacionesStr = data.alergias ? String(data.alergias) : 'Ninguna registrada';
             observacionesStr = observacionesStr.replace(/\n/g, ' / ');
@@ -754,7 +764,9 @@
             doc.setFontSize(10);
             doc.setFont("helvetica", "normal");
             doc.setTextColor(100);
-            doc.text("Reporte Técnico de Cuenta Médica", 40, 55);
+            
+            const tituloReporte = printType === 'paciente' ? "Estado de Cuenta del Paciente" : "Reporte Técnico de Cuenta Médica";
+            doc.text(tituloReporte, 40, 55);
 
             doc.setFontSize(9);
             doc.text(`Fecha de Emisión: ${fechaEmision}`, pageWidth - 40, 40, { align: 'right' });
@@ -787,20 +799,29 @@
             doc.setFont("helvetica", "normal");
             doc.text(data.estado ? data.estado.toUpperCase() : 'DESCONOCIDO', 350, 85);
 
+            // AGREGAR FOLIO AL PDF SI EXISTE
+            if(data.folio) {
+                doc.setFont("helvetica", "bold");
+                doc.text("Folio:", 300, 100);
+                doc.setFont("helvetica", "normal");
+                doc.text(data.folio, 350, 100);
+            }
+
+            // Mover observaciones un poco más abajo si el folio existe para que no se encimen
+            const obsY = data.folio ? 115 : 100;
             doc.setFont("helvetica", "bold");
-            doc.text("Observaciones:", 300, 100);
+            doc.text("Observaciones:", 300, obsY);
             doc.setFont("helvetica", "normal");
-            
             const splitObs = doc.splitTextToSize(observacionesStr, 230);
-            doc.text(splitObs, 385, 100);
+            doc.text(splitObs, 385, obsY);
 
             doc.autoTable({
                 startY: 135,
-                head: [['Fecha / Hora', 'Concepto', 'Cant.', 'Acreditado a', 'Subtotal']],
+                head: tableHead,
                 body: tableBody,
                 theme: 'striped',
                 headStyles: { fillColor: [44, 62, 80], textColor: 255 },
-                columnStyles: { 0: { cellWidth: 100 }, 2: { cellWidth: 40, halign: 'center' }, 4: { halign: 'right' } },
+                columnStyles: columnStyles,
                 styles: { fontSize: 9 }
             });
 
@@ -833,7 +854,8 @@
                 });
             }
 
-            doc.save(`Cuenta_Hospital_${data.es_anonimo ? 'Anonimo' : data.paciente_nombre.replace(/\s+/g, '_')}.pdf`);
+            const prefix = printType === 'paciente' ? 'Ticket' : 'Reporte';
+            doc.save(`${prefix}_${data.es_anonimo ? 'Anonimo' : data.paciente_nombre.replace(/\s+/g, '_')}.pdf`);
             cerrarModalImpresion();
 
         } catch(error) {
@@ -937,6 +959,7 @@
         document.getElementById('modal-title').innerHTML = '➕ Nuevo Paciente';
         document.getElementById('modal-nombre').value = '';
         document.getElementById('modal-cuarto').value = '';
+        document.getElementById('modal-folio').value = ''; // Reset folio
         document.getElementById('modal-ambulatorio').checked = false;
         document.getElementById('modal-anonimo').checked = false;
         document.getElementById('modal-nivel').value = 'baja';
@@ -953,6 +976,7 @@
         document.getElementById('modal-title').innerHTML = '✏️ Editar Paciente';
         document.getElementById('modal-nombre').value = d.paciente_nombre || '';
         document.getElementById('modal-cuarto').value = d.cuarto_id || '';
+        document.getElementById('modal-folio').value = d.folio || ''; // Cargar folio
         document.getElementById('modal-ambulatorio').checked = !!d.es_ambulatorio;
         document.getElementById('modal-anonimo').checked = !!d.es_anonimo;
         document.getElementById('modal-nivel').value = d.nivel_observacion || 'baja';
@@ -979,8 +1003,9 @@
         const fechaInput = document.getElementById('modal-fecha-ingreso').value;
 
         const datos = {
-            paciente_nombre: document.getElementById('modal-nombre').value,
+            paciente_nombre: document.getElementById('modal-nombre').value.trim(),
             cuarto_id: cuartoVal,
+            folio: document.getElementById('modal-folio').value.trim(), // Guardar folio
             es_ambulatorio: esAmbulatorio,
             es_anonimo: document.getElementById('modal-anonimo').checked,
             nivel_observacion: document.getElementById('modal-nivel').value,
