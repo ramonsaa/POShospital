@@ -20,7 +20,7 @@
         button.btn-header:hover { background: rgba(255,255,255,0.2); }
         button.btn-logout { background: #c0392b; border-color: #e74c3c; }
 
-        main { display: grid; grid-template-columns: var(--cart-width) 280px 1fr 380px; gap: 1px; background-color: var(--border-color); flex: 1; overflow: hidden; transition: grid-template-columns 0.3s ease-in-out; }
+        main { display: grid; grid-template-columns: var(--cart-width) 300px 1fr 380px; gap: 1px; background-color: var(--border-color); flex: 1; overflow: hidden; transition: grid-template-columns 0.3s ease-in-out; }
         section { background-color: var(--white); display: flex; flex-direction: column; overflow: hidden; }
         .panel-header { background-color: var(--secondary-blue); color: var(--white); padding: 8px 12px; font-size: 0.85em; font-weight: bold; text-transform: uppercase; display: flex; justify-content: space-between; align-items: center; }
         
@@ -31,7 +31,7 @@
         .data-list { flex: 1; overflow-y: auto; }
         .dual-list-container { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
         .list-section { flex: 1; display: flex; flex-direction: column; overflow: hidden; border-bottom: 2px solid var(--border-color); }
-        .list-title { background: #eef2f5; padding: 5px 10px; font-size: 0.8em; font-weight: bold; color: var(--secondary-blue); border-bottom: 1px solid var(--border-color); }
+        .list-title { background: #eef2f5; padding: 5px 10px; font-size: 0.8em; font-weight: bold; color: var(--secondary-blue); border-bottom: 1px solid var(--border-color); position: sticky; top: 0; z-index: 2;}
         
         table { width: 100%; border-collapse: collapse; font-size: 0.85em; }
         th { background-color: #f8f9fa; position: sticky; top: 0; text-align: left; padding: 8px; border-bottom: 1px solid var(--border-color); z-index: 1;}
@@ -126,22 +126,30 @@
     </section>
 
     <section>
-        <div class="panel-header">Pacientes Activos <span>[F1]</span></div>
-        <div class="search-container" style="display: flex; flex-direction: column; gap: 10px;">
+        <div class="panel-header">Recepción <span>[F1]</span></div>
+        <div class="search-container" style="display: flex; flex-direction: column; gap: 5px;">
             <div style="display: flex; gap: 5px;">
-                <button class="btn-action btn-warning" onclick="activarModoInterno()" style="flex: 1; font-size:0.8em; justify-content: center;" title="Extraer insumos">📋 Interno</button>
-                <button class="btn-action btn-info" onclick="crearPresupuestoRapido()" style="flex: 1; font-size:0.8em; justify-content: center;" title="Cotización sin afectar stock">📝 Presup.</button>
-                <button class="btn-action btn-success" id="btn-nuevo-paciente" onclick="abrirModalNuevo()" style="flex: 1.2; font-size:0.8em; justify-content: center;">➕ Paciente</button>
+                <button class="btn-action btn-warning" onclick="activarModoInterno()" style="flex: 1; font-size:0.7em; padding:5px;" title="Uso Interno">📋 Merma</button>
+                <button class="btn-action btn-info" onclick="crearPresupuestoRapido()" style="flex: 1; font-size:0.7em; padding:5px;" title="Cotización">📝 Presup.</button>
+                <button class="btn-action btn-success" id="btn-nuevo-paciente" onclick="abrirModalNuevo()" style="flex: 1.2; font-size:0.7em; padding:5px;">➕ Paciente</button>
             </div>
             <input type="text" id="search-patients" placeholder="Buscar cuarto, paciente o folio... [F1]">
         </div>
-        <div class="data-list">
-            <table>
-                <thead><tr><th>Cuarto / Folio</th><th>Paciente</th></tr></thead>
-                <tbody id="lista-pacientes">
-                    <tr><td colspan="2" style="text-align: center; color: gray;">Cargando pacientes...</td></tr>
-                </tbody>
-            </table>
+        
+        <!-- DOS LISTAS SEPARADAS Y VISIBLES -->
+        <div class="dual-list-container" style="flex-direction: column;">
+            <div class="list-section">
+                <div class="list-title">🏥 Pacientes Activos</div>
+                <div class="data-list">
+                    <table><tbody id="lista-pacientes"><tr><td style="color:gray; text-align:center;">Cargando...</td></tr></tbody></table>
+                </div>
+            </div>
+            <div class="list-section" style="border-top: 3px solid var(--border-color);">
+                <div class="list-title" style="background:#f39c12; color:white;">📝 Presupuestos / Cotizaciones</div>
+                <div class="data-list">
+                    <table><tbody id="lista-presupuestos"><tr><td style="color:gray; text-align:center;">Cargando...</td></tr></tbody></table>
+                </div>
+            </div>
         </div>
     </section>
 
@@ -166,9 +174,7 @@
                 </table>
             </div>
             <div class="action-bar" id="action-bar-cuenta">
-                <button class="btn-action btn-primary" id="btn-imprimir">🖨️ Imprimir [P]</button>
-                <button class="btn-action btn-success" id="btn-liquidar">💰 Liquidar</button>
-                <button class="btn-action btn-danger" id="btn-borrar-paciente" onclick="abrirModalBorrar()">🗑️ Borrar [DEL]</button>
+                <!-- Se llena dinámicamente según sea presupuesto o paciente -->
             </div>
         </div>
     </section>
@@ -263,8 +269,8 @@
         
         <label style="font-weight:bold; color:var(--secondary-blue); margin-bottom:5px;">Tipo de Documento:</label>
         <select id="print-type" style="margin-bottom: 15px; padding: 10px; background: #fdfdfd;">
-            <option value="paciente">🧾 Ticket Paciente (Sin desglose de precios)</option>
-            <option value="interno">📄 Reporte Interno (Desglose completo y operadores)</option>
+            <option value="paciente">🧾 Ticket Paciente (Resumen Cliente)</option>
+            <option value="interno">📄 Reporte Interno (Desglose de Precios Completo)</option>
         </select>
 
         <label class="checkbox-label-print" style="margin-bottom: 15px; background: #e8f8f5; border-color: #a3e4d7;">
@@ -318,7 +324,10 @@
     window.activarModoInterno = activarModoInterno; 
     window.borrarCargoIndividual = borrarCargoIndividual;
     window.crearPresupuestoRapido = crearPresupuestoRapido;
-
+    window.borrarPresupuestoSimple = borrarPresupuestoSimple;
+    window.convertirAPaciente = convertirAPaciente;
+    
+    let isConvirtiendoPresupuesto = false;
     let modoModal = 'nuevo';
 
     window.AppState = {
@@ -430,12 +439,16 @@
     function configurarBuscadores() {
         document.getElementById('search-patients').addEventListener('input', (e) => {
             const term = e.target.value.toLowerCase();
-            document.querySelectorAll('#lista-pacientes tr').forEach(row => { row.style.display = row.innerText.toLowerCase().includes(term) ? '' : 'none'; });
+            // Filtrar ambas tablas
+            document.querySelectorAll('#lista-pacientes tr, #lista-presupuestos tr').forEach(row => { 
+                if (row.children.length > 1) { // Evita ocultar el texto de "Cargando..."
+                    row.style.display = row.innerText.toLowerCase().includes(term) ? '' : 'none'; 
+                }
+            });
         });
         document.getElementById('inventory-search').addEventListener('input', (e) => {
             const term = e.target.value.toLowerCase();
-            document.querySelectorAll('#lista-servicios tr').forEach(row => { row.style.display = row.innerText.toLowerCase().includes(term) ? '' : 'none'; });
-            document.querySelectorAll('#lista-inventario tr').forEach(row => { row.style.display = row.innerText.toLowerCase().includes(term) ? '' : 'none'; });
+            document.querySelectorAll('#lista-servicios tr, #lista-inventario tr').forEach(row => { row.style.display = row.innerText.toLowerCase().includes(term) ? '' : 'none'; });
         });
     }
 
@@ -463,29 +476,42 @@
         });
     }
 
+    // 🌟 SEPARACIÓN DE LISTAS
     function escucharPacientesActivos() {
-        const tbody = document.getElementById('lista-pacientes');
-        // SE AÑADIÓ "presupuesto" AL QUERY
+        const tbodyPac = document.getElementById('lista-pacientes');
+        const tbodyPres = document.getElementById('lista-presupuestos');
+        
         onSnapshot(query(collection(db, "accounts"), where("estado", "in", ["abierta", "presupuesto"])), (snap) => {
-            tbody.innerHTML = '';
-            if(snap.empty) {
-                tbody.innerHTML = '<tr><td colspan="2" style="text-align: center; color: gray;">No hay pacientes ni presupuestos</td></tr>';
-                return;
-            }
+            tbodyPac.innerHTML = '';
+            tbodyPres.innerHTML = '';
+            let countPac = 0; let countPres = 0;
+
             snap.forEach((docSnap) => {
                 const data = docSnap.data(); 
                 const tr = document.createElement('tr');
                 if (AppState.pacienteActualId === docSnap.id) tr.classList.add('selected-row');
                 
                 const folioTxt = data.folio ? ` (F:${data.folio})` : '';
-                const cuartoDisplay = data.estado === 'presupuesto' ? 'PRESUP.' : (data.es_ambulatorio ? 'Amb.' : (data.cuarto_id || 'Amb.'));
-                const iconPresupuesto = data.estado === 'presupuesto' ? '📝 ' : '';
+                const cuartoDisplay = data.estado === 'presupuesto' ? 'COTIZACIÓN' : (data.es_ambulatorio ? 'Amb.' : (data.cuarto_id || 'Amb.'));
                 
-                tr.innerHTML = `<td>${cuartoDisplay}${folioTxt}</td><td>${iconPresupuesto}${data.paciente_nombre}</td>`;
+                tr.innerHTML = `<td>${cuartoDisplay}${folioTxt}</td><td>${data.paciente_nombre}</td>`;
                 tr.onclick = () => seleccionarPaciente(docSnap.id, data, tr);
-                tbody.appendChild(tr);
+                
+                if (data.estado === 'presupuesto') {
+                    tbodyPres.appendChild(tr);
+                    countPres++;
+                } else {
+                    tbodyPac.appendChild(tr);
+                    countPac++;
+                }
             });
-        }, (error) => { tbody.innerHTML = '<tr><td colspan="2" style="text-align: center; color: var(--danger-red);">❌ Error de permisos</td></tr>'; });
+            
+            if(countPac === 0) tbodyPac.innerHTML = '<tr><td colspan="2" style="text-align: center; color: gray;">Sin pacientes activos</td></tr>';
+            if(countPres === 0) tbodyPres.innerHTML = '<tr><td colspan="2" style="text-align: center; color: gray;">Sin presupuestos</td></tr>';
+            
+        }, (error) => { 
+            tbodyPac.innerHTML = '<tr><td colspan="2" style="text-align: center; color: var(--danger-red);">❌ Error</td></tr>'; 
+        });
     }
 
     function escucharServiciosYPaquetes() {
@@ -530,7 +556,7 @@
     }
 
     async function crearPresupuestoRapido() {
-        const nombre = prompt("Ingrese el nombre del paciente para la Cotización/Presupuesto:");
+        const nombre = prompt("Ingrese el nombre del paciente para el Presupuesto:");
         if(!nombre) return;
         try {
             await addDoc(collection(db, "accounts"), {
@@ -544,6 +570,54 @@
         } catch(e) { console.error(e); alert("Error al crear presupuesto"); }
     }
 
+    // 🌟 NUEVA LÓGICA DE BOTONES PARA PRESUPUESTO
+    function actualizarUIBotones() {
+        const bar = document.getElementById('action-bar-cuenta');
+        const esPresupuesto = AppState.pacienteActualData.estado === 'presupuesto';
+        
+        if (esPresupuesto) {
+            bar.innerHTML = `
+                <button class="btn-action btn-primary" onclick="abrirModalImpresion()">🖨️ Imprimir Cotización</button>
+                <button class="btn-action btn-success" onclick="convertirAPaciente()">⚡ Pasar a Paciente Activo</button>
+                <button class="btn-action btn-danger" onclick="borrarPresupuestoSimple()">🗑️ Borrar Presup.</button>
+            `;
+        } else {
+            let btnsHTML = `<button class="btn-action btn-primary" onclick="abrirModalImpresion()">🖨️ Imprimir [P]</button>`;
+            if (AppState.es_admin || AppState.permisos.cerrar_cuentas) btnsHTML += `<button class="btn-action btn-success" onclick="liquidarCuenta()">💰 Liquidar</button>`;
+            if (AppState.es_admin || AppState.permisos.borrar_pacientes) btnsHTML += `<button class="btn-action btn-danger" onclick="abrirModalBorrar()">🗑️ Borrar [DEL]</button>`;
+            bar.innerHTML = btnsHTML;
+        }
+    }
+
+    async function convertirAPaciente() {
+        if(!confirm("¿Convertir Presupuesto a Paciente Activo?\nSe te pedirá llenar la información de ingreso y EL INVENTARIO FÍSICO SE DESCONTARÁ en este momento.")) return;
+        isConvirtiendoPresupuesto = true;
+        abrirModalEdicion();
+    }
+
+    async function borrarPresupuestoSimple() {
+        if(!confirm("¿Deseas eliminar esta cotización? (Es definitivo y no afecta al inventario)")) return;
+        
+        try {
+            const batch = writeBatch(db);
+            batch.delete(doc(db, "accounts", AppState.pacienteActualId));
+            
+            const q = query(collection(db, "transactions"), where("pacienteId", "==", AppState.pacienteActualId));
+            const snap = await getDocs(q);
+            snap.forEach(d => batch.delete(d.ref));
+            
+            await batch.commit();
+            
+            AppState.pacienteActualId = null;
+            AppState.pacienteActualData = null;
+            document.getElementById('header-cuenta').innerHTML = `Cuenta del Paciente <span>--</span>`;
+            document.getElementById('resumen-cuenta').innerHTML = `<div>Seleccione un paciente o presupuesto de la lista.</div>`;
+            document.getElementById('lista-transacciones').innerHTML = '';
+            document.getElementById('action-bar-cuenta').innerHTML = '';
+            alert("Presupuesto eliminado.");
+        } catch(e) { alert("Error al borrar."); }
+    }
+
     function activarModoInterno() {
         if(Object.keys(AppState.carrito).length > 0) {
             if(!confirm("Tienes insumos pendientes. ¿Vaciar carrito y cambiar a Uso Interno?")) return;
@@ -554,17 +628,17 @@
         AppState.pacienteActualId = null;
         AppState.pacienteActualData = null;
         
-        document.querySelectorAll('#lista-pacientes tr').forEach(r => r.classList.remove('selected-row'));
+        document.querySelectorAll('#lista-pacientes tr, #lista-presupuestos tr').forEach(r => r.classList.remove('selected-row'));
         document.getElementById('header-cuenta').innerHTML = `Modo Activo <span style="color:var(--warning-orange); font-weight:bold;">USO INTERNO / MERMA</span>`;
         document.getElementById('resumen-cuenta').innerHTML = `
             <div style="font-size: 1.05em; color: var(--text-dark);">
                 <strong>⚠️ Extracción de Insumos a la Clínica</strong><br>
-                <span style="font-size: 0.85em; color: gray;">Los insumos procesados aquí se descontarán del stock físico y se enviarán al reporte de Pérdidas/Mermas. No se cobrarán a ningún paciente.</span>
+                <span style="font-size: 0.85em; color: gray;">Los insumos se descontarán del stock físico sin cobrar a ningún paciente.</span>
             </div>`;
         
         document.getElementById('lista-transacciones').innerHTML = '';
         document.getElementById('table-head-tx').style.display = 'none';
-        document.getElementById('action-bar-cuenta').style.display = 'none';
+        document.getElementById('action-bar-cuenta').innerHTML = '';
 
         document.getElementById('cart-section').classList.add('internal-cart');
         const btnCarrito = document.getElementById('btn-procesar-carrito');
@@ -574,7 +648,7 @@
 
     function seleccionarPaciente(id, data, filaHtml) {
         if(Object.keys(AppState.carrito).length > 0) {
-            if(!confirm("Tienes insumos pendientes en el carrito. ¿Vaciar y cambiar de paciente?")) return;
+            if(!confirm("Tienes insumos en el carrito. ¿Vaciar y cambiar de paciente?")) return;
             vaciarCarrito();
         }
 
@@ -582,11 +656,10 @@
         AppState.pacienteActualId = id; 
         AppState.pacienteActualData = data;
         
-        document.querySelectorAll('#lista-pacientes tr').forEach(r => r.classList.remove('selected-row'));
+        document.querySelectorAll('#lista-pacientes tr, #lista-presupuestos tr').forEach(r => r.classList.remove('selected-row'));
         filaHtml.classList.add('selected-row');
         
         document.getElementById('table-head-tx').style.display = '';
-        document.getElementById('action-bar-cuenta').style.display = 'flex';
         document.getElementById('cart-section').classList.remove('internal-cart');
         
         const btnCarrito = document.getElementById('btn-procesar-carrito');
@@ -594,6 +667,7 @@
         btnCarrito.className = "btn-action btn-success";
 
         actualizarUIResumenCuenta();
+        actualizarUIBotones(); // Cargar barra de botones dinámicos
 
         if(AppState.unsubscribeTransacciones) AppState.unsubscribeTransacciones();
         
@@ -630,7 +704,7 @@
     function actualizarUIResumenCuenta() {
         if (AppState.isModoInterno) return;
         const data = AppState.pacienteActualData;
-        const cuartoDisplay = data.es_ambulatorio ? 'AMB' : (data.cuarto_id || 'AMB');
+        const cuartoDisplay = data.estado === 'presupuesto' ? 'COTIZACIÓN' : (data.es_ambulatorio ? 'AMB' : (data.cuarto_id || 'AMB'));
         
         let btnEditarHTML = '';
         if (AppState.es_admin || AppState.permisos.registrar_pacientes) {
@@ -645,9 +719,9 @@
         }
         
         const folioBadge = data.folio ? `<span class="folio-badge">Folio: ${data.folio}</span>` : '';
-        const presBadge = data.estado === 'presupuesto' ? `<span class="presupuesto-badge">SOLO PRESUPUESTO</span>` : '';
+        const presBadge = data.estado === 'presupuesto' ? `<span class="presupuesto-badge">PRESUPUESTO</span>` : '';
 
-        document.getElementById('header-cuenta').innerHTML = `Cuenta del Paciente <span>CUARTO ${cuartoDisplay}</span>`;
+        document.getElementById('header-cuenta').innerHTML = `Cuenta / Doc <span>${cuartoDisplay}</span>`;
         document.getElementById('resumen-cuenta').innerHTML = `
             <div style="display:flex; justify-content:space-between; align-items:flex-start; width:100%;">
                 <div>
@@ -664,7 +738,6 @@
 
     async function borrarCargoIndividual(txId, itemId, cantidad, tipoOperacion, precioVenta) {
         if(!confirm("⚠️ ¿Deseas eliminar este cargo?")) return;
-        
         const esPresupuesto = AppState.pacienteActualData.estado === 'presupuesto';
 
         try {
@@ -679,39 +752,37 @@
             }
 
             await batch.commit();
-        } catch (e) {
-            console.error(e);
-            alert("Error al intentar cancelar el cargo.");
-        }
+        } catch (e) { alert("Error al cancelar."); }
     }
 
     async function procesarServicioOKit(item) {
         if (AppState.isModoInterno) return alert("Los servicios médicos no aplican para consumo interno.");
-        if (!AppState.pacienteActualId) return alert("Selecciona un paciente primero.");
+        if (!AppState.pacienteActualId) return alert("Selecciona un paciente o presupuesto.");
         
         const selector = document.getElementById('select-empleado');
         const ac_id = selector.value;
         const ac_nombre = selector.options[selector.selectedIndex].text;
         const esPresupuesto = AppState.pacienteActualData.estado === 'presupuesto';
 
-        const tipoTexto = item.tipo === 'kit' ? 'Paquete' : 'Servicio';
-        if(!confirm(`¿Cargar ${tipoTexto} "${item.nombre}" a ${AppState.pacienteActualData.paciente_nombre}?\nAcreditado a: ${ac_nombre}`)) return;
+        if(!confirm(`¿Cargar "${item.nombre}" a ${AppState.pacienteActualData.paciente_nombre}?`)) return;
 
         try {
             const batch = writeBatch(db);
             const refTx = doc(collection(db, "transactions"));
             
+            // 🌟 AÑADIDO: Guardar insumos vinculados y tipo de item para la futura conversión
             batch.set(refTx, {
                 pacienteId: AppState.pacienteActualId, itemId: item.id, nombre: item.nombre,
                 cantidad: 1, precio_venta: item.precio_venta, usuario_registro: AppState.uidRecepcionista,
                 acreditado_a_id: ac_id, acreditado_a_nombre: ac_nombre, timestamp: serverTimestamp(),
-                tipo_operacion: esPresupuesto ? 'cargo_presupuesto' : (item.tipo === 'kit' ? 'cargo_kit' : 'cargo_servicio')
+                tipo_operacion: esPresupuesto ? `cargo_${item.tipo}_presupuesto` : `cargo_${item.tipo}`,
+                tipo_item: item.tipo,
+                insumos_vinculados: item.insumos_vinculados || null
             });
 
             const accRef = doc(db, "accounts", AppState.pacienteActualId);
             batch.update(accRef, { total: increment(item.precio_venta) });
 
-            // NO DESCONTAR INVENTARIO SI ES PRESUPUESTO
             if (!esPresupuesto && item.tipo === 'kit' && item.insumos_vinculados && item.insumos_vinculados.length > 0) {
                 item.insumos_vinculados.forEach(insumoInterno => {
                     if (insumoInterno.tipo_item === 'fisico') {
@@ -726,11 +797,8 @@
     }
 
     function agregarAlCarrito(item) {
-        if (!AppState.pacienteActualId && !AppState.isModoInterno) return alert("Selecciona un paciente o activa el Uso Interno.");
-        
+        if (!AppState.pacienteActualId && !AppState.isModoInterno) return alert("Selecciona paciente o activa Uso Interno.");
         const esPresupuesto = AppState.pacienteActualData && AppState.pacienteActualData.estado === 'presupuesto';
-        
-        // Si no es presupuesto, validamos stock
         if (!esPresupuesto && item.stock <= 0) return alert("No hay stock disponible.");
         
         const selector = document.getElementById('select-empleado');
@@ -767,14 +835,12 @@
 
         if(items.length === 0) { document.documentElement.style.setProperty('--cart-width', '0px'); return; }
         document.documentElement.style.setProperty('--cart-width', '300px');
-
         const puedeVerPrecios = AppState.es_admin || AppState.permisos.ver_cuentas;
 
         items.forEach(key => {
             const cObj = AppState.carrito[key];
             const subtotal = cObj.cantidad * cObj.item.precio_venta;
             totalCash += subtotal;
-            
             let htmlPrecio = puedeVerPrecios ? `<div class="cart-price">$${subtotal.toLocaleString('es-MX')}</div>` : '';
 
             lista.innerHTML += `
@@ -824,11 +890,15 @@
                 const subtotal = obj.cantidad * obj.item.precio_venta;
                 granTotal += subtotal;
 
+                // 🌟 AÑADIDO: Info adicional para futura conversión
                 batch.set(doc(transRef), {
                     pacienteId: AppState.pacienteActualId, itemId: obj.item.id, nombre: obj.item.nombre,
                     cantidad: obj.cantidad, precio_venta: subtotal, usuario_registro: AppState.uidRecepcionista,
                     acreditado_a_id: obj.acreditado_a_id, acreditado_a_nombre: obj.acreditado_a_nombre,
-                    timestamp: serverTimestamp(), tipo_operacion: esPresupuesto ? 'cargo_presupuesto' : 'cargo_directo'
+                    timestamp: serverTimestamp(), 
+                    tipo_operacion: esPresupuesto ? 'cargo_directo_presupuesto' : 'cargo_directo',
+                    tipo_item: obj.item.tipo || 'fisico',
+                    insumos_vinculados: obj.item.insumos_vinculados || null
                 });
                 
                 if(!esPresupuesto) {
@@ -841,14 +911,14 @@
         try { 
             await batch.commit(); 
             vaciarCarrito(); 
-            if(AppState.isModoInterno) alert("✅ Inventario descontado correctamente como Uso Interno/Merma.");
+            if(AppState.isModoInterno) alert("✅ Inventario descontado.");
         } 
         catch (error) { alert("Error al procesar lote."); } 
         finally { btn.disabled = false; btn.innerText = AppState.isModoInterno ? "Confirmar Merma" : "Confirmar Cargos"; }
     });
 
     // ==========================================
-    // IMPRESIÓN Y PDF (Ticket 80mm y Carta)
+    // IMPRESIÓN Y PDF
     // ==========================================
     document.getElementById('btn-imprimir').addEventListener('click', abrirModalImpresion);
 
@@ -861,7 +931,7 @@
         document.getElementById('chk-sig-hospital').checked = false;
         document.getElementById('chk-sig-paciente').checked = false;
         document.getElementById('chk-sig-familiar').checked = false;
-        document.getElementById('chk-impresion-carta').checked = false; // Default: Ticket 80mm
+        document.getElementById('chk-impresion-carta').checked = false; 
         document.getElementById('print-type').value = 'paciente';
         
         document.getElementById('print-modal').style.display = 'flex';
@@ -871,18 +941,17 @@
         document.getElementById('print-modal').style.display = 'none';
     }
 
-async function ejecutarExportacionPDF() {
+    async function ejecutarExportacionPDF() {
         const btn = document.getElementById('btn-generar-pdf');
         btn.innerText = "⏳ Generando...";
         btn.disabled = true;
 
         try {
-            if (!window.jspdf || !window.jspdf.jsPDF) {
-                throw new Error("La librería de PDF no cargó correctamente.");
-            }
+            if (!window.jspdf || !window.jspdf.jsPDF) throw new Error("Librería de PDF no cargó.");
 
             const data = AppState.pacienteActualData;
-            const printType = document.getElementById('print-type').value;
+            const esPresupuesto = data.estado === 'presupuesto';
+            let printType = document.getElementById('print-type').value;
             const isCarta = document.getElementById('chk-impresion-carta').checked;
             
             const q = query(collection(db, "transactions"), where("pacienteId", "==", AppState.pacienteActualId));
@@ -895,42 +964,27 @@ async function ejecutarExportacionPDF() {
             let tableBody = [];
             let columnStyles = {};
 
-            if (printType === 'paciente') {
+            // 🌟 SOLUCIÓN TICKETS EN $0: Si es presupuesto, forzamos a que salgan los precios para que tenga sentido la cotización.
+            if (printType === 'paciente' && !esPresupuesto) {
+                // Ticket limpio para paciente normal (sin precios individuales)
                 tableHead = [['Concepto', 'Cant.']];
                 tableBody = txs.map(tx => [tx.nombre, tx.cantidad.toString()]);
-                columnStyles = isCarta ? { 0: { cellWidth: 300 }, 1: { cellWidth: 50, halign: 'center' } } 
-                                       : { 0: { cellWidth: 160 }, 1: { cellWidth: 30, halign: 'center' } };
+                columnStyles = isCarta ? { 0: { cellWidth: 300 }, 1: { cellWidth: 50, halign: 'center' } } : { 0: { cellWidth: 160 }, 1: { cellWidth: 30, halign: 'center' } };
             } else {
+                // Ticket interno o Presupuesto (Muestra los precios individuales)
                 tableHead = [['Concepto', 'Cant.', 'Total']];
-                tableBody = txs.map(tx => [tx.nombre, tx.cantidad.toString(), `$${tx.precio_venta.toLocaleString('es-MX')}`]);
-                columnStyles = isCarta ? { 0: { cellWidth: 200 }, 1: { cellWidth: 40, halign: 'center' }, 2: { halign: 'right' } } 
-                                       : { 0: { cellWidth: 110 }, 1: { cellWidth: 30, halign: 'center' }, 2: { halign: 'right' } };
+                tableBody = txs.map(tx => [tx.nombre, tx.cantidad.toString(), `$${(tx.precio_venta||0).toLocaleString('es-MX')}`]);
+                columnStyles = isCarta ? { 0: { cellWidth: 200 }, 1: { cellWidth: 40, halign: 'center' }, 2: { halign: 'right' } } : { 0: { cellWidth: 110 }, 1: { cellWidth: 30, halign: 'center' }, 2: { halign: 'right' } };
             }
 
-            let observacionesStr = data.alergias ? String(data.alergias) : 'Ninguna registrada';
-            observacionesStr = observacionesStr.replace(/\n/g, ' / ');
-
+            let observacionesStr = data.alergias ? String(data.alergias).replace(/\n/g, ' / ') : 'Ninguna registrada';
             const fechaEmision = new Date().toLocaleString('es-MX');
-            let fechaIngreso = 'N/A';
-            if (data.fecha_ingreso) {
-                if (typeof data.fecha_ingreso.toDate === 'function') fechaIngreso = new Date(data.fecha_ingreso.toDate()).toLocaleString('es-MX'); 
-                else if (data.fecha_ingreso instanceof Date) fechaIngreso = data.fecha_ingreso.toLocaleString('es-MX'); 
-            }
 
-            // 🌟 CÁLCULO DINÁMICO DE LONGITUD PARA IMPRESORA TÉRMICA (SÚPER AJUSTADO)
             let ticketHeight = 800; 
             if (!isCarta) {
                 let lineasEstimadas = 0;
-                txs.forEach(tx => {
-                    // Si el nombre del artículo es largo, la tabla lo divide en dos renglones.
-                    // Asumimos que caben aprox 20 caracteres por renglón en el ticket.
-                    lineasEstimadas += Math.ceil((tx.nombre.length || 1) / 20); 
-                });
-                
-                // 170 puntos base (cabecera, datos del paciente y pie) + 14 puntos por línea impresa
+                txs.forEach(tx => { lineasEstimadas += Math.ceil((tx.nombre.length || 1) / 20); });
                 ticketHeight = 170 + (lineasEstimadas * 14); 
-                
-                // Reducimos el tope mínimo drásticamente para no desperdiciar papel en ventas de 1 solo artículo
                 if(ticketHeight < 220) ticketHeight = 220; 
             }
 
@@ -949,7 +1003,7 @@ async function ejecutarExportacionPDF() {
             doc.setTextColor(isCarta ? 100 : 0);
             
             let tituloReporte = printType === 'paciente' ? "Estado de Cuenta" : "Reporte Interno";
-            if(data.estado === 'presupuesto') tituloReporte = "PRESUPUESTO / COTIZACIÓN";
+            if(esPresupuesto) tituloReporte = "PRESUPUESTO / COTIZACIÓN";
             
             const titleY = isCarta ? 55 : 45;
             if(isCarta) doc.text(tituloReporte, m, titleY);
@@ -982,7 +1036,7 @@ async function ejecutarExportacionPDF() {
             doc.setFont("helvetica", "bold");
             doc.text("Cuarto:", m, currentY);
             doc.setFont("helvetica", "normal");
-            doc.text(data.estado === 'presupuesto' ? 'COTIZACIÓN' : (data.es_ambulatorio ? 'Ambulatorio' : data.cuarto_id), m + (isCarta ? 60 : 45), currentY);
+            doc.text(esPresupuesto ? 'COTIZACIÓN' : (data.es_ambulatorio ? 'Ambulatorio' : data.cuarto_id), m + (isCarta ? 60 : 45), currentY);
 
             if(data.folio) {
                 currentY += 15;
@@ -1011,10 +1065,13 @@ async function ejecutarExportacionPDF() {
                 margin: { left: m, right: m }
             });
 
+            // Recalcular total real de transacciones para evitar bugs si data.total está mal
+            let sumTotal = txs.reduce((acc, tx) => acc + (tx.precio_venta || 0), 0);
+            
             let finalY = doc.lastAutoTable.finalY + 20;
             doc.setFontSize(isCarta ? 14 : 11);
             doc.setFont("helvetica", "bold");
-            doc.text(`TOTAL: $${(data.total || 0).toLocaleString('es-MX')}`, pageWidth - m, finalY, { align: 'right' });
+            doc.text(`TOTAL: $${sumTotal.toLocaleString('es-MX')}`, pageWidth - m, finalY, { align: 'right' });
 
             if (isCarta) {
                 let firmas = [];
@@ -1041,13 +1098,13 @@ async function ejecutarExportacionPDF() {
                     });
                 }
             } else {
-                // Mensaje final para el ticket
                 doc.setFontSize(7);
                 doc.setFont("helvetica", "normal");
-                doc.text("Gracias por su preferencia.", pageWidth/2, finalY + 20, { align: 'center' });
+                let msg = esPresupuesto ? "Cotización válida sujeta a cambios." : "Gracias por su preferencia.";
+                doc.text(msg, pageWidth/2, finalY + 20, { align: 'center' });
             }
 
-            const prefix = printType === 'paciente' ? 'Ticket' : 'Reporte';
+            const prefix = esPresupuesto ? 'Cotizacion' : (printType === 'paciente' ? 'Ticket' : 'Reporte');
             doc.save(`${prefix}_${data.es_anonimo ? 'Anonimo' : data.paciente_nombre.replace(/\s+/g, '_')}.pdf`);
             cerrarModalImpresion();
 
@@ -1056,6 +1113,9 @@ async function ejecutarExportacionPDF() {
         } finally { btn.innerText = "🖨️ Generar Documento"; btn.disabled = false; }
     }
 
+    // ==========================================
+    // ALTA, EDICIÓN Y CONVERSIÓN DE PACIENTES
+    // ==========================================
     function toggleAmbulatorio() {
         const isAmbulatorio = document.getElementById('modal-ambulatorio').checked;
         const inputCuarto = document.getElementById('modal-cuarto');
@@ -1065,6 +1125,7 @@ async function ejecutarExportacionPDF() {
 
     function abrirModalNuevo() {
         modoModal = 'nuevo';
+        isConvirtiendoPresupuesto = false;
         document.getElementById('modal-title').innerHTML = '➕ Nuevo Paciente';
         document.getElementById('modal-nombre').value = '';
         document.getElementById('modal-cuarto').value = '';
@@ -1082,9 +1143,9 @@ async function ejecutarExportacionPDF() {
         if(!AppState.pacienteActualData) return;
         modoModal = 'editar';
         const d = AppState.pacienteActualData;
-        document.getElementById('modal-title').innerHTML = '✏️ Editar Paciente';
+        document.getElementById('modal-title').innerHTML = isConvirtiendoPresupuesto ? '⚡ Ingresar Paciente (Conversión)' : '✏️ Editar Paciente';
         document.getElementById('modal-nombre').value = d.paciente_nombre || '';
-        document.getElementById('modal-cuarto').value = d.cuarto_id || '';
+        document.getElementById('modal-cuarto').value = isConvirtiendoPresupuesto ? '' : (d.cuarto_id || '');
         document.getElementById('modal-folio').value = d.folio || ''; 
         document.getElementById('modal-ambulatorio').checked = !!d.es_ambulatorio;
         document.getElementById('modal-anonimo').checked = !!d.es_anonimo;
@@ -1092,7 +1153,7 @@ async function ejecutarExportacionPDF() {
         document.getElementById('modal-alergias').value = d.alergias || '';
         
         if(d.fecha_ingreso && typeof d.fecha_ingreso.toDate === 'function') {
-            const date = d.fecha_ingreso.toDate();
+            const date = isConvirtiendoPresupuesto ? new Date() : d.fecha_ingreso.toDate(); // Si convierte, le pone fecha de hoy
             date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
             document.getElementById('modal-fecha-ingreso').value = date.toISOString().slice(0,16);
         } else { document.getElementById('modal-fecha-ingreso').value = ''; }
@@ -1101,7 +1162,10 @@ async function ejecutarExportacionPDF() {
         document.getElementById('patient-modal').style.display = 'flex';
     }
 
-    function cerrarModalPaciente() { document.getElementById('patient-modal').style.display = 'none'; }
+    function cerrarModalPaciente() { 
+        document.getElementById('patient-modal').style.display = 'none'; 
+        isConvirtiendoPresupuesto = false;
+    }
 
     async function guardarPaciente() {
         const btn = document.getElementById('btn-guardar-paciente');
@@ -1122,7 +1186,12 @@ async function ejecutarExportacionPDF() {
         };
 
         if (fechaInput) datos.fecha_ingreso = new Date(fechaInput);
-        else if (modoModal === 'nuevo') datos.fecha_ingreso = serverTimestamp();
+        else if (modoModal === 'nuevo' || isConvirtiendoPresupuesto) datos.fecha_ingreso = serverTimestamp();
+
+        // 🌟 LÓGICA DE CONVERSIÓN DE ESTADO
+        if (isConvirtiendoPresupuesto) {
+            datos.estado = 'abierta';
+        }
 
         try {
             if(modoModal === 'nuevo') {
@@ -1130,105 +1199,47 @@ async function ejecutarExportacionPDF() {
                 await addDoc(collection(db, "accounts"), datos);
             } else {
                 if(!AppState.pacienteActualId) return;
-                await updateDoc(doc(db, "accounts", AppState.pacienteActualId), datos);
+                
+                // Si estamos convirtiendo un presupuesto, DESCONTAMOS EL INVENTARIO DE GOLPE
+                if (isConvirtiendoPresupuesto) {
+                    const batch = writeBatch(db);
+                    batch.update(doc(db, "accounts", AppState.pacienteActualId), datos);
+                    
+                    const q = query(collection(db, "transactions"), where("pacienteId", "==", AppState.pacienteActualId));
+                    const snap = await getDocs(q);
+                    
+                    snap.forEach(docSnap => {
+                        const tx = docSnap.data();
+                        if (tx.tipo_operacion && tx.tipo_operacion.includes('presupuesto')) {
+                            let newOp = tx.tipo_operacion.replace('_presupuesto', '');
+                            batch.update(docSnap.ref, { tipo_operacion: newOp });
+                            
+                            if (tx.tipo_item === 'fisico') {
+                                batch.update(doc(db, "inventory_master", tx.itemId), { stock: increment(-tx.cantidad) });
+                            } else if (tx.tipo_item === 'kit' && tx.insumos_vinculados) {
+                                tx.insumos_vinculados.forEach(inv => {
+                                    if (inv.tipo_item === 'fisico') {
+                                        batch.update(doc(db, "inventory_master", inv.id_insumo), { stock: increment(-inv.cantidad * tx.cantidad) });
+                                    }
+                                });
+                            }
+                        }
+                    });
+                    await batch.commit();
+                    alert("Presupuesto convertido a Paciente Activo.\nInventario descontado exitosamente.");
+                } else {
+                    // Edición normal
+                    await updateDoc(doc(db, "accounts", AppState.pacienteActualId), datos);
+                }
+                
                 if (datos.fecha_ingreso instanceof Date) datos.fecha_ingreso = { toDate: () => datos.fecha_ingreso }; 
                 AppState.pacienteActualData = { ...AppState.pacienteActualData, ...datos };
                 actualizarUIResumenCuenta(); 
+                actualizarUIBotones();
             }
             cerrarModalPaciente();
-        } catch (error) { console.error(error); } finally { btn.disabled = false; btn.innerText = "💾 Guardar"; }
-    }
-
-    function iniciarReloj() { setInterval(() => { document.getElementById('clock').innerText = new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }); }, 1000); }
-    function configurarPantallaCompleta() {
-        const btn = document.getElementById('btn-fullscreen');
-        btn.addEventListener('click', () => {
-            if (!document.fullscreenElement) { document.documentElement.requestFullscreen(); btn.innerHTML = "🗗 Salir Pantalla Completa"; } 
-            else { document.exitFullscreen(); btn.innerHTML = "🖵 Pantalla Completa"; }
-        });
-    }
-
-    document.getElementById('btn-liquidar').addEventListener('click', liquidarCuenta);
-
-    async function liquidarCuenta() {
-        if(!AppState.pacienteActualId) return alert("Selecciona un paciente primero.");
-        if(confirm(`¿Estás seguro de liquidar la cuenta de ${AppState.pacienteActualData.paciente_nombre}?`)) {
-            if(confirm("Doble Confirmación: La cuenta pasará a estado 'liquidada' y desaparecerá de la vista principal. ¿Deseas continuar?")) {
-                try {
-                    await updateDoc(doc(db, "accounts", AppState.pacienteActualId), { 
-                        estado: "liquidada", 
-                        fecha_liquidacion: serverTimestamp(),
-                        liquidado_por: AppState.uidRecepcionista 
-                    });
-                    
-                    AppState.pacienteActualId = null;
-                    AppState.pacienteActualData = null;
-                    document.getElementById('header-cuenta').innerHTML = `Cuenta del Paciente <span>--</span>`;
-                    document.getElementById('resumen-cuenta').innerHTML = `<div>Seleccione un paciente de la lista.</div>`;
-                    document.getElementById('lista-transacciones').innerHTML = '';
-                    alert("Cuenta liquidada con éxito.");
-                } catch(e) { console.error(e); }
-            }
-        }
-    }
-
-    function abrirModalBorrar() {
-        if(!AppState.pacienteActualId) return alert("Selecciona un paciente primero.");
-        document.getElementById('delete-confirm-text').value = '';
-        document.getElementById('delete-action-select').value = 'devolver';
-        document.getElementById('delete-modal').style.display = 'flex';
-    }
-
-    function cerrarModalBorrar() { document.getElementById('delete-modal').style.display = 'none'; }
-
-    async function ejecutarBorrado() {
-        const palabra = document.getElementById('delete-confirm-text').value;
-        if (palabra !== "BORRAR") return alert("Debes escribir la palabra BORRAR en mayúsculas para confirmar.");
-
-        const accionInsumos = document.getElementById('delete-action-select').value;
-        const btn = document.getElementById('btn-confirmar-borrar');
-        btn.disabled = true; btn.innerText = "Eliminando...";
-
-        const esPresupuesto = AppState.pacienteActualData.estado === 'presupuesto';
-
-        try {
-            const batch = writeBatch(db);
-            const accountId = AppState.pacienteActualId;
-            
-            batch.delete(doc(db, "accounts", accountId));
-            
-            const q = query(collection(db, "transactions"), where("pacienteId", "==", accountId));
-            const snap = await getDocs(q);
-            
-            snap.forEach(docSnap => {
-                const tx = docSnap.data();
-                if (!esPresupuesto && (tx.tipo_operacion === 'cargo_directo' || tx.tipo_operacion === 'cargo_directo_tablet' || tx.tipo_operacion === 'cargo_directo_movil')) {
-                    if (accionInsumos === 'devolver') {
-                        const invRef = doc(db, "inventory_master", tx.itemId);
-                        batch.update(invRef, { stock: increment(tx.cantidad) });
-                    } else if (accionInsumos === 'perdida') {
-                        const lossRef = doc(collection(db, "inventory_losses"));
-                        batch.set(lossRef, {
-                            itemId: tx.itemId, nombre: tx.nombre, cantidad: tx.cantidad,
-                            precio_perdida: tx.precio_venta, fecha: serverTimestamp(),
-                            usuario_registro: AppState.uidRecepcionista, motivo: "Eliminación de cuenta", cuenta_eliminada_id: accountId
-                        });
-                    }
-                }
-                batch.delete(docSnap.ref);
-            });
-            
-            await batch.commit();
-            
-            AppState.pacienteActualId = null;
-            AppState.pacienteActualData = null;
-            document.getElementById('header-cuenta').innerHTML = `Cuenta del Paciente <span>--</span>`;
-            document.getElementById('resumen-cuenta').innerHTML = `<div>Seleccione un paciente de la lista.</div>`;
-            document.getElementById('lista-transacciones').innerHTML = '';
-            cerrarModalBorrar();
-            alert("🗑️ Cuenta/Presupuesto eliminado correctamente.");
-            
-        } catch(e) { console.error(e); } finally { btn.disabled = false; btn.innerText = "Eliminar Cuenta"; }
+        } catch (error) { console.error(error); alert("Error al guardar."); } 
+        finally { btn.disabled = false; btn.innerText = "💾 Guardar"; }
     }
 </script>
 </body>
