@@ -871,7 +871,7 @@
         document.getElementById('print-modal').style.display = 'none';
     }
 
-    async function ejecutarExportacionPDF() {
+async function ejecutarExportacionPDF() {
         const btn = document.getElementById('btn-generar-pdf');
         btn.innerText = "⏳ Generando...";
         btn.disabled = true;
@@ -917,8 +917,17 @@
                 else if (data.fecha_ingreso instanceof Date) fechaIngreso = data.fecha_ingreso.toLocaleString('es-MX'); 
             }
 
+            // 🌟 CÁLCULO DINÁMICO DE LONGITUD PARA IMPRESORA TÉRMICA
+            let ticketHeight = 800; // Valor por defecto
+            if (!isCarta) {
+                // 240 puntos de encabezado y pie de página fijos + 25 puntos por cada insumo cobrado
+                ticketHeight = 240 + (txs.length * 25); 
+                // Asegurar un mínimo de altura para que el ticket no salga cortado si solo compran 1 cosa
+                if(ticketHeight < 350) ticketHeight = 350; 
+            }
+
             const { jsPDF } = window.jspdf;
-            const pdfFormat = isCarta ? 'letter' : [226.77, 800]; // 80mm de ancho x 800 de largo para ticket
+            const pdfFormat = isCarta ? 'letter' : [226.77, ticketHeight]; 
             const doc = new jsPDF('p', 'pt', pdfFormat);
             const pageWidth = doc.internal.pageSize.width;
             const m = isCarta ? 40 : 10; 
@@ -1027,7 +1036,7 @@
                 // Mensaje final para el ticket
                 doc.setFontSize(7);
                 doc.setFont("helvetica", "normal");
-                doc.text("Gracias por su preferencia.", pageWidth/2, finalY + 30, { align: 'center' });
+                doc.text("Gracias por su preferencia.", pageWidth/2, finalY + 20, { align: 'center' });
             }
 
             const prefix = printType === 'paciente' ? 'Ticket' : 'Reporte';
