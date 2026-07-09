@@ -917,13 +917,21 @@ async function ejecutarExportacionPDF() {
                 else if (data.fecha_ingreso instanceof Date) fechaIngreso = data.fecha_ingreso.toLocaleString('es-MX'); 
             }
 
-            // 🌟 CÁLCULO DINÁMICO DE LONGITUD PARA IMPRESORA TÉRMICA
-            let ticketHeight = 800; // Valor por defecto
+           // 🌟 CÁLCULO DINÁMICO DE LONGITUD PARA IMPRESORA TÉRMICA (SÚPER AJUSTADO)
+            let ticketHeight = 800; 
             if (!isCarta) {
-                // 240 puntos de encabezado y pie de página fijos + 25 puntos por cada insumo cobrado
-                ticketHeight = 240 + (txs.length * 25); 
-                // Asegurar un mínimo de altura para que el ticket no salga cortado si solo compran 1 cosa
-                if(ticketHeight < 350) ticketHeight = 350; 
+                let lineasEstimadas = 0;
+                txs.forEach(tx => {
+                    // Si el nombre del artículo es largo, la tabla lo divide en dos renglones.
+                    // Asumimos que caben aprox 20 caracteres por renglón en el ticket.
+                    lineasEstimadas += Math.ceil((tx.nombre.length || 1) / 20); 
+                });
+                
+                // 170 puntos base (cabecera, datos del paciente y pie) + 14 puntos por línea impresa
+                ticketHeight = 170 + (lineasEstimadas * 14); 
+                
+                // Reducimos el tope mínimo drásticamente para no desperdiciar papel en ventas de 1 solo artículo
+                if(ticketHeight < 220) ticketHeight = 220; 
             }
 
             const { jsPDF } = window.jspdf;
