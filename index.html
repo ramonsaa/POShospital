@@ -938,7 +938,7 @@ async function ejecutarExportacionPDF() {
             const pdfFormat = isCarta ? 'letter' : [204.09, ticketHeight]; 
             const doc = new jsPDF('p', 'pt', pdfFormat);
             const pageWidth = doc.internal.pageSize.width;
-            const m = isCarta ? 40 : 3; 
+            const m = isCarta ? 0 : 3; 
 
             doc.setFontSize(isCarta ? 18 : 12);
             doc.setFont("helvetica", "bold");
