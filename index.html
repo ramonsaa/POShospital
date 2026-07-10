@@ -1014,7 +1014,7 @@ async function ejecutarExportacionPDF() {
             let finalY = doc.lastAutoTable.finalY + 20;
             doc.setFontSize(isCarta ? 14 : 11);
             doc.setFont("helvetica", "bold");
-            doc.text(`TOTAL: $${(data.total || 0).toLocaleString('es-MX')}`, pageWidth - m, finalY, { align: 'right' });
+            doc.text(`TOTAL: $${(data.total || 0).toLocaleString('es-MX')}`, pageWidth - m - 15, finalY, { align: 'right' });
 
             if (isCarta) {
                 let firmas = [];
