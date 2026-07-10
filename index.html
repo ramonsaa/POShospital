@@ -942,7 +942,7 @@ async function ejecutarExportacionPDF() {
 
             doc.setFontSize(isCarta ? 18 : 12);
             doc.setFont("helvetica", "bold");
-            doc.text("MÉDICA SAN FRANCISCO", isCarta ? m : pageWidth/2, isCarta ? 40 : 30, { align: isCarta ? 'left' : 'center' });
+            doc.text("MÉDICA SAN FRANCISCO", isCarta ? m : pageWidth/2, isCarta ? 40 : 25, { align: isCarta ? 'left' : 'center' });
             
             doc.setFontSize(isCarta ? 10 : 8);
             doc.setFont("helvetica", "normal");
